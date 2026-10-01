@@ -1,0 +1,322 @@
+{
+  "version": "0.1.0",
+  "records": [
+    {
+      "id": "E01",
+      "source_id": "P01",
+      "paper_family": "P01",
+      "module_ids": [
+        "M04",
+        "M12",
+        "M14"
+      ],
+      "context": "killifish embryo / diapause",
+      "intervention": "CBX7 mutants versus WT",
+      "evidence_type": "genetic_perturbation",
+      "measured_outcome": "muscle preservation and maintenance",
+      "branch": "maintenance",
+      "claim_summary": "CBX7 扰动的肌肉与维持表型支持区分进入和长期保存。",
+      "source_locator": "Results: CBX7 is required for muscle preservation and diapause maintenance",
+      "exact_time": null,
+      "effect_size": null,
+      "independent_units": null,
+      "limits": [
+        "Summary-level seed, not a fully curated experiment record",
+        "No numerical labels extracted"
+      ],
+      "review_status": "needs_domain_review",
+      "reviewed_by": null,
+      "training_eligible": false,
+      "partition": "unassigned",
+      "internal_derived": false
+    },
+    {
+      "id": "E02",
+      "source_id": "P02",
+      "paper_family": "P02",
+      "module_ids": [
+        "M04",
+        "M09"
+      ],
+      "context": "killifish embryos / multiple species",
+      "intervention": "REST/FOXO perturbations and multi-omics",
+      "evidence_type": "genetic_perturbation",
+      "measured_outcome": "gene-expression programme and lipids",
+      "branch": "diapause",
+      "claim_summary": "调控与脂质程序的关联须保留 paralog 与物种背景。",
+      "source_locator": "Summary and Highlights",
+      "exact_time": null,
+      "effect_size": null,
+      "independent_units": null,
+      "limits": [
+        "Summary-level seed, not a fully curated experiment record",
+        "No numerical labels extracted"
+      ],
+      "review_status": "needs_domain_review",
+      "reviewed_by": null,
+      "training_eligible": false,
+      "partition": "unassigned",
+      "internal_derived": false
+    },
+    {
+      "id": "E03",
+      "source_id": "P03",
+      "paper_family": "P03",
+      "module_ids": [
+        "M01",
+        "M02",
+        "M06",
+        "M14"
+      ],
+      "context": "mouse blastocysts and ESCs",
+      "intervention": "partial mTOR inhibition",
+      "evidence_type": "pharmacological_perturbation",
+      "measured_outcome": "pausing and retained developmental competence",
+      "branch": "paused",
+      "claim_summary": "该系统支持可逆暂停；细胞培养与胚胎结果分别待全文标注。",
+      "source_locator": "Abstract",
+      "exact_time": null,
+      "effect_size": null,
+      "independent_units": null,
+      "limits": [
+        "Summary-level seed, not a fully curated experiment record",
+        "No numerical labels extracted"
+      ],
+      "review_status": "needs_domain_review",
+      "reviewed_by": null,
+      "training_eligible": false,
+      "partition": "unassigned",
+      "internal_derived": false
+    },
+    {
+      "id": "E04",
+      "source_id": "P05",
+      "paper_family": "P05",
+      "module_ids": [
+        "M07",
+        "M08",
+        "M09",
+        "M14"
+      ],
+      "context": "mouse embryo pausing",
+      "intervention": "mTOR inhibition / carnitine / FOXO1 manipulation",
+      "evidence_type": "pharmacological_perturbation",
+      "measured_outcome": "lipid usage and embryo longevity",
+      "branch": "maintenance",
+      "claim_summary": "脂质相关测量和维持结局在明确条件下建立联系。",
+      "source_locator": "Abstract and Fig. 4 / lysosome-autophagy results",
+      "exact_time": null,
+      "effect_size": null,
+      "independent_units": null,
+      "limits": [
+        "Summary-level seed, not a fully curated experiment record",
+        "No numerical labels extracted"
+      ],
+      "review_status": "needs_domain_review",
+      "reviewed_by": null,
+      "training_eligible": false,
+      "partition": "unassigned",
+      "internal_derived": false
+    },
+    {
+      "id": "E05",
+      "source_id": "P06",
+      "paper_family": "P06",
+      "module_ids": [
+        "M01",
+        "M09",
+        "M12"
+      ],
+      "context": "Culex pipiens adult females",
+      "intervention": "insulin receptor / FOXO RNAi and hormone context",
+      "evidence_type": "genetic_perturbation",
+      "measured_outcome": "ovarian development and fat storage",
+      "branch": "adult_diapause",
+      "claim_summary": "内分泌控制与储备需区分观测终点，不作为鱼胚胎真值。",
+      "source_locator": "Results and abstract",
+      "exact_time": null,
+      "effect_size": null,
+      "independent_units": null,
+      "limits": [
+        "Summary-level seed, not a fully curated experiment record",
+        "No numerical labels extracted"
+      ],
+      "review_status": "needs_domain_review",
+      "reviewed_by": null,
+      "training_eligible": false,
+      "partition": "unassigned",
+      "internal_derived": false
+    },
+    {
+      "id": "E06",
+      "source_id": "P07",
+      "paper_family": "P07",
+      "module_ids": [
+        "M01"
+      ],
+      "context": "Bombyx mori diapause determination",
+      "intervention": "Period knockout",
+      "evidence_type": "genetic_perturbation",
+      "measured_outcome": "diapause determination under temperature/photoperiod conditions",
+      "branch": "determination",
+      "claim_summary": "Per 与环境/激素依赖的结果支持单列季节感知。",
+      "source_locator": "Abstract",
+      "exact_time": null,
+      "effect_size": null,
+      "independent_units": null,
+      "limits": [
+        "Summary-level seed, not a fully curated experiment record",
+        "No numerical labels extracted"
+      ],
+      "review_status": "needs_domain_review",
+      "reviewed_by": null,
+      "training_eligible": false,
+      "partition": "unassigned",
+      "internal_derived": false
+    },
+    {
+      "id": "E07",
+      "source_id": "P08",
+      "paper_family": "P08",
+      "module_ids": [
+        "M09",
+        "M10",
+        "M11"
+      ],
+      "context": "C. elegans dauer / desiccation",
+      "intervention": "defined desiccation conditions",
+      "evidence_type": "functional_assay",
+      "measured_outcome": "desiccation tolerance",
+      "branch": "dauer",
+      "claim_summary": "脱水耐受是有条件的功能终点，不能等同所有 diapause。",
+      "source_locator": "Abstract",
+      "exact_time": null,
+      "effect_size": null,
+      "independent_units": null,
+      "limits": [
+        "Summary-level seed, not a fully curated experiment record",
+        "No numerical labels extracted"
+      ],
+      "review_status": "needs_domain_review",
+      "reviewed_by": null,
+      "training_eligible": false,
+      "partition": "unassigned",
+      "internal_derived": false
+    },
+    {
+      "id": "E08",
+      "source_id": "P09",
+      "paper_family": "P09",
+      "module_ids": [
+        "M07",
+        "M10",
+        "M14"
+      ],
+      "context": "rat embryonic fibroblasts",
+      "intervention": "serum withdrawal, stimulation and lysosomal manipulation",
+      "evidence_type": "functional_assay",
+      "measured_outcome": "re-entry delay, flux, ROS",
+      "branch": "quiescence",
+      "claim_summary": "转录上升与通量下降可以共存，深度需刺激响应定义。",
+      "source_locator": "Abstract and Fig. 1",
+      "exact_time": null,
+      "effect_size": null,
+      "independent_units": null,
+      "limits": [
+        "Summary-level seed, not a fully curated experiment record",
+        "No numerical labels extracted"
+      ],
+      "review_status": "needs_domain_review",
+      "reviewed_by": null,
+      "training_eligible": false,
+      "partition": "unassigned",
+      "internal_derived": false
+    },
+    {
+      "id": "E09",
+      "source_id": "P10",
+      "paper_family": "P10",
+      "module_ids": [
+        "M07",
+        "M08",
+        "M14"
+      ],
+      "context": "hematopoietic stem cells",
+      "intervention": "restriction of lysosomal activation",
+      "evidence_type": "pharmacological_perturbation",
+      "measured_outcome": "quiescence and repopulation potency",
+      "branch": "quiescence",
+      "claim_summary": "与 E08 的方向不能脱离细胞背景合并。",
+      "source_locator": "Abstract",
+      "exact_time": null,
+      "effect_size": null,
+      "independent_units": null,
+      "limits": [
+        "Summary-level seed, not a fully curated experiment record",
+        "No numerical labels extracted"
+      ],
+      "review_status": "needs_domain_review",
+      "reviewed_by": null,
+      "training_eligible": false,
+      "partition": "unassigned",
+      "internal_derived": false
+    },
+    {
+      "id": "E10",
+      "source_id": "P11",
+      "paper_family": "P11",
+      "module_ids": [
+        "M01",
+        "M14"
+      ],
+      "context": "Arabidopsis fresh and stored seeds",
+      "intervention": "maturation and after-ripening context",
+      "evidence_type": "molecular_association",
+      "measured_outcome": "DOG1 protein and germination potential",
+      "branch": "seed_dormancy",
+      "claim_summary": "储存历史影响蛋白量与恢复关系；只作远端迁移案例。",
+      "source_locator": "Abstract",
+      "exact_time": null,
+      "effect_size": null,
+      "independent_units": null,
+      "limits": [
+        "Summary-level seed, not a fully curated experiment record",
+        "No numerical labels extracted"
+      ],
+      "review_status": "needs_domain_review",
+      "reviewed_by": null,
+      "training_eligible": false,
+      "partition": "unassigned",
+      "internal_derived": false
+    },
+    {
+      "id": "E11",
+      "source_id": "P12",
+      "paper_family": "P12",
+      "module_ids": [
+        "M04",
+        "M09",
+        "M13"
+      ],
+      "context": "mouse blastocyst / ESC pausing",
+      "intervention": "Smad2/Pparg mechanism study",
+      "evidence_type": "genetic_perturbation",
+      "measured_outcome": "lipid accumulation and pausing compatibility",
+      "branch": "maintenance",
+      "claim_summary": "新机制来源支持通信与代谢的联合审查，具体条件需全文复核。",
+      "source_locator": "Abstract",
+      "exact_time": null,
+      "effect_size": null,
+      "independent_units": null,
+      "limits": [
+        "Summary-level seed, not a fully curated experiment record",
+        "No numerical labels extracted"
+      ],
+      "review_status": "needs_domain_review",
+      "reviewed_by": null,
+      "training_eligible": false,
+      "partition": "unassigned",
+      "internal_derived": false
+    }
+  ]
+}

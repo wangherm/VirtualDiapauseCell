@@ -1,0 +1,774 @@
+{
+  "version": "0.1.0",
+  "definition_status": "proposal",
+  "go_snapshot": "knowledge/snapshots/go_2026-10-01",
+  "rules": [
+    "module != gene_set != empirical_factor != trained_model",
+    "overlap_is_allowed_and_must_be_recorded",
+    "unknown_is_not_negative",
+    "clock_is_separate",
+    "ontology_annotation_is_not_diapause_evidence"
+  ],
+  "modules": [
+    {
+      "id": "M01",
+      "name_cn": "环境感知与内分泌决策",
+      "name_en": "Environment sensing and endocrine control",
+      "functional_question": "如何感知季节、营养与释放条件，并决定进入或恢复？",
+      "submodules": [
+        {
+          "id": "M01.1",
+          "name_cn": "光周期/温度及昼夜节律",
+          "membership_status": "not_defined"
+        },
+        {
+          "id": "M01.2",
+          "name_cn": "胰岛素/TOR/AMPK 等营养信号",
+          "membership_status": "not_defined"
+        },
+        {
+          "id": "M01.3",
+          "name_cn": "物种特定的激素与母体条件",
+          "membership_status": "not_defined"
+        }
+      ],
+      "go_anchors": [
+        "GO:0007165",
+        "GO:0007623"
+      ],
+      "source_ids": [
+        "P03",
+        "P06",
+        "P07",
+        "DB_GO"
+      ],
+      "observables": [
+        "刺激历史、激素处理元数据",
+        "受体/信号相关 RNA",
+        "磷酸化与激素测量（若有）"
+      ],
+      "do_not_infer": "单凭受体 RNA 推断信号强度或跨物种共享内分泌规则",
+      "applicability": "core_with_taxon_specific_channels",
+      "context_required": [
+        "species",
+        "life_stage",
+        "cell_type_or_tissue",
+        "branch",
+        "assay"
+      ],
+      "evidence_status": "proposed_pending_domain_review",
+      "gene_membership": [],
+      "training_ready": false,
+      "output_contract": {
+        "rna": "programme_expression_score_with_coverage_if_available",
+        "functional": "measured_readout_only_or_unavailable",
+        "uncertainty": "explicit"
+      },
+      "clock_relation": "conditioned_on_branch_and_context; direction_not_fixed; non_monotonic_allowed"
+    },
+    {
+      "id": "M02",
+      "name_cn": "细胞周期与生长暂停",
+      "name_en": "Cell-cycle and growth arrest",
+      "functional_question": "如何停止复制/分裂并保留重新进入能力？",
+      "submodules": [
+        {
+          "id": "M02.1",
+          "name_cn": "G0/G1/S/G2 与复制许可",
+          "membership_status": "not_defined"
+        },
+        {
+          "id": "M02.2",
+          "name_cn": "生长/细胞体积",
+          "membership_status": "not_defined"
+        },
+        {
+          "id": "M02.3",
+          "name_cn": "重新进入与分裂恢复",
+          "membership_status": "not_defined"
+        }
+      ],
+      "go_anchors": [
+        "GO:0007049"
+      ],
+      "source_ids": [
+        "P03",
+        "P09",
+        "DB_GO"
+      ],
+      "observables": [
+        "复制/细胞周期相关表达",
+        "EdU、DNA 含量、分裂及体积测量"
+      ],
+      "do_not_infer": "将所有低增殖状态称为 diapause，或把低 RNA 当作 G0 证明",
+      "applicability": "core_observation",
+      "context_required": [
+        "species",
+        "life_stage",
+        "cell_type_or_tissue",
+        "branch",
+        "assay"
+      ],
+      "evidence_status": "proposed_pending_domain_review",
+      "gene_membership": [],
+      "training_ready": false,
+      "output_contract": {
+        "rna": "programme_expression_score_with_coverage_if_available",
+        "functional": "measured_readout_only_or_unavailable",
+        "uncertainty": "explicit"
+      },
+      "clock_relation": "conditioned_on_branch_and_context; direction_not_fixed; non_monotonic_allowed"
+    },
+    {
+      "id": "M03",
+      "name_cn": "基因组完整性与损伤修复",
+      "name_en": "Genome integrity and repair",
+      "functional_question": "长时间暂停时损伤负担和维护怎样变化？",
+      "submodules": [
+        {
+          "id": "M03.1",
+          "name_cn": "DNA 损伤检测与修复",
+          "membership_status": "not_defined"
+        },
+        {
+          "id": "M03.2",
+          "name_cn": "复制压力与染色体完整性",
+          "membership_status": "not_defined"
+        },
+        {
+          "id": "M03.3",
+          "name_cn": "转座元件控制",
+          "membership_status": "not_defined"
+        }
+      ],
+      "go_anchors": [
+        "GO:0006281"
+      ],
+      "source_ids": [
+        "DB_GO"
+      ],
+      "observables": [
+        "修复相关 RNA",
+        "损伤/修复实验、突变和染色体 readout（若有）"
+      ],
+      "do_not_infer": "修复基因上调等于更高修复通量；本次缺少精读的直接 diapause 功能来源",
+      "applicability": "general_function_direct_evidence_gap",
+      "context_required": [
+        "species",
+        "life_stage",
+        "cell_type_or_tissue",
+        "branch",
+        "assay"
+      ],
+      "evidence_status": "proposed_pending_domain_review",
+      "gene_membership": [],
+      "training_ready": false,
+      "output_contract": {
+        "rna": "programme_expression_score_with_coverage_if_available",
+        "functional": "measured_readout_only_or_unavailable",
+        "uncertainty": "explicit"
+      },
+      "clock_relation": "conditioned_on_branch_and_context; direction_not_fixed; non_monotonic_allowed"
+    },
+    {
+      "id": "M04",
+      "name_cn": "染色质与转录记忆",
+      "name_en": "Chromatin and transcriptional memory",
+      "functional_question": "如何建立、维持并解除状态相关调控？",
+      "submodules": [
+        {
+          "id": "M04.1",
+          "name_cn": "Polycomb/组蛋白调控",
+          "membership_status": "not_defined"
+        },
+        {
+          "id": "M04.2",
+          "name_cn": "DNA 甲基化与 TET",
+          "membership_status": "not_defined"
+        },
+        {
+          "id": "M04.3",
+          "name_cn": "染色质可及性、TF 调控与记忆",
+          "membership_status": "not_defined"
+        }
+      ],
+      "go_anchors": [
+        "GO:0006325"
+      ],
+      "source_ids": [
+        "P01",
+        "P02",
+        "P04",
+        "DB_GO"
+      ],
+      "observables": [
+        "RNA、ATAC/ChIP/CUT&Tag 或甲基化",
+        "真实遗传/药理扰动与功能结局"
+      ],
+      "do_not_infer": "TF 表达、motif 或计算 regulon 当作真实因果边",
+      "applicability": "core_mechanistic_seed",
+      "context_required": [
+        "species",
+        "life_stage",
+        "cell_type_or_tissue",
+        "branch",
+        "assay"
+      ],
+      "evidence_status": "proposed_pending_domain_review",
+      "gene_membership": [],
+      "training_ready": false,
+      "output_contract": {
+        "rna": "programme_expression_score_with_coverage_if_available",
+        "functional": "measured_readout_only_or_unavailable",
+        "uncertainty": "explicit"
+      },
+      "clock_relation": "conditioned_on_branch_and_context; direction_not_fixed; non_monotonic_allowed"
+    },
+    {
+      "id": "M05",
+      "name_cn": "RNA 加工、保存与转录后控制",
+      "name_en": "RNA processing and storage",
+      "functional_question": "RNA 如何加工、稳定、储存并为恢复准备？",
+      "submodules": [
+        {
+          "id": "M05.1",
+          "name_cn": "剪接与 RNA 稳定性",
+          "membership_status": "not_defined"
+        },
+        {
+          "id": "M05.2",
+          "name_cn": "miRNA/非编码 RNA",
+          "membership_status": "not_defined"
+        },
+        {
+          "id": "M05.3",
+          "name_cn": "RNA 颗粒与翻译储备",
+          "membership_status": "not_defined"
+        }
+      ],
+      "go_anchors": [
+        "GO:0006396",
+        "GO:0006402"
+      ],
+      "source_ids": [
+        "DB_GO"
+      ],
+      "observables": [
+        "RNA isoform/非编码 RNA",
+        "颗粒成像、稳定性与翻译测量（若有）"
+      ],
+      "do_not_infer": "由 bulk RNA 推断 RNA 颗粒或蛋白合成速率；需补充直接休眠论文",
+      "applicability": "general_function_direct_evidence_gap",
+      "context_required": [
+        "species",
+        "life_stage",
+        "cell_type_or_tissue",
+        "branch",
+        "assay"
+      ],
+      "evidence_status": "proposed_pending_domain_review",
+      "gene_membership": [],
+      "training_ready": false,
+      "output_contract": {
+        "rna": "programme_expression_score_with_coverage_if_available",
+        "functional": "measured_readout_only_or_unavailable",
+        "uncertainty": "explicit"
+      },
+      "clock_relation": "conditioned_on_branch_and_context; direction_not_fixed; non_monotonic_allowed"
+    },
+    {
+      "id": "M06",
+      "name_cn": "蛋白合成与折叠质控",
+      "name_en": "Protein synthesis and quality control",
+      "functional_question": "怎样降低合成负担并保留可恢复的蛋白稳态？",
+      "submodules": [
+        {
+          "id": "M06.1",
+          "name_cn": "核糖体与翻译调节",
+          "membership_status": "not_defined"
+        },
+        {
+          "id": "M06.2",
+          "name_cn": "伴侣与折叠",
+          "membership_status": "not_defined"
+        },
+        {
+          "id": "M06.3",
+          "name_cn": "ER 应激/UPR 与蛋白损伤",
+          "membership_status": "not_defined"
+        }
+      ],
+      "go_anchors": [
+        "GO:0006412",
+        "GO:0006457"
+      ],
+      "source_ids": [
+        "P03",
+        "DB_GO"
+      ],
+      "observables": [
+        "核糖体/伴侣相关 RNA",
+        "新生蛋白、蛋白质组与聚集 readout"
+      ],
+      "do_not_infer": "核糖体转录量直接等于翻译速率；各通道不得只平均成 maintenance 分数",
+      "applicability": "core_with_submodule_gaps",
+      "context_required": [
+        "species",
+        "life_stage",
+        "cell_type_or_tissue",
+        "branch",
+        "assay"
+      ],
+      "evidence_status": "proposed_pending_domain_review",
+      "gene_membership": [],
+      "training_ready": false,
+      "output_contract": {
+        "rna": "programme_expression_score_with_coverage_if_available",
+        "functional": "measured_readout_only_or_unavailable",
+        "uncertainty": "explicit"
+      },
+      "clock_relation": "conditioned_on_branch_and_context; direction_not_fixed; non_monotonic_allowed"
+    },
+    {
+      "id": "M07",
+      "name_cn": "自噬、溶酶体与降解回收",
+      "name_en": "Autophagy and degradative recycling",
+      "functional_question": "物质与细胞器的清除回收怎样支持维持或恢复？",
+      "submodules": [
+        {
+          "id": "M07.1",
+          "name_cn": "自噬/选择性细胞器回收",
+          "membership_status": "not_defined"
+        },
+        {
+          "id": "M07.2",
+          "name_cn": "溶酶体功能",
+          "membership_status": "not_defined"
+        },
+        {
+          "id": "M07.3",
+          "name_cn": "泛素-蛋白酶体降解",
+          "membership_status": "not_defined"
+        }
+      ],
+      "go_anchors": [
+        "GO:0006914",
+        "GO:0010498"
+      ],
+      "source_ids": [
+        "P05",
+        "P09",
+        "P10",
+        "DB_GO"
+      ],
+      "observables": [
+        "相关 RNA/蛋白",
+        "带阻断对照的通量实验与溶酶体测量"
+      ],
+      "do_not_infer": "溶酶体 RNA 或数量等于通量；忽略 HSC 与 fibroblast 的不同背景",
+      "applicability": "context_dependent_direction",
+      "context_required": [
+        "species",
+        "life_stage",
+        "cell_type_or_tissue",
+        "branch",
+        "assay"
+      ],
+      "evidence_status": "proposed_pending_domain_review",
+      "gene_membership": [],
+      "training_ready": false,
+      "output_contract": {
+        "rna": "programme_expression_score_with_coverage_if_available",
+        "functional": "measured_readout_only_or_unavailable",
+        "uncertainty": "explicit"
+      },
+      "clock_relation": "conditioned_on_branch_and_context; direction_not_fixed; non_monotonic_allowed"
+    },
+    {
+      "id": "M08",
+      "name_cn": "能量供给与线粒体状态",
+      "name_en": "Energy supply and mitochondrial state",
+      "functional_question": "低活动与恢复时如何维持能量并改变代谢选择？",
+      "submodules": [
+        {
+          "id": "M08.1",
+          "name_cn": "糖酵解/TCA/呼吸",
+          "membership_status": "not_defined"
+        },
+        {
+          "id": "M08.2",
+          "name_cn": "线粒体状态与动力学",
+          "membership_status": "not_defined"
+        },
+        {
+          "id": "M08.3",
+          "name_cn": "能量需求与供需匹配",
+          "membership_status": "not_defined"
+        }
+      ],
+      "go_anchors": [
+        "GO:0006119",
+        "GO:0006096"
+      ],
+      "source_ids": [
+        "P03",
+        "P05",
+        "DB_GO"
+      ],
+      "observables": [
+        "能源相关表达",
+        "ATP、呼吸/酸化、膜电位和示踪（若有）"
+      ],
+      "do_not_infer": "RNA 分数等于 ATP、通量或线粒体健康；不预设所有通道下调",
+      "applicability": "core_with_multimodal_need",
+      "context_required": [
+        "species",
+        "life_stage",
+        "cell_type_or_tissue",
+        "branch",
+        "assay"
+      ],
+      "evidence_status": "proposed_pending_domain_review",
+      "gene_membership": [],
+      "training_ready": false,
+      "output_contract": {
+        "rna": "programme_expression_score_with_coverage_if_available",
+        "functional": "measured_readout_only_or_unavailable",
+        "uncertainty": "explicit"
+      },
+      "clock_relation": "conditioned_on_branch_and_context; direction_not_fixed; non_monotonic_allowed"
+    },
+    {
+      "id": "M09",
+      "name_cn": "储备物质与脂质重塑",
+      "name_en": "Resource reserves and lipid remodelling",
+      "functional_question": "如何积累、保存和动用有限资源？",
+      "submodules": [
+        {
+          "id": "M09.1",
+          "name_cn": "脂滴/脂肪酸/甾醇",
+          "membership_status": "not_defined"
+        },
+        {
+          "id": "M09.2",
+          "name_cn": "糖原/保护性糖类",
+          "membership_status": "not_defined"
+        },
+        {
+          "id": "M09.3",
+          "name_cn": "氨基酸等资源利用",
+          "membership_status": "not_defined"
+        }
+      ],
+      "go_anchors": [
+        "GO:0006629",
+        "GO:0005975"
+      ],
+      "source_ids": [
+        "P02",
+        "P05",
+        "P06",
+        "P08",
+        "P12",
+        "DB_GO"
+      ],
+      "observables": [
+        "代谢相关 RNA",
+        "脂质组/代谢组、脂滴及底物消耗"
+      ],
+      "do_not_infer": "脂质积累统一意味着更深休眠；不跨背景合并相反结果",
+      "applicability": "core_with_taxon_specific_channels",
+      "context_required": [
+        "species",
+        "life_stage",
+        "cell_type_or_tissue",
+        "branch",
+        "assay"
+      ],
+      "evidence_status": "proposed_pending_domain_review",
+      "gene_membership": [],
+      "training_ready": false,
+      "output_contract": {
+        "rna": "programme_expression_score_with_coverage_if_available",
+        "functional": "measured_readout_only_or_unavailable",
+        "uncertainty": "explicit"
+      },
+      "clock_relation": "conditioned_on_branch_and_context; direction_not_fixed; non_monotonic_allowed"
+    },
+    {
+      "id": "M10",
+      "name_cn": "应激、防御与氧化还原",
+      "name_en": "Stress defence and redox balance",
+      "functional_question": "怎样控制氧化损伤并应对外界挑战？",
+      "submodules": [
+        {
+          "id": "M10.1",
+          "name_cn": "ROS/抗氧化与氧化还原",
+          "membership_status": "not_defined"
+        },
+        {
+          "id": "M10.2",
+          "name_cn": "热/缺氧/脱水应答",
+          "membership_status": "not_defined"
+        },
+        {
+          "id": "M10.3",
+          "name_cn": "解毒、铁/血红素与条件性免疫防御",
+          "membership_status": "not_defined"
+        }
+      ],
+      "go_anchors": [
+        "GO:0006979",
+        "GO:0006950",
+        "GO:0002376"
+      ],
+      "source_ids": [
+        "P08",
+        "P09",
+        "DB_GO"
+      ],
+      "observables": [
+        "应激相关 RNA",
+        "ROS/损伤、挑战后生存与恢复",
+        "免疫仅在有相关组织/处理时单独解释"
+      ],
+      "do_not_infer": "应激表达高等于耐受强；感染/炎症不是普遍 diapause 核心",
+      "applicability": "core_stress_optional_immune",
+      "context_required": [
+        "species",
+        "life_stage",
+        "cell_type_or_tissue",
+        "branch",
+        "assay"
+      ],
+      "evidence_status": "proposed_pending_domain_review",
+      "gene_membership": [],
+      "training_ready": false,
+      "output_contract": {
+        "rna": "programme_expression_score_with_coverage_if_available",
+        "functional": "measured_readout_only_or_unavailable",
+        "uncertainty": "explicit"
+      },
+      "clock_relation": "conditioned_on_branch_and_context; direction_not_fixed; non_monotonic_allowed"
+    },
+    {
+      "id": "M11",
+      "name_cn": "膜、运输与离子/水稳态",
+      "name_en": "Membranes, transport and physical homeostasis",
+      "functional_question": "如何维持屏障、运输、渗透压及可逆物理状态？",
+      "submodules": [
+        {
+          "id": "M11.1",
+          "name_cn": "膜运输/内吞/分泌",
+          "membership_status": "not_defined"
+        },
+        {
+          "id": "M11.2",
+          "name_cn": "离子/pH/钙稳态",
+          "membership_status": "not_defined"
+        },
+        {
+          "id": "M11.3",
+          "name_cn": "水分、渗透保护与屏障",
+          "membership_status": "not_defined"
+        }
+      ],
+      "go_anchors": [
+        "GO:0055085",
+        "GO:0006811",
+        "GO:0006874"
+      ],
+      "source_ids": [
+        "P08",
+        "DB_GO"
+      ],
+      "observables": [
+        "转运相关 RNA",
+        "膜完整性、离子/pH、水分和耐受测量"
+      ],
+      "do_not_infer": "表达推断膜运输动力学；dauer 脱水结果直接推广到所有胚胎",
+      "applicability": "transfer_seed_direct_evidence_gaps",
+      "context_required": [
+        "species",
+        "life_stage",
+        "cell_type_or_tissue",
+        "branch",
+        "assay"
+      ],
+      "evidence_status": "proposed_pending_domain_review",
+      "gene_membership": [],
+      "training_ready": false,
+      "output_contract": {
+        "rna": "programme_expression_score_with_coverage_if_available",
+        "functional": "measured_readout_only_or_unavailable",
+        "uncertainty": "explicit"
+      },
+      "clock_relation": "conditioned_on_branch_and_context; direction_not_fixed; non_monotonic_allowed"
+    },
+    {
+      "id": "M12",
+      "name_cn": "身份、骨架与组织结构保存",
+      "name_en": "Identity and structural preservation",
+      "functional_question": "暂停期间如何保留细胞身份和组织结构？",
+      "submodules": [
+        {
+          "id": "M12.1",
+          "name_cn": "细胞类型/干性与分化潜能",
+          "membership_status": "not_defined"
+        },
+        {
+          "id": "M12.2",
+          "name_cn": "骨架/黏附/肌肉等结构",
+          "membership_status": "not_defined"
+        },
+        {
+          "id": "M12.3",
+          "name_cn": "生殖组织等 life-stage 特定子过程",
+          "membership_status": "not_defined"
+        }
+      ],
+      "go_anchors": [
+        "GO:0030154",
+        "GO:0007010"
+      ],
+      "source_ids": [
+        "P01",
+        "P03",
+        "P04",
+        "P06",
+        "DB_GO"
+      ],
+      "observables": [
+        "身份 RNA 与组织分层表达",
+        "形态、肌肉/结构成像与功能测量"
+      ],
+      "do_not_infer": "细胞捕获比例就是组织组成；marker 就是谱系或真实功能",
+      "applicability": "core_multiscale",
+      "context_required": [
+        "species",
+        "life_stage",
+        "cell_type_or_tissue",
+        "branch",
+        "assay"
+      ],
+      "evidence_status": "proposed_pending_domain_review",
+      "gene_membership": [],
+      "training_ready": false,
+      "output_contract": {
+        "rna": "programme_expression_score_with_coverage_if_available",
+        "functional": "measured_readout_only_or_unavailable",
+        "uncertainty": "explicit"
+      },
+      "clock_relation": "conditioned_on_branch_and_context; direction_not_fixed; non_monotonic_allowed"
+    },
+    {
+      "id": "M13",
+      "name_cn": "细胞间通信与生态位协调",
+      "name_en": "Intercellular and niche coordination",
+      "functional_question": "不同细胞、组织及母体条件如何协调暂停与恢复？",
+      "submodules": [
+        {
+          "id": "M13.1",
+          "name_cn": "配体-受体候选与通信",
+          "membership_status": "not_defined"
+        },
+        {
+          "id": "M13.2",
+          "name_cn": "细胞黏附/基质及生态位",
+          "membership_status": "not_defined"
+        },
+        {
+          "id": "M13.3",
+          "name_cn": "母体-胚胎/组织间协调",
+          "membership_status": "not_defined"
+        }
+      ],
+      "go_anchors": [
+        "GO:0007154",
+        "GO:0007155"
+      ],
+      "source_ids": [
+        "P12",
+        "DB_GO"
+      ],
+      "observables": [
+        "细胞类型分层表达与条件记录",
+        "配体/受体扰动、空间/接触和功能实验"
+      ],
+      "do_not_infer": "RNA 配体受体共现证明通信；Nodal 结果证明所有生态位机制",
+      "applicability": "context_specific_with_gaps",
+      "context_required": [
+        "species",
+        "life_stage",
+        "cell_type_or_tissue",
+        "branch",
+        "assay"
+      ],
+      "evidence_status": "proposed_pending_domain_review",
+      "gene_membership": [],
+      "training_ready": false,
+      "output_contract": {
+        "rna": "programme_expression_score_with_coverage_if_available",
+        "functional": "measured_readout_only_or_unavailable",
+        "uncertainty": "explicit"
+      },
+      "clock_relation": "conditioned_on_branch_and_context; direction_not_fixed; non_monotonic_allowed"
+    },
+    {
+      "id": "M14",
+      "name_cn": "存活、细胞死亡与恢复能力",
+      "name_en": "Survival control and recovery competence",
+      "functional_question": "暂停能否保存活性，并在刺激后真正恢复？",
+      "submodules": [
+        {
+          "id": "M14.1",
+          "name_cn": "死亡/凋亡控制",
+          "membership_status": "not_defined"
+        },
+        {
+          "id": "M14.2",
+          "name_cn": "释放后恢复比例与时延",
+          "membership_status": "not_defined"
+        },
+        {
+          "id": "M14.3",
+          "name_cn": "长期功能保存与竞争结局",
+          "membership_status": "not_defined"
+        }
+      ],
+      "go_anchors": [
+        "GO:0006915"
+      ],
+      "source_ids": [
+        "P01",
+        "P03",
+        "P05",
+        "P09",
+        "DB_GO"
+      ],
+      "observables": [
+        "存活/死亡实验",
+        "标准刺激下恢复曲线及后续功能",
+        "相关 RNA 仅辅助"
+      ],
+      "do_not_infer": "低死亡通路 RNA 等于活着；低增殖等于深休眠；结局不从 clock 反推",
+      "applicability": "outcome_linked_not_rna_only",
+      "context_required": [
+        "species",
+        "life_stage",
+        "cell_type_or_tissue",
+        "branch",
+        "assay"
+      ],
+      "evidence_status": "proposed_pending_domain_review",
+      "gene_membership": [],
+      "training_ready": false,
+      "output_contract": {
+        "rna": "programme_expression_score_with_coverage_if_available",
+        "functional": "measured_readout_only_or_unavailable",
+        "uncertainty": "explicit"
+      },
+      "clock_relation": "conditioned_on_branch_and_context; direction_not_fixed; non_monotonic_allowed"
+    }
+  ]
+}

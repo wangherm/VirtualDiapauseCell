@@ -1,0 +1,106 @@
+{
+  "version": "0.1.0",
+  "project_local_inventory": true,
+  "datasets": [
+    {
+      "id": "DS_PUBLIC_KILLIFISH_2020",
+      "source_id": "P01",
+      "accession": null,
+      "priority": 1,
+      "role": "core_state_and_maintenance",
+      "admission_blockers": [
+        "Find and verify associated accession and files",
+        "Audit stage/time and biological units",
+        "Check possible overlap with final internal experiment"
+      ],
+      "downloaded": false,
+      "files": [],
+      "split": "unassigned",
+      "training_eligible": false,
+      "status": "candidate_not_admitted"
+    },
+    {
+      "id": "DS_PUBLIC_KILLIFISH_2024",
+      "source_id": "P02",
+      "accession": null,
+      "priority": 1,
+      "role": "core_regulatory_and_species_context",
+      "admission_blockers": [
+        "Resolve accession/file inventory",
+        "Separate species, perturbations and assays",
+        "Audit paralog/orthology and biological units"
+      ],
+      "downloaded": false,
+      "files": [],
+      "split": "unassigned",
+      "training_eligible": false,
+      "status": "candidate_not_admitted"
+    },
+    {
+      "id": "DS_TET_2024",
+      "source_id": "P04",
+      "accession": "GSE221470",
+      "priority": 1,
+      "role": "paused_ESC_mechanism",
+      "admission_blockers": [
+        "Accession associated in source material; primary series metadata not fully readable in this audit",
+        "Select RNA subseries and isolate other assays",
+        "Identify actual controls, timepoints and independent cultures"
+      ],
+      "downloaded": false,
+      "files": [],
+      "split": "unassigned",
+      "training_eligible": false,
+      "status": "candidate_not_admitted"
+    },
+    {
+      "id": "DS_FOXO_2024",
+      "source_id": "P05",
+      "accession": null,
+      "priority": 1,
+      "role": "core_pausing_and_functional_outcomes",
+      "admission_blockers": [
+        "Resolve public data identifiers and actual files",
+        "Check matched molecular/functional observations"
+      ],
+      "downloaded": false,
+      "files": [],
+      "split": "unassigned",
+      "training_eligible": false,
+      "status": "candidate_not_admitted"
+    },
+    {
+      "id": "DS_RAT_QUIESCENCE",
+      "source_id": "P09",
+      "accession": "GSE124109",
+      "priority": 2,
+      "role": "auxiliary_quiescence_depth_not_diapause_clock",
+      "admission_blockers": [
+        "GEO title/species and processed FPKM file metadata verified; new-project files not downloaded",
+        "Reaudit mapping, independent cultures and measured stimulation endpoints",
+        "Previous FactorBridge development use means not a fresh blind test"
+      ],
+      "downloaded": false,
+      "files": [],
+      "split": "unassigned",
+      "training_eligible": false,
+      "status": "candidate_not_admitted"
+    },
+    {
+      "id": "DS_INTERNAL_KILLIFISH",
+      "source_id": null,
+      "accession": null,
+      "priority": 0,
+      "role": "frozen_test",
+      "admission_blockers": [
+        "No new protocol authorizes development use",
+        "Exclude raw data, derived M4/K13 and result text from training/retrieval"
+      ],
+      "downloaded": false,
+      "files": [],
+      "split": "frozen_test",
+      "training_eligible": false,
+      "status": "locked"
+    }
+  ]
+}

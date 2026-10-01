@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.pyc
+outputs/
+work/
+data/raw/
+data/processed/
+runs/
+models/
+.env
+*.safetensors
+*.pt
+*.ckpt
