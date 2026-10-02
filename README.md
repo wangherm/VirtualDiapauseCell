@@ -1,8 +1,14 @@
 # Virtual Diapause Cell
 
-A clock-centred research project for context-aware dormancy knowledge, molecular state estimation and, eventually, experimentally evaluated state-transition prediction.
+A biotime-centred model of diapause state, gene/TF waves and programme dynamics, grounded in context-specific biological evidence.
 
 **独立新项目，2026-10-01 建立。当前交付是模块定义、公开来源目录、知识记录契约与离线校验工具；尚未训练模型，也未证明细胞状态或未来响应预测能力。** FactorBridge 已归档，仅供方法参考，不是本项目依赖。
+
+## 核心优先级 v0.2
+
+**状态与维护 → Exit biotime → gene/TF waves → programme/regulon waves** 构成研究主线。DC01–DC04 是核心任务，M01–M14 是功能解释层；细胞类型异步、Entry–Exit 逆转/持续变化和组成效应贯穿评价。Clock 与 programme 同时验收，不能只优化一个进程分数。
+
+[核心优先级与 thesis 方法衔接](docs/CORE_PRIORITIES_CN.md) · [机器可读任务定义](knowledge/core_tasks.json)
 
 ## 先读这些
 
@@ -14,7 +20,7 @@ A clock-centred research project for context-aware dormancy knowledge, molecular
 | 核查论文与数据库 | [证据与来源](docs/SOURCES_CN.md) / [来源注册表](knowledge/sources.json) |
 | 决定哪些数据真正可用 | [数据纳入目录](knowledge/datasets.json) |
 | 借鉴旧项目、在同一服务器独立部署 | [FactorBridge 参考与服务器说明](docs/FACTORBRIDGE_AND_SERVER_CN.md) |
-| 确认本次做了什么 | [v0.1 定义快照](docs/STATUS.md) |
+| 确认本次做了什么 | [当前定义状态](docs/STATUS.md) |
 
 ## 定义
 
@@ -23,7 +29,7 @@ A clock-centred research project for context-aware dormancy knowledge, molecular
 三个任务分别验收：
 
 1. 知识：从来源定位实验事实，区分直接证据、迁移假设与未知。
-2. 状态：从真实观测估计 clock 和 programme 数值；同时报告独立功能终点。
+2. 状态与动态：分别登记 biotime 坐标，恢复 gene/TF 与 programme waves 的形状和幅度，并保留细胞类型异步、参考偏离及独立功能终点。
 3. 转移：给定当前状态、时间间隔、条件与历史，预测后续分布；需要真实时间或干预数据。
 
 知识范围可广，首个数值任务须窄：优先审计公开胚胎 diapause / reactivation 数据。昆虫 diapause、dauer、细胞 quiescence、植物种子及微生物 dormancy 分层记录，不共用无条件 clock。内部 killifish 继续锁定；论文结果、K13 和 M4 等派生对象也不自动导入训练。

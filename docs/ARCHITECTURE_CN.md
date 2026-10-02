@@ -1,5 +1,9 @@
 # 组织架构与评价协议草案
 
+## 核心任务优先
+
+[DC01–DC04](CORE_PRIORITIES_CN.md) 是科学任务层，14 个功能领域是解释层，知识/数值/语言/转移是实现层。三种分类不互相代替。DC02 提供坐标，DC03/DC04 的 wave 形状、幅度及异步共同构成状态，DC01 记录维护历史和有依据的深度。
+
 ## 当前仓库与未来计算组件
 
 ```mermaid
@@ -8,7 +12,13 @@ flowchart TD
   D[真实观测 / 实验元数据] --> A[数据审计 / 分组冻结 / 映射与覆盖]
   K --> R[按评价协议过滤的知识检索]
   A --> N[数值状态模型：拟议]
-  N --> S[分支 + clock + programme + 偏离]
+  N --> C[DC02 有版本的 biotime]
+  N --> H[DC01 状态与维护]
+  C --> W[DC03 gene / TF waves]
+  C --> F[DC04 programme / regulon waves]
+  H --> S[多尺度异步 / 参考偏离 / 不确定性]
+  W --> S
+  F --> S
   S --> E[证据解释：拟议 Qwen]
   R --> E
   S --> T[有真实配对/时序监督才建立转移模型]
@@ -30,7 +40,7 @@ flowchart TD
 
 ## 状态表示
 
-`state = {context, branch, progress, observed_programmes, deviations, history, functional_outcomes, uncertainty}`。
+`state = {context, branch, versioned_biotime, gene_tf_waves, programme_regulon_waves, deviations, asynchrony, history, functional_outcomes, uncertainty}`。具体坐标与 wave 字段见 `knowledge/core_tasks.json`；这些是对象契约，数值算法尚未实现。
 
 - context：物种、株系、发育阶段、细胞类型、组织、测量尺度与处理背景。
 - branch：预备/进入、维持、终止、终止后静息、恢复或未知；原研究术语保留，按证据映射，不要求每个系统都有全部阶段。

@@ -1,0 +1,328 @@
+{
+  "version": "0.2.0",
+  "updated_on": "2026-10-02",
+  "status": "definition_only",
+  "organising_axis": "DC02",
+  "co_primary_tasks": [
+    "DC02",
+    "DC03",
+    "DC04"
+  ],
+  "core_tasks": [
+    {
+      "id": "DC01",
+      "name": "Diapause state, maintenance and depth",
+      "scientific_priority": "core",
+      "required_outputs": [
+        "state_evidence",
+        "maintenance_reference_deviation",
+        "measured_history",
+        "functional_depth_if_supported"
+      ],
+      "thesis_method_sections": [
+        "2.7.14",
+        "Chapter 5"
+      ],
+      "functional_links": [
+        "M01",
+        "M02",
+        "M07",
+        "M12",
+        "M14"
+      ],
+      "implemented": false
+    },
+    {
+      "id": "DC02",
+      "name": "Exit clock and biotime",
+      "scientific_priority": "core",
+      "required_outputs": [
+        "versioned_coordinate",
+        "anchor_definition",
+        "support_range",
+        "uncertainty",
+        "cell_type_conditioned_position"
+      ],
+      "thesis_method_sections": [
+        "2.7.7",
+        "2.7.15",
+        "5.6.1-5.6.6"
+      ],
+      "functional_links": [
+        "M01",
+        "M02",
+        "M04",
+        "M12"
+      ],
+      "implemented": false
+    },
+    {
+      "id": "DC03",
+      "name": "Gene and TF expression waves",
+      "scientific_priority": "core",
+      "required_outputs": [
+        "observations",
+        "unstandardised_curve",
+        "shape_curve",
+        "amplitude",
+        "template_or_unclassified",
+        "transition_position_if_identifiable",
+        "unit_stability"
+      ],
+      "thesis_method_sections": [
+        "2.7.8",
+        "2.7.9",
+        "6.3"
+      ],
+      "functional_links": [
+        "M04",
+        "M05"
+      ],
+      "implemented": false
+    },
+    {
+      "id": "DC04",
+      "name": "Programme, pathway and regulon waves",
+      "scientific_priority": "core",
+      "required_outputs": [
+        "gene_members_and_weights",
+        "sample_scores",
+        "programme_curves",
+        "coverage",
+        "reference_deviation",
+        "asynchrony",
+        "evidence_type"
+      ],
+      "thesis_method_sections": [
+        "2.7.8",
+        "6.4-6.9",
+        "5.9.20"
+      ],
+      "functional_links": [
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14"
+      ],
+      "implemented": false
+    }
+  ],
+  "functional_layer": {
+    "path": "knowledge/modules.json",
+    "role": "annotation_and_interpretation",
+    "core_module_mapping": "many_to_many"
+  },
+  "coordinate_registry": [
+    {
+      "id": "whole_embryo_biotime",
+      "original_name": "whole-embryo biotime",
+      "level": "embryo",
+      "construction": "bulk anchor projection",
+      "thesis_method_section": "2.7.7; 5.6.1",
+      "axis_artifact_imported": false,
+      "training_eligible": false,
+      "anchor_policy": "explicit_per_axis; never automatically clip",
+      "comparability": "requires_recorded_construction_and_calibration"
+    },
+    {
+      "id": "biotime_bulk",
+      "original_name": "biotime_bulk",
+      "level": "single_cell",
+      "construction": "bulk direction transfer with single-cell recalibration",
+      "thesis_method_section": "2.7.7; 5.6.2",
+      "axis_artifact_imported": false,
+      "training_eligible": false,
+      "anchor_policy": "explicit_per_axis; never automatically clip",
+      "comparability": "requires_recorded_construction_and_calibration"
+    },
+    {
+      "id": "biotime_sc",
+      "original_name": "biotime_sc",
+      "level": "single_cell",
+      "construction": "cell-type-balanced single-cell construction; bulk-template feature dependency retained",
+      "thesis_method_section": "2.7.7; 5.6.2",
+      "axis_artifact_imported": false,
+      "training_eligible": false,
+      "anchor_policy": "explicit_per_axis; never automatically clip",
+      "comparability": "requires_recorded_construction_and_calibration"
+    },
+    {
+      "id": "cell_type_specific_biotime",
+      "original_name": "cell-type-specific biotime",
+      "level": "within_cell_type",
+      "construction": "separate type-specific anchors; robustness analysis",
+      "thesis_method_section": "2.7.7; 5.6.3",
+      "axis_artifact_imported": false,
+      "training_eligible": false,
+      "anchor_policy": "explicit_per_axis; never automatically clip",
+      "comparability": "requires_recorded_construction_and_calibration"
+    },
+    {
+      "id": "M4_exit_clock",
+      "original_name": "M4 exit clock",
+      "level": "single_cell",
+      "construction": "separately registered frozen reference model; no assumed equivalence to other axes",
+      "thesis_method_section": "2.7.15",
+      "axis_artifact_imported": false,
+      "training_eligible": false,
+      "anchor_policy": "explicit_per_axis; never automatically clip",
+      "comparability": "requires_recorded_construction_and_calibration"
+    }
+  ],
+  "coordinate_required_fields": [
+    "coordinate_id",
+    "axis_version",
+    "level",
+    "branch",
+    "feature_set_id",
+    "normalisation",
+    "anchor_ids",
+    "fit_studies",
+    "fit_units",
+    "frozen_hash",
+    "support_range"
+  ],
+  "wave_required_fields": [
+    "object_id",
+    "object_kind",
+    "coordinate_id",
+    "axis_version",
+    "branch",
+    "species",
+    "cell_context",
+    "biological_units",
+    "observations",
+    "unstandardised_curve",
+    "shape_curve",
+    "amplitude",
+    "shape_class",
+    "transition_or_peak_interval",
+    "observed_range",
+    "extrapolation_mask",
+    "smoothing_parameters",
+    "coverage",
+    "unit_stability",
+    "fit_lineage"
+  ],
+  "template_vocabulary": [
+    "EarlyUp",
+    "Up",
+    "LateUp",
+    "EarlyDown",
+    "Down",
+    "LateDown",
+    "EarlyPeak",
+    "MidPeak",
+    "LatePeak",
+    "EarlyValley",
+    "MidValley",
+    "LateValley",
+    "Flat",
+    "Unclassified"
+  ],
+  "template_status": "vocabulary_reference_only; original_algorithm_not_reproduced",
+  "depth_policy": {
+    "derivation": "requires_measured_response",
+    "history_is_depth": false,
+    "depth_equals_one_minus_clock": false,
+    "missing_response_output": "unavailable",
+    "initial_depth_separate_from_current_progress": true
+  },
+  "wave_policy": {
+    "preserve_unstandardised_amplitude": true,
+    "enrichment_p_is_amplitude": false,
+    "lag_requires_identifiability": true,
+    "tf_rna_is_tf_activity": false,
+    "residual_is_automatically_biology": false
+  },
+  "cross_cutting_priorities": [
+    {
+      "id": "cell_type_asynchrony",
+      "priority": "P0",
+      "method_sources": [
+        "5.6"
+      ]
+    },
+    {
+      "id": "entry_exit_reversal_and_persistence",
+      "priority": "P0",
+      "method_sources": [
+        "2.7.8",
+        "M1"
+      ]
+    },
+    {
+      "id": "composition_within_type_and_interaction",
+      "priority": "P0",
+      "method_sources": [
+        "M8"
+      ]
+    },
+    {
+      "id": "clock_and_programme_joint_evaluation",
+      "priority": "P0",
+      "method_sources": [
+        "DVC",
+        "5.9.20"
+      ]
+    },
+    {
+      "id": "typed_regulatory_evidence",
+      "priority": "P0",
+      "method_sources": [
+        "Chapter 6",
+        "M5"
+      ]
+    },
+    {
+      "id": "simplex_and_regional_multiview",
+      "priority": "P1",
+      "method_sources": [
+        "M2",
+        "M3",
+        "M6"
+      ]
+    },
+    {
+      "id": "cross_species_specificity_controls",
+      "priority": "P1",
+      "method_sources": [
+        "M7"
+      ]
+    },
+    {
+      "id": "state_conditioned_stress",
+      "priority": "P1",
+      "method_sources": [
+        "Chapter 4",
+        "Chapter 5"
+      ]
+    }
+  ],
+  "development_sequence": [
+    "register_coordinates_and_freeze_units",
+    "public_state_clock_baselines",
+    "gene_and_programme_waves_with_amplitude",
+    "independent_joint_evaluation",
+    "evidence_grounded_language_explanation",
+    "depth_and_transition_when_measured"
+  ],
+  "design_provenance": {
+    "user_supplied_thesis_read_for_design": true,
+    "extracted_text_published": false,
+    "internal_result_tables_published": false,
+    "internal_artifacts_imported": false,
+    "internal_training_authorized": false,
+    "claim_of_blind_design": false
+  }
+}

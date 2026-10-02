@@ -29,6 +29,30 @@ def validate(root=ROOT):
     datasets=read(root,'knowledge/datasets.json')['datasets']
     mids=unique(modules,'module'); sids=unique(sources,'source')
     unique(evidence,'evidence'); unique(datasets,'dataset')
+    core=read(root,'knowledge/core_tasks.json')
+    require(core['version']=='0.2.0' and core['status']=='definition_only','Unexpected core definition version/status')
+    require(catalogue['layer']=='functional_annotation','Functional domains must retain their interpretation role')
+    require(catalogue['core_tasks_path']=='knowledge/core_tasks.json','Broken core definition link')
+    cids=unique(core['core_tasks'],'core task')
+    require(cids=={'DC01','DC02','DC03','DC04'},'Missing core task')
+    require(core['organising_axis']=='DC02' and set(core['co_primary_tasks'])=={'DC02','DC03','DC04'},'Clock and waves must remain co-primary')
+    for task in core['core_tasks']:
+        require(set(task['functional_links']) <= mids,'Unknown functional link')
+        require(task['implemented'] is False and bool(task['required_outputs']),'Core algorithms are not yet implemented')
+    axes=core['coordinate_registry']
+    axis_ids=unique(axes,'coordinate')
+    require(axis_ids=={'whole_embryo_biotime','biotime_bulk','biotime_sc','cell_type_specific_biotime','M4_exit_clock'},'Coordinate identities must remain distinct')
+    for axis in axes:
+        require(axis['axis_artifact_imported'] is False and axis['training_eligible'] is False,'Internal coordinate artifacts are not imported or admitted')
+    depth=core['depth_policy']
+    require(depth['derivation']=='requires_measured_response' and depth['history_is_depth'] is False and depth['depth_equals_one_minus_clock'] is False,'Depth cannot be derived from duration or inverse clock')
+    require(depth['missing_response_output']=='unavailable','Missing depth observations must remain unavailable')
+    wave=core['wave_policy']
+    require(wave['preserve_unstandardised_amplitude'] is True and wave['enrichment_p_is_amplitude'] is False,'Wave amplitude must be measured, not enrichment significance')
+    require(wave['lag_requires_identifiability'] is True and wave['tf_rna_is_tf_activity'] is False,'Wave interpretation boundary violated')
+    provenance=core['design_provenance']
+    for field in ('extracted_text_published','internal_result_tables_published','internal_artifacts_imported','internal_training_authorized','claim_of_blind_design'):
+        require(provenance[field] is False,'Internal design review does not authorize data use or blind-design claims')
     subids=set()
     for s in sources:
         require(s['url'].startswith('https://'),f"Missing source URL: {s['id']}")
@@ -69,7 +93,7 @@ def validate(root=ROOT):
     require(len(terms)==len(ids)==meta['term_count'], 'GO count mismatch')
     require(not any(t.get('isObsolete') for t in terms), 'Obsolete GO term requires review')
     require(meta['gene_membership_downloaded'] is False,'Ontology terms are not gene sets')
-    return dict(status='passed',scope='definition_consistency_only',modules=len(modules),submodules=len(subids),
+    return dict(status='passed',scope='definition_consistency_only',core_tasks=len(cids),coordinate_definitions=len(axes),modules=len(modules),submodules=len(subids),
                 sources=len(sources),evidence_notes=len(evidence),datasets=len(datasets),go_terms=len(ids),
                 expression_datasets_downloaded=0,training_ready=False,model_training_executed=False)
 

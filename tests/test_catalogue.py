@@ -36,5 +36,17 @@ class CatalogueTests(unittest.TestCase):
         path=self.root/'knowledge/snapshots/go_2026-10-01/quickgo_response.json'
         path.write_bytes(path.read_bytes()+b' ')
         with self.assertRaisesRegex(ValueError,'checksum'): validator.validate(self.root)
+    def test_coordinate_alias_rejected(self):
+        self.mutate('core_tasks.json',lambda d:d['coordinate_registry'][1].update(id='whole_embryo_biotime'))
+        with self.assertRaisesRegex(ValueError,'coordinate'): validator.validate(self.root)
+    def test_inverse_clock_depth_rejected(self):
+        self.mutate('core_tasks.json',lambda d:d['depth_policy'].update(depth_equals_one_minus_clock=True))
+        with self.assertRaisesRegex(ValueError,'Depth'): validator.validate(self.root)
+    def test_enrichment_as_amplitude_rejected(self):
+        self.mutate('core_tasks.json',lambda d:d['wave_policy'].update(enrichment_p_is_amplitude=True))
+        with self.assertRaisesRegex(ValueError,'amplitude'): validator.validate(self.root)
+    def test_design_review_does_not_authorize_training(self):
+        self.mutate('core_tasks.json',lambda d:d['design_provenance'].update(internal_training_authorized=True))
+        with self.assertRaisesRegex(ValueError,'Internal design review'): validator.validate(self.root)
 
 if __name__=='__main__': unittest.main()

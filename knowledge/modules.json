@@ -1,5 +1,5 @@
 {
-  "version": "0.1.0",
+  "version": "0.2.0",
   "definition_status": "proposal",
   "go_snapshot": "knowledge/snapshots/go_2026-10-01",
   "rules": [
@@ -770,5 +770,7 @@
       },
       "clock_relation": "conditioned_on_branch_and_context; direction_not_fixed; non_monotonic_allowed"
     }
-  ]
+  ],
+  "layer": "functional_annotation",
+  "core_tasks_path": "knowledge/core_tasks.json"
 }
