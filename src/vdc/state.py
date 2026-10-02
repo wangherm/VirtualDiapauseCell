@@ -129,7 +129,9 @@ def atomic_checkpoint(path: Path, state: dict) -> None:
 def fit_state(bundle: ObservationBundle, run_dir: str | Path, steps: int = 100,
               config: StateConfig | None = None, device: str = "cpu", resume: bool = False,
               semantics: np.ndarray | None = None, semantic_provenance: dict | None = None) -> dict:
-    b = bundle.validate(); cfg = config or StateConfig(); cfg.validate()
+    bundle.validate()
+    b = bundle.subset([i for i, r in enumerate(bundle.rows) if r["split"] in {"train", "validation"}])
+    cfg = config or StateConfig(); cfg.validate()
     if steps < 1:
         raise ValueError("steps must be positive")
     if device.startswith("cuda") and not torch.cuda.is_available():

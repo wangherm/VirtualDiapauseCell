@@ -79,6 +79,18 @@ def validate(root=ROOT):
             require(d['split']=='predeclared_unit_holdout' and d['status']=='admitted_reconstruction_only', 'Pilot scope changed')
             require(d['downloaded'] is True and d['training_eligible'] is True and len(d['files'])==3, 'Incomplete pilot admission')
             require(all(re.fullmatch(r'[0-9a-f]{64}', f.get('sha256','')) and f['url'].startswith('https://') for f in d['files']), 'Unverified pilot file')
+            if 'alpha_extension' in d:
+                a=d['alpha_extension']
+                require(a['train_replicates']==[1] and a['validation_replicates']==[2] and a['old_test_replicates']==[3]
+                        and a['test_reassigned'] is False and a['independent_clock_truth'] is False,'Alpha changed original test or clock truth')
+            continue
+        if d['role']=='alpha_development':
+            require(d['id']=='DS_GSE291659_ALPHA' and d['accession']=='GSE291659','Unknown Alpha admission')
+            require(d['split']=='predeclared_unit_holdout' and d['status']=='admitted_alpha_development','Alpha scope changed')
+            require(d['downloaded'] is True and d['training_eligible'] is True and len(d['files'])==2,'Incomplete Alpha admission')
+            require(d['train_replicates']==[1,2] and d['validation_replicates']==[3] and d['reserved_replicates']==[4],'Alpha split changed')
+            require(d['matrix_samples']==30 and d['metadata_samples']==32,'Metadata count substituted for real matrix')
+            require(all(re.fullmatch(r'[0-9a-f]{64}',f.get('sha256','')) and f['url'].startswith('https://') for f in d['files']),'Unverified Alpha file')
             continue
         require(d['training_eligible'] is False, 'No other dataset has completed admission')
         require(d['downloaded'] is False and d['files']==[], 'This definition snapshot has no expression files')
@@ -103,7 +115,7 @@ def validate(root=ROOT):
                 sources=len(sources),evidence_notes=len(evidence),datasets=len(datasets),go_terms=len(ids),
                 expression_datasets_downloaded=sum(d["downloaded"] for d in datasets),
                 training_ready=False,training_executed_by_this_command=False,
-                runtime_status="See reports/v0.4.0; this command only audits the catalogue")
+                runtime_status="See docs/ALL_MODULE_ALPHA_CN.md and run artifacts; this command only audits the catalogue")
 
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__)

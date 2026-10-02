@@ -24,7 +24,10 @@ class CatalogueTests(unittest.TestCase):
     def test_current_snapshot(self):
         result = validator.validate(self.root)
         self.assertFalse(result['training_ready'])
-        self.assertEqual(result['expression_datasets_downloaded'], 1)
+        self.assertEqual(result['expression_datasets_downloaded'], 2)
+    def test_alpha_cannot_reassign_old_test(self):
+        self.mutate('datasets.json',lambda d:next(x for x in d['datasets'] if x['id']=='DS_GSE288723_PILOT')['alpha_extension'].update(test_reassigned=True))
+        with self.assertRaisesRegex(ValueError,'original test'):validator.validate(self.root)
     def test_unreviewed_gold_rejected(self):
         self.mutate('evidence_seed.json',lambda d:d['records'][0].update(training_eligible=True))
         with self.assertRaisesRegex(ValueError,'gold'): validator.validate(self.root)

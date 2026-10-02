@@ -1,0 +1,16 @@
+{
+  "GSE291659": {
+    "expression": {
+      "file": "GSE291659_masterTable_annotated.tsv.gz",
+      "bytes": 4904591,
+      "sha256": "da0259a6c20e6245f04a7c3c0bada3f89de64ea17be3e1624da4be116de25edc",
+      "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE291nnn/GSE291659/suppl/GSE291659_masterTable_annotated.tsv.gz"
+    },
+    "metadata": {
+      "file": "GSE291659_family.soft.gz",
+      "bytes": 4892,
+      "sha256": "c28525a6c3b8b1fe7c3c155b526ecb8771afca76f24a9b30f43f61a169578ed9",
+      "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE291nnn/GSE291659/soft/GSE291659_family.soft.gz"
+    }
+  }
+}

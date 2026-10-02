@@ -163,6 +163,8 @@ class ResponseRegressor:
             raise ValueError("Response inference shape/order mismatch")
         if not np.isfinite(current).all() or not np.isfinite(action).all(): raise ValueError("Invalid inputs")
         elapsed = None if elapsed is None else np.asarray(elapsed, float)
+        if scope['mode'] == 'transition' and (elapsed is None or elapsed.shape != (len(current),)):
+            raise ValueError('One elapsed time per input row required')
         x = self.design(current, action, scope["mode"], elapsed)
         y = np.column_stack((np.ones(len(x)), (x-self.mean)/self.scale)) @ self.coefficients
         if scope["mode"] == "transition":

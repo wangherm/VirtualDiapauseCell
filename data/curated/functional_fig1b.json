@@ -1,0 +1,333 @@
+{
+  "source_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12686545/",
+  "download_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC12686545/supplementaryFiles",
+  "source_file": "ACEL-24-e70253-s009.xlsx",
+  "source_sha256": "65a8cd57c3f5ad5421125d5d3f45468712d12093f107b56e0f35e094e6034001",
+  "license": "CC-BY-4.0",
+  "extraction": "raw counts C:E, verify against H; no cached percentage or significance cells used",
+  "review": "source-cell and sum checks by Codex; no independent expert review",
+  "endpoint": "young_adult_fraction_among_scored_worms",
+  "protocol": "daf-2(e1370), dauer maintenance then food and 15C release; 0mJ; Figure 1B",
+  "units": "group fraction; not individual labels",
+  "split_policy": "conservative_row_order_replicate_blocks; no proven longitudinal tracking",
+  "limitations": [
+    "Expression histories are 1/4/15/30 days, functional histories 1/10/20 days",
+    "No deposited mapping between RNA pools and assay cohorts; expression-to-function/depth remains unavailable",
+    "Replicate 3 is reserved and omitted from this development table",
+    "Shared culture lineage cannot be established from table; validation is exploratory within-study"
+  ],
+  "records": [
+    {
+      "history_days": 1,
+      "hours_after_release": 48,
+      "replicate_block": 1,
+      "split": "train",
+      "counts": {
+        "dauer": 64,
+        "L4": 145,
+        "young_adult": 0
+      },
+      "total": 209,
+      "source_cells": "Fig1B!C5:E5;H5"
+    },
+    {
+      "history_days": 1,
+      "hours_after_release": 48,
+      "replicate_block": 2,
+      "split": "validation",
+      "counts": {
+        "dauer": 66,
+        "L4": 203,
+        "young_adult": 0
+      },
+      "total": 269,
+      "source_cells": "Fig1B!C6:E6;H6"
+    },
+    {
+      "history_days": 1,
+      "hours_after_release": 72,
+      "replicate_block": 1,
+      "split": "train",
+      "counts": {
+        "dauer": 25,
+        "L4": 49,
+        "young_adult": 165
+      },
+      "total": 239,
+      "source_cells": "Fig1B!C12:E12;H12"
+    },
+    {
+      "history_days": 1,
+      "hours_after_release": 72,
+      "replicate_block": 2,
+      "split": "validation",
+      "counts": {
+        "dauer": 28,
+        "L4": 74,
+        "young_adult": 178
+      },
+      "total": 280,
+      "source_cells": "Fig1B!C13:E13;H13"
+    },
+    {
+      "history_days": 1,
+      "hours_after_release": 96,
+      "replicate_block": 1,
+      "split": "train",
+      "counts": {
+        "dauer": 0,
+        "L4": 39,
+        "young_adult": 194
+      },
+      "total": 233,
+      "source_cells": "Fig1B!C18:E18;H18"
+    },
+    {
+      "history_days": 1,
+      "hours_after_release": 96,
+      "replicate_block": 2,
+      "split": "validation",
+      "counts": {
+        "dauer": 0,
+        "L4": 27,
+        "young_adult": 253
+      },
+      "total": 280,
+      "source_cells": "Fig1B!C19:E19;H19"
+    },
+    {
+      "history_days": 1,
+      "hours_after_release": 120,
+      "replicate_block": 1,
+      "split": "train",
+      "counts": {
+        "dauer": 0,
+        "L4": 3,
+        "young_adult": 122
+      },
+      "total": 125,
+      "source_cells": "Fig1B!C24:E24;H24"
+    },
+    {
+      "history_days": 1,
+      "hours_after_release": 120,
+      "replicate_block": 2,
+      "split": "validation",
+      "counts": {
+        "dauer": 0,
+        "L4": 1,
+        "young_adult": 227
+      },
+      "total": 228,
+      "source_cells": "Fig1B!C25:E25;H25"
+    },
+    {
+      "history_days": 10,
+      "hours_after_release": 48,
+      "replicate_block": 1,
+      "split": "train",
+      "counts": {
+        "dauer": 32,
+        "L4": 176,
+        "young_adult": 0
+      },
+      "total": 208,
+      "source_cells": "Fig1B!C35:E35;H35"
+    },
+    {
+      "history_days": 10,
+      "hours_after_release": 48,
+      "replicate_block": 2,
+      "split": "validation",
+      "counts": {
+        "dauer": 61,
+        "L4": 204,
+        "young_adult": 0
+      },
+      "total": 265,
+      "source_cells": "Fig1B!C36:E36;H36"
+    },
+    {
+      "history_days": 10,
+      "hours_after_release": 72,
+      "replicate_block": 1,
+      "split": "train",
+      "counts": {
+        "dauer": 14,
+        "L4": 33,
+        "young_adult": 123
+      },
+      "total": 170,
+      "source_cells": "Fig1B!C41:E41;H41"
+    },
+    {
+      "history_days": 10,
+      "hours_after_release": 72,
+      "replicate_block": 2,
+      "split": "validation",
+      "counts": {
+        "dauer": 14,
+        "L4": 61,
+        "young_adult": 164
+      },
+      "total": 239,
+      "source_cells": "Fig1B!C42:E42;H42"
+    },
+    {
+      "history_days": 10,
+      "hours_after_release": 96,
+      "replicate_block": 1,
+      "split": "train",
+      "counts": {
+        "dauer": 0,
+        "L4": 45,
+        "young_adult": 213
+      },
+      "total": 258,
+      "source_cells": "Fig1B!C47:E47;H47"
+    },
+    {
+      "history_days": 10,
+      "hours_after_release": 96,
+      "replicate_block": 2,
+      "split": "validation",
+      "counts": {
+        "dauer": 0,
+        "L4": 23,
+        "young_adult": 271
+      },
+      "total": 294,
+      "source_cells": "Fig1B!C48:E48;H48"
+    },
+    {
+      "history_days": 10,
+      "hours_after_release": 120,
+      "replicate_block": 1,
+      "split": "train",
+      "counts": {
+        "dauer": 0,
+        "L4": 7,
+        "young_adult": 209
+      },
+      "total": 216,
+      "source_cells": "Fig1B!C53:E53;H53"
+    },
+    {
+      "history_days": 10,
+      "hours_after_release": 120,
+      "replicate_block": 2,
+      "split": "validation",
+      "counts": {
+        "dauer": 0,
+        "L4": 2,
+        "young_adult": 263
+      },
+      "total": 265,
+      "source_cells": "Fig1B!C54:E54;H54"
+    },
+    {
+      "history_days": 20,
+      "hours_after_release": 48,
+      "replicate_block": 1,
+      "split": "train",
+      "counts": {
+        "dauer": 79,
+        "L4": 185,
+        "young_adult": 0
+      },
+      "total": 264,
+      "source_cells": "Fig1B!C64:E64;H64"
+    },
+    {
+      "history_days": 20,
+      "hours_after_release": 48,
+      "replicate_block": 2,
+      "split": "validation",
+      "counts": {
+        "dauer": 71,
+        "L4": 217,
+        "young_adult": 0
+      },
+      "total": 288,
+      "source_cells": "Fig1B!C65:E65;H65"
+    },
+    {
+      "history_days": 20,
+      "hours_after_release": 72,
+      "replicate_block": 1,
+      "split": "train",
+      "counts": {
+        "dauer": 37,
+        "L4": 67,
+        "young_adult": 207
+      },
+      "total": 311,
+      "source_cells": "Fig1B!C70:E70;H70"
+    },
+    {
+      "history_days": 20,
+      "hours_after_release": 72,
+      "replicate_block": 2,
+      "split": "validation",
+      "counts": {
+        "dauer": 41,
+        "L4": 81,
+        "young_adult": 214
+      },
+      "total": 336,
+      "source_cells": "Fig1B!C71:E71;H71"
+    },
+    {
+      "history_days": 20,
+      "hours_after_release": 96,
+      "replicate_block": 1,
+      "split": "train",
+      "counts": {
+        "dauer": 0,
+        "L4": 21,
+        "young_adult": 242
+      },
+      "total": 263,
+      "source_cells": "Fig1B!C76:E76;H76"
+    },
+    {
+      "history_days": 20,
+      "hours_after_release": 96,
+      "replicate_block": 2,
+      "split": "validation",
+      "counts": {
+        "dauer": 0,
+        "L4": 29,
+        "young_adult": 270
+      },
+      "total": 299,
+      "source_cells": "Fig1B!C77:E77;H77"
+    },
+    {
+      "history_days": 20,
+      "hours_after_release": 120,
+      "replicate_block": 1,
+      "split": "train",
+      "counts": {
+        "dauer": 0,
+        "L4": 9,
+        "young_adult": 275
+      },
+      "total": 284,
+      "source_cells": "Fig1B!C82:E82;H82"
+    },
+    {
+      "history_days": 20,
+      "hours_after_release": 120,
+      "replicate_block": 2,
+      "split": "validation",
+      "counts": {
+        "dauer": 0,
+        "L4": 15,
+        "young_adult": 302
+      },
+      "total": 317,
+      "source_cells": "Fig1B!C83:E83;H83"
+    }
+  ]
+}

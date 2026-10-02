@@ -1,0 +1,34 @@
+{
+  "version": "all-module-alpha-1",
+  "state_steps": 500,
+  "state_config": {
+    "hidden_dim": 32,
+    "latent_dim": 8,
+    "layers": 1,
+    "heads": 2,
+    "learning_rate": 0.001,
+    "clock_weight": 1,
+    "corrupt_fraction": 0.2,
+    "additive_noise": 0.05,
+    "seed": 42,
+    "validation_every": 25
+  },
+  "model_name": "Qwen/Qwen3-4B-Instruct-2507",
+  "model_revision": "cdbee75f17c01a7cc42f958dc650907174af0554",
+  "knowledge_epochs": 1,
+  "max_length": 2048,
+  "quantized": false,
+  "excluded_families": [
+    "PMID41104926_GSE288723",
+    "GSE291659",
+    "PMC5143278",
+    "GSE185815",
+    "PRJNA503701"
+  ],
+  "cpu_threads": 2,
+  "notes": [
+    "No original test or internal killifish access",
+    "One epoch on small curated pilot, not comprehensive domain training",
+    "Each numeric context fitted separately; no cross-species performance claim"
+  ]
+}

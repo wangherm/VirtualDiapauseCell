@@ -32,11 +32,15 @@ def main(argv: list[str] | None = None) -> None:
         p = sub.add_parser(name); p.add_argument("records"); p.add_argument("output")
         p.add_argument("--model", default="Qwen/Qwen3-4B-Instruct-2507"); p.add_argument("--revision", required=True)
         p.add_argument("--allow-download", action="store_true")
-        if name == "knowledge-embed": p.add_argument("--device", default="cpu")
+        if name == "knowledge-embed":
+            p.add_argument("--device", default="cpu"); p.add_argument("--adapter")
         else:
             p.add_argument("--steps", type=int, default=40); p.add_argument("--resume", action="store_true")
+            p.add_argument("--smoke-dir", required=True); p.add_argument("--epochs", type=int)
+            p.add_argument("--bf16-lora", action="store_true")
     p = sub.add_parser("release"); p.add_argument("run"); p.add_argument("review"); p.add_argument("output")
     p = sub.add_parser("serve"); p.add_argument("release"); p.add_argument("--port", type=int, default=8000)
+    p = sub.add_parser("serve-experimental"); p.add_argument("run"); p.add_argument("--port", type=int, default=8000)
     args = parser.parse_args(argv)
     if args.command == "audit":
         from .contracts import ObservationBundle, audit_rows
@@ -115,11 +119,12 @@ def main(argv: list[str] | None = None) -> None:
             print(json.dumps(retrieve(records, args.query, set(args.exclude_family)), indent=2, ensure_ascii=False))
         elif args.command == "knowledge-embed":
             print(json.dumps(embed_objects(records, args.output, args.model, args.revision,
-                                           args.device, args.allow_download), indent=2))
+                                           args.device, args.allow_download, adapter=args.adapter), indent=2))
         else:
             from .knowledge_train import fit_knowledge
             fit_knowledge(records, args.output, args.model, args.revision, args.steps,
-                          resume=args.resume, allow_download=args.allow_download)
+                          resume=args.resume, allow_download=args.allow_download, smoke_dir=args.smoke_dir,
+                          epochs=args.epochs, quantized=not args.bf16_lora)
     elif args.command == "release":
         from .release import create_release
         print(json.dumps(create_release(args.run, args.review, args.output), indent=2))
@@ -127,6 +132,10 @@ def main(argv: list[str] | None = None) -> None:
         import uvicorn
         from .service import create_app
         uvicorn.run(create_app(args.release), host="127.0.0.1", port=args.port)
+    elif args.command == "serve-experimental":
+        import uvicorn
+        from .experimental import create_experimental_app
+        uvicorn.run(create_experimental_app(args.run), host="127.0.0.1", port=args.port)
 
 
 if __name__ == "__main__":

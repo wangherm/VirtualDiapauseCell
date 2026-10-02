@@ -95,6 +95,16 @@ class ObservationBundle:
     def indices(self, split: str) -> np.ndarray:
         return np.array([i for i, row in enumerate(self.rows) if row["split"] == split], dtype=int)
 
+    def subset(self, indices) -> "ObservationBundle":
+        """Select rows before normalisation, corruption or a model forward call."""
+        import copy
+        idx = np.asarray(indices, dtype=int)
+        return ObservationBundle(self.values[idx].copy(), self.mask[idx].copy(),
+            self.coverage[idx].copy(), self.feature_ids.copy(),
+            [copy.deepcopy(self.rows[i]) for i in idx], copy.deepcopy(self.context),
+            self.split_policy, self.clock[idx].copy(), self.clock_mask[idx].copy(),
+            self.clock_reference_id).validate()
+
     @property
     def scope(self) -> dict:
         return {"context": self.context, "feature_ids": self.feature_ids,

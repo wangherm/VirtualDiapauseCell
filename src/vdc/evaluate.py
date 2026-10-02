@@ -17,6 +17,9 @@ def evaluate_state(run_dir: str | Path, bundle: ObservationBundle, out_dir: str 
         raise ValueError("Locked test requires an explicitly authorised final evaluation")
     b = bundle.validate(); idx = b.indices(split)
     if not len(idx): raise ValueError("No observations in the requested split")
+    # Never forward test/locked_test while requesting validation.
+    b = b.subset(idx)
+    idx = np.arange(len(b.rows))
     p = StatePredictor.load(run_dir)
     fit_ids = set(p.manifest["fit_ids"])
     if fit_ids.intersection(b.rows[i]["observation_id"] for i in idx):

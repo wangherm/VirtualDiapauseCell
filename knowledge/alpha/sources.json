@@ -1,0 +1,51 @@
+{
+  "sources": [
+    {
+      "family": "PMC11398561",
+      "split": "train",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11398561/",
+      "xml_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC11398561/fullTextXML",
+      "xml_sha256": "85e5801bba0dde1caceb58da6713d6555fba3616aebc72fd1596649d79c27f53",
+      "license": "CC-BY-4.0",
+      "review_scope": "Results: mTOR inhibition has a rapid and strong negative effect on BRD4 subnuclear organization and chromatin binding; Abstract",
+      "reviewer": "Codex source comparison, not independent domain expert",
+      "excluded_from_numeric_inputs": true
+    },
+    {
+      "family": "PMC10866708",
+      "split": "train",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC10866708/",
+      "xml_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC10866708/fullTextXML",
+      "xml_sha256": "3df46f39bfab718891854ee0d1adb930fa71b0db78737fc1e4b3d01422684180",
+      "license": "CC-BY-4.0",
+      "review_scope": "Results: Reversible pausing of ESCs, but not TSCs, in vitro; Enhancing lipid usage boosts embryo survival; Abstract",
+      "reviewer": "Codex source comparison, not independent domain expert",
+      "excluded_from_numeric_inputs": true
+    },
+    {
+      "family": "PMC11146600",
+      "split": "validation",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11146600/",
+      "xml_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC11146600/fullTextXML",
+      "xml_sha256": "b5f3b37aa097d9de745ef5477a3d50d70db75709c534536e98423683d29e8d02",
+      "license": "CC-BY-NC-4.0",
+      "review_scope": "Results: miRNAs are indispensable for the establishment of paused pluripotency; Dgcr8 KO ESCs show an aberrant transcriptome; Abstract",
+      "reviewer": "Codex source comparison, not independent domain expert",
+      "excluded_from_numeric_inputs": true
+    }
+  ],
+  "excluded_families": [
+    "PMID41104926_GSE288723",
+    "GSE291659",
+    "PMC5143278",
+    "GSE185815",
+    "PRJNA503701"
+  ],
+  "excluded_reason": "Numerical outcome papers and inherited VAL/L4-OOD families. No original seed records were blindly marked reviewed.",
+  "limitations": [
+    "18 train questions across two families, 9 validation questions across one family; pilot extraction only",
+    "Evidence is present in each prompt; this evaluates supported extraction, not closed-book recall",
+    "Validation source has CC-BY-NC-4.0 terms; corpus and derived adapter research use only",
+    "Source-curated weak references require domain expert review before substantive claims"
+  ]
+}

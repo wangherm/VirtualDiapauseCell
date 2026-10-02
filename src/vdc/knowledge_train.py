@@ -1,78 +1,180 @@
-"""Optional QLoRA training entry point. Not executed in the CPU framework verification.
-
-Training accepts reviewed train/validation source families and explicit answers.
-No raw PDF crawling, automatic gold-label fabrication or numeric validation is performed.
-"""
-from __future__ import annotations
+"""Actual GPU LoRA/QLoRA training. Smoke, formal epoch and new-process evaluation are distinct."""
 from pathlib import Path
+import gc
+import json
+import importlib.metadata
 import torch
 from .knowledge import audit_knowledge, completion_example
-from .io import write_json, object_hash
+from .io import write_json, read_json, object_hash, sha256
 
 
-def fit_knowledge(records: list[dict], run_dir: str | Path, model_name: str, revision: str,
-                  max_steps: int = 40, max_length: int = 2048, resume: bool = False,
-                  allow_download: bool = False) -> None:
-    audit_knowledge(records)
-    if not revision or revision in {"main", "latest"}: raise ValueError("Pin model revision")
+def require_gpu():
     if not torch.cuda.is_available() or not torch.cuda.is_bf16_supported():
-        raise RuntimeError("This QLoRA entry point requires a BF16-capable CUDA GPU")
-    if not any(r["split"] == "train" for r in records) or not any(r["split"] == "validation" for r in records):
-        raise ValueError("Reviewed train and validation source families required")
-    if any(r["split"] not in {"train", "validation"} for r in records):
-        raise ValueError("Remove test records from the training-corpus file")
-    from transformers import (AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig,
-                              Trainer, TrainingArguments)
-    from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
-    from datasets import Dataset
-    output = Path(run_dir)
-    if output.exists() and any(output.iterdir()) and not resume:
-        raise FileExistsError("Use a new knowledge run or explicit resume")
-    output.mkdir(parents=True, exist_ok=True)
-    tokenizer = AutoTokenizer.from_pretrained(model_name, revision=revision, local_files_only=not allow_download)
-    if tokenizer.pad_token_id is None: tokenizer.pad_token = tokenizer.eos_token
-    tokenizer.padding_side = "right"
-    prepared = {"train": [], "validation": []}
-    for r in records:
-        if not r.get("prompt") or not r.get("completion"):
-            raise ValueError("Knowledge SFT requires reviewed prompt and completion fields")
-        prepared[r["split"]].append(completion_example(tokenizer, r["prompt"], r["completion"], max_length))
-    contract = {"model": model_name, "revision": revision, "corpus_hash": object_hash(records),
-                "completion_only_loss": True, "max_length": max_length,
-                "stage": "knowledge_sft_not_numeric_recovery", "base_adapter": "new"}
-    if resume:
-        from .io import read_json
-        if read_json(output / "contract.json") != contract:
-            raise ValueError("Knowledge corpus or model contract changed")
-    write_json(output / "contract.json", contract)
-    quant = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4",
-                              bnb_4bit_use_double_quant=True, bnb_4bit_compute_dtype=torch.bfloat16)
-    model = AutoModelForCausalLM.from_pretrained(model_name, revision=revision,
-               local_files_only=not allow_download, quantization_config=quant,
-               device_map={"": torch.cuda.current_device()}, torch_dtype=torch.bfloat16,
-               trust_remote_code=False)
+        raise RuntimeError('BF16 CUDA GPU required; no CPU/fake training fallback')
+    p = torch.cuda.get_device_properties(0)
+    return {'gpu': p.name, 'total_memory_bytes': p.total_memory, 'torch': torch.__version__,
+        'cuda_runtime': torch.version.cuda, 'capability': list(torch.cuda.get_device_capability()),
+        'dependencies': {n: importlib.metadata.version(n) for n in ('transformers', 'peft', 'accelerate')}}
+
+
+def model_fingerprint(model_name, revision):
+    if len(revision) != 40 or any(c not in '0123456789abcdef' for c in revision):
+        raise ValueError('Immutable model commit required')
+    p = Path(model_name)
+    if not p.is_dir(): return {'model': model_name, 'revision': revision}
+    lock=read_json(Path(__file__).resolve().parents[2]/'configs/qwen3_4b_snapshot.json')
+    if revision!=lock['hf_revision']:raise ValueError('Local snapshot must match the admitted Qwen file lock')
+    verified={}
+    for entry in lock['files']:
+        f=p/entry['name'];print('VERIFY BASE '+entry['name'],flush=True)
+        if not f.is_file() or f.stat().st_size!=entry['size']:raise ValueError('Missing or wrong-sized base file: '+entry['name'])
+        digest=sha256(f)
+        if digest!=entry['sha256']:raise ValueError('Base checksum mismatch: '+entry['name'])
+        verified[f.name]=digest
+    return {'model': 'Qwen/Qwen3-4B-Instruct-2507', 'revision': revision,
+        'files':verified,'hash_provenance':lock['hash_provenance']}
+
+
+def _base(name, revision, download=False, quantized=False):
+    from transformers import AutoModelForCausalLM, BitsAndBytesConfig
+    kw = {}
+    if quantized:
+        kw['quantization_config'] = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type='nf4',
+            bnb_4bit_use_double_quant=True, bnb_4bit_compute_dtype=torch.bfloat16)
+    model = AutoModelForCausalLM.from_pretrained(name, revision=revision, local_files_only=not download,
+        trust_remote_code=False, dtype=torch.bfloat16, device_map={'': 0}, attn_implementation='sdpa', **kw)
     model.config.use_cache = False
-    model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
-    model = get_peft_model(model, LoraConfig(r=16, lora_alpha=32, lora_dropout=0.05,
-                         target_modules="all-linear", task_type="CAUSAL_LM"))
+    return model
 
-    def collate(examples: list[dict]) -> dict:
-        width = max(len(x["input_ids"]) for x in examples)
-        return {key: torch.tensor([x[key] + [pad] * (width - len(x[key])) for x in examples])
-                for key, pad in (("input_ids", tokenizer.pad_token_id), ("attention_mask", 0), ("labels", -100))}
 
-    interval = min(20, max_steps)
-    args = TrainingArguments(output_dir=str(output / "checkpoints"), max_steps=max_steps,
-            per_device_train_batch_size=1, per_device_eval_batch_size=1,
-            gradient_accumulation_steps=4, learning_rate=1e-4, bf16=True,
-            logging_steps=1, eval_strategy="steps", eval_steps=interval,
-            save_strategy="steps", save_steps=interval, save_total_limit=2,
-            load_best_model_at_end=True, report_to=[], seed=42, remove_unused_columns=False)
-    trainer = Trainer(model=model, args=args, data_collator=collate,
-                      train_dataset=Dataset.from_list(prepared["train"]),
-                      eval_dataset=Dataset.from_list(prepared["validation"]))
+def _lora(model, quantized=False):
+    from peft import get_peft_model, LoraConfig, prepare_model_for_kbit_training
+    if quantized: model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=False)
+    model = get_peft_model(model, LoraConfig(r=16, lora_alpha=32, lora_dropout=.05,
+        target_modules='all-linear', task_type='CAUSAL_LM'))
+    model.enable_input_require_grads()
+    model.gradient_checkpointing_enable(gradient_checkpointing_kwargs={'use_reentrant': False})
+    return model
+
+
+def _tokenizer(name, revision, download=False):
+    from transformers import AutoTokenizer
+    tok = AutoTokenizer.from_pretrained(name, revision=revision, local_files_only=not download, trust_remote_code=False)
+    if tok.pad_token_id is None: tok.pad_token = tok.eos_token
+    tok.padding_side = 'right'
+    return tok
+
+
+def _contract(records, name, revision, length, quantized, excluded):
+    audit_knowledge(records, set(excluded))
+    if {r['split'] for r in records} != {'train', 'validation'}: raise ValueError('Train/validation families required')
+    if any(not r.get('source_locator') or not r.get('review_basis') for r in records):
+        raise ValueError('Source locator and curation basis required, not just reviewed=true')
+    return {'base': model_fingerprint(name, revision), 'corpus_hash': object_hash(records),
+        'max_length': length, 'quantized': quantized, 'lora': {'r':16, 'alpha':32, 'dropout':.05},
+        'environment': require_gpu(), 'completion_only_loss': True, 'base_adapter': 'new',
+        'code_hash': sha256(__file__)}
+
+
+def smoke_knowledge(records, run_dir, model_name, revision, max_length=2048, allow_download=False,
+                    quantized=False, excluded_families=()):
+    output = Path(run_dir)
+    if output.exists(): raise FileExistsError('New smoke output required')
+    contract = _contract(records, model_name, revision, max_length, quantized, excluded_families)
+    tok = _tokenizer(model_name, revision, allow_download); torch.manual_seed(42)
+    r = next(r for r in records if r['split'] == 'train')
+    batch = {k: torch.tensor([v], device='cuda') for k,v in completion_example(tok,r['prompt'],r['completion'],max_length).items()}
+    model = _lora(_base(model_name,revision,allow_download,quantized),quantized)
+    params = [p for p in model.parameters() if p.requires_grad]
+    before = [p.detach().float().cpu().clone() for p in params]
+    opt = torch.optim.AdamW(params,lr=1e-4); losses=[]; torch.cuda.reset_peak_memory_stats()
+    for _ in range(2):
+        model.train(); opt.zero_grad(); loss=model(**batch).loss
+        if not torch.isfinite(loss): raise RuntimeError('Nonfinite smoke loss')
+        loss.backward(); torch.nn.utils.clip_grad_norm_(params,1);opt.step();losses.append(float(loss.detach()))
+    updated=any(not torch.equal(a,p.detach().float().cpu()) for a,p in zip(before,params))
+    if not updated: raise RuntimeError('No adapter parameter update')
+    model.eval();inputs={k:v for k,v in batch.items() if k!='labels'}
+    with torch.inference_mode(): logits=model(**inputs).logits.float().cpu()
+    model.save_pretrained(output/'adapter',safe_serialization=True);tok.save_pretrained(output/'adapter')
+    peak=torch.cuda.max_memory_allocated();trainable=sum(p.numel() for p in params)
+    del params,before,opt,model;gc.collect();torch.cuda.empty_cache()
+    from peft import PeftModel
+    model=PeftModel.from_pretrained(_base(model_name,revision,allow_download,quantized),str(output/'adapter'),is_trainable=False).eval()
+    with torch.inference_mode(): again=model(**inputs).logits.float().cpu()
+    delta=float((again-logits).abs().max())
+    if delta>1e-3: raise RuntimeError(f'Save/reload logits differ: {delta}')
+    write_json(output/'status.json',{'status':'passed','signature':object_hash(contract),'contract':contract,
+        'steps':2,'losses':losses,'adapter_updated':updated,'reload_max_abs_delta':delta,
+        'peak_cuda_bytes':peak,'trainable_parameters':trainable,'formal_training':False})
+
+
+def fit_knowledge(records, run_dir, model_name, revision, max_steps=40, max_length=2048,
+                  resume=False, allow_download=False, epochs=None, quantized=True, smoke_dir=None, excluded_families=()):
+    contract=_contract(records,model_name,revision,max_length,quantized,excluded_families)
+    if smoke_dir is None: raise ValueError('Passed actual GPU smoke required before formal training')
+    smoke=read_json(Path(smoke_dir)/'status.json')
+    if smoke.get('status')!='passed' or smoke.get('signature')!=object_hash(contract): raise ValueError('GPU smoke contract differs')
+    if epochs is not None and epochs!=1: raise ValueError('Alpha budget is one epoch')
+    from transformers import Trainer,TrainingArguments
+    from datasets import Dataset
+    output=Path(run_dir)
+    if output.exists() and any(output.iterdir()) and not resume: raise FileExistsError('New run or explicit resume required')
+    output.mkdir(parents=True,exist_ok=True)
+    contract['budget']={'epochs':epochs,'max_steps':None if epochs else max_steps}
+    if resume and read_json(output/'contract.json')!=contract: raise ValueError('Training contract changed')
+    write_json(output/'contract.json',contract)
+    tok=_tokenizer(model_name,revision,allow_download);torch.manual_seed(42)
+    prepared={s:[completion_example(tok,r['prompt'],r['completion'],max_length) for r in records if r['split']==s] for s in ('train','validation')}
+    def collate(examples):
+        width=max(len(x['input_ids']) for x in examples)
+        return {k:torch.tensor([x[k]+[pad]*(width-len(x[k])) for x in examples]) for k,pad in [('input_ids',tok.pad_token_id),('attention_mask',0),('labels',-100)]}
+    model=_lora(_base(model_name,revision,allow_download,quantized),quantized)
+    schedule={'num_train_epochs':1,'max_steps':-1,'eval_strategy':'epoch','save_strategy':'epoch'} if epochs else {
+        'max_steps':max_steps,'eval_strategy':'steps','eval_steps':min(20,max_steps),'save_strategy':'steps','save_steps':min(20,max_steps)}
+    args=TrainingArguments(output_dir=str(output/'checkpoints'),per_device_train_batch_size=1,per_device_eval_batch_size=1,
+        gradient_accumulation_steps=4,learning_rate=1e-4,bf16=True,logging_steps=1,save_total_limit=2,
+        load_best_model_at_end=True,report_to=[],seed=42,remove_unused_columns=False,dataloader_num_workers=0,**schedule)
+    trainer=Trainer(model=model,args=args,data_collator=collate,train_dataset=Dataset.from_list(prepared['train']),eval_dataset=Dataset.from_list(prepared['validation']))
     trainer.train(resume_from_checkpoint=True if resume else None)
-    trainer.save_model(str(output / "adapter")); tokenizer.save_pretrained(output / "adapter")
-    write_json(output / "status.json", {"training": "completed", "science_status": "unvalidated",
-               "numerical_recovery_tested": False, "checkpoint_selector": "knowledge_validation_token_loss",
-               "next_gate": "heldout_evidence_quality_and_separate_numeric_ablation"})
+    trainer.save_model(str(output/'adapter'));tok.save_pretrained(output/'adapter');trainer.save_state()
+    if epochs and float(trainer.state.epoch or 0)<.999: raise RuntimeError('Requested epoch incomplete')
+    write_json(output/'training_log.json',trainer.state.log_history)
+    write_json(output/'status.json',{'training':'completed','epochs_completed':trainer.state.epoch,
+        'optimizer_steps':trainer.state.global_step,'examples':{k:len(v) for k,v in prepared.items()},
+        'best_checkpoint':trainer.state.best_model_checkpoint,'checkpoint_selector':'knowledge_validation_token_loss',
+        'science_status':'unvalidated','new_process_evaluation':'pending','scope':'small_source_curated_extraction_pilot_not_all_dormancy_knowledge'})
+
+
+def evaluate_knowledge(records, output, model_name, revision, adapter=None, allow_download=False):
+    require_gpu();tok=_tokenizer(model_name,revision,allow_download);model=_base(model_name,revision,allow_download)
+    if adapter:
+        from peft import PeftModel
+        model=PeftModel.from_pretrained(model,str(adapter),is_trainable=False)
+    model.eval();rows=[]
+    for r in records:
+        if r['split']!='validation':continue
+        prompt=tok.apply_chat_template(r['prompt'],tokenize=False,add_generation_prompt=True)
+        inputs=tok(prompt,return_tensors='pt',add_special_tokens=False).to('cuda')
+        with torch.inference_mode(): ids=model.generate(**inputs,max_new_tokens=192,do_sample=False,pad_token_id=tok.pad_token_id)
+        answer=tok.decode(ids[0,inputs['input_ids'].shape[1]:],skip_special_tokens=True)
+        try: parsed=json.loads(answer);valid=isinstance(parsed,dict)
+        except (ValueError,TypeError):parsed={};valid=False
+        if not valid:parsed={}
+        expected=json.loads(r['completion'])
+        rows.append({'record_id':r['record_id'],'answer':answer,'expected':expected,'valid_json':valid,
+            'exact_fields':{k:parsed.get(k)==expected[k] for k in ('source','context','uncertain')},
+            'answer_exact':parsed.get('answer')==expected['answer']})
+    if not rows:raise ValueError('No held-out questions')
+    write_json(Path(output)/'answers.json',rows)
+    if adapter:
+        write_json(Path(output)/'reload.json',{'new_process':True,'status':'passed_actual_adapter_load_and_generation',
+            'adapter_files':{p.name:sha256(p) for p in sorted(Path(adapter).iterdir()) if p.is_file()},
+            'base_revision':revision})
+    write_json(Path(output)/'evaluation.json',{'weight_kind':'domain_adapter' if adapter else 'base','n':len(rows),
+        'format_rate':sum(r['valid_json'] for r in rows)/len(rows),'exact_answer_rate':sum(r['answer_exact'] for r in rows)/len(rows),
+        'exact_context_rate':sum(r['exact_fields']['context'] for r in rows)/len(rows),'exact_source_rate':sum(r['exact_fields']['source'] for r in rows)/len(rows),
+        'uncertain_field_accuracy':sum(r['exact_fields']['uncertain'] for r in rows)/len(rows),
+        'limitations':['Small family-held-out evidence extraction, not comprehensive knowledge validation',
+        'Canonical text match undercounts paraphrases; saved answers require expert factual review',
+        'Public papers may occur in base pretraining'],'science_status':'unvalidated'})

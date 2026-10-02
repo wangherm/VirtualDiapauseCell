@@ -1,4 +1,7 @@
 .venv/
+.venv-alpha/
+.venv-autodl-vdc/
+VirtualDiapauseCell_Alpha_report_*.zip
 __pycache__/
 *.pyc
 outputs/

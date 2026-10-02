@@ -48,7 +48,8 @@ def masked_mean_pool(last_hidden_state: torch.Tensor, attention_mask: torch.Tens
 
 
 def embed_objects(records: list[dict], output: str | Path, model_name: str, revision: str,
-                  device: str = "cpu", allow_download: bool = False, max_length: int = 512) -> dict:
+                  device: str = "cpu", allow_download: bool = False, max_length: int = 512,
+                  adapter: str | Path | None = None) -> dict:
     audit_knowledge(records)
     if not revision or revision in {"main", "latest"}:
         raise ValueError("Pin an immutable model commit or a resolved local snapshot revision")
@@ -57,14 +58,22 @@ def embed_objects(records: list[dict], output: str | Path, model_name: str, revi
     if any(not r.get("object_id") for r in records): raise ValueError("Object IDs are required")
     if len({r["object_id"] for r in records}) != len(records): raise ValueError("Duplicate object ID")
     try:
-        from transformers import AutoModel, AutoTokenizer
+        from transformers import AutoModelForCausalLM, AutoTokenizer
     except ImportError as exc:
         raise RuntimeError("Install vdc-research[knowledge]; no embedding fallback is used") from exc
     tokenizer = AutoTokenizer.from_pretrained(model_name, revision=revision, local_files_only=not allow_download)
     if tokenizer.pad_token_id is None: tokenizer.pad_token = tokenizer.eos_token
     dtype = torch.bfloat16 if device.startswith("cuda") else torch.float32
-    model = AutoModel.from_pretrained(model_name, revision=revision, local_files_only=not allow_download,
-                                     torch_dtype=dtype, trust_remote_code=False).to(device).eval()
+    model = AutoModelForCausalLM.from_pretrained(model_name, revision=revision, local_files_only=not allow_download,
+                                     dtype=dtype, trust_remote_code=False).to(device)
+    adapter_hash = None
+    if adapter is not None:
+        from peft import PeftModel
+        from .io import sha256
+        adapter = Path(adapter)
+        adapter_hash = object_hash({p.name: sha256(p) for p in sorted(adapter.iterdir()) if p.is_file()})
+        model = PeftModel.from_pretrained(model, str(adapter), is_trainable=False)
+    model.eval()
     vectors = []
     for r in records:
         inputs = tokenizer(r["text"], return_tensors="pt", truncation=False)
@@ -72,15 +81,19 @@ def embed_objects(records: list[dict], output: str | Path, model_name: str, revi
             raise ValueError(f"Description exceeds max_length: {r['object_id']}; shorten explicitly")
         inputs = {k: v.to(device) for k, v in inputs.items()}
         with torch.inference_mode():
-            out = model(**inputs, use_cache=False)
-            v = masked_mean_pool(out.last_hidden_state, inputs["attention_mask"])
+            out = model(**inputs, use_cache=False, output_hidden_states=True)
+            v = masked_mean_pool(out.hidden_states[-1], inputs["attention_mask"])
         vectors.append(v.float().cpu().numpy()[0])
     output = Path(output)
     save_npz(output / "embeddings.npz", vectors=np.stack(vectors),
              feature_ids=np.array([r["object_id"] for r in records]))
     provenance = {"model": model_name, "revision": revision, "pooling": "masked_mean_last_hidden_state",
+                  "weight_kind": "domain_adapter" if adapter is not None else "frozen_base",
+                  "adapter_hash": adapter_hash,
                   "corpus_hash": object_hash(records), "record_ids": [r["record_id"] for r in records],
                   "status": "computed_embeddings_not_validated_biology"}
+    from .io import sha256
+    provenance['arrays_sha256'] = sha256(output / 'embeddings.npz')
     write_json(output / "embeddings.json", provenance)
     return provenance
 

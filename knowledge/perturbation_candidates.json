@@ -210,7 +210,13 @@
       ],
       "review_status": "supplied_candidate_requires_primary_source_admission",
       "training_eligible": false,
-      "real_response_training": "not_run"
+      "real_response_training": "not_run",
+      "alpha_admission": {
+        "dataset_id": "DS_GSE291659_ALPHA",
+        "report": "docs/ALPHA_DATA_AUDIT_CN.md",
+        "real_response_fit": "executed_local_CPU_2026-10-02",
+        "science_status": "unvalidated"
+      }
     },
     {
       "record_id": "VDP011",

@@ -2,7 +2,9 @@
 
 A biotime-centred model of diapause state, gene/TF waves and programme dynamics, grounded in context-specific biological evidence.
 
-**独立新项目，2026-10-01 建立。当前 v0.4.0 已整合可运行的模块化框架，完成 CPU 工程验证与一份公开数据的小规模重构试点；尚未验证 diapause clock、扰动预测或功能 depth。** FactorBridge 已归档，仅供方法参考，不是本项目依赖。
+**独立新项目，2026-10-01 建立。当前推进 All-Module Alpha：复用 v0.4.0 数值模块，实际运行公开数据上的状态、候选 clock、gene/TF/programme waves、端点、转移及组级功能读出。Qwen GPU 分支由 AutoDL 实际运行后记录结果；整体科学能力仍未验证，expression-to-depth 不可用。** FactorBridge 已归档，仅供方法参考，不是本项目依赖。
+
+**本轮入口：[AutoDL 一键启动、进度、打包和内部界面](docs/ALL_MODULE_ALPHA_CN.md) · [数据与语料审计](docs/ALPHA_DATA_AUDIT_CN.md)**。只使用开发划分；单模块性能不作为其他分支的运行门槛。
 
 ## 核心优先级 v0.2
 

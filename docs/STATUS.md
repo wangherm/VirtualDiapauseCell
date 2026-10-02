@@ -1,4 +1,23 @@
-# 实施状态 v0.4.0
+# 实施状态：All-Module Alpha
+
+2026-10-02 新进展：全模块任务调度、真实数值分支、Qwen 一轮 SFT 与语义对照入口、内部 experimental API/界面已经接入同一代码路径。数值分支已在本地 CPU 实际执行，GPU 分支等待用户在 AutoDL 运行；不可将本地总体写成全部完成。
+
+| 新工作 | 当前实际状态 |
+|---|---|
+| GSE288723 | 24 个 train/validation pools；旧 12 个 test 未读取为 Alpha 数值输入 |
+| GSE291659 | 32 个 GEO 条目、30 列矩阵核对完成；23 个开发 pools；7 个保留列不转数值 |
+| 状态＋局部 clock | 两个 context 各 500 步；clock 为 train-only reference-derived 坐标；保存重载完成 |
+| 状态读出、gene/TF/programme curves | 实际拟合；19909 gene、433 TF RNA、24 GO programme；无 regulon 边表 |
+| 端点＋释放转移 | 观测输入与冻结状态输出两条路径均拟合和评价；共享对照不跨 split |
+| 功能 | Table S1 原始群体计数核对；24 个开发观测拟合组协议读出；expression-to-depth 无匹配标签 |
+| 知识 | 27 条有源弱参考：18 train/9 validation，三个论文家族；不宣称完成全部领域知识 |
+| GPU | 新 LoRA smoke/训练/回答评价/adapter 向量/语义对照尚未本地执行，提供 AutoDL screen 启动脚本 |
+| 内部接口 | 真实保存模型的 ASGI 与 loopback HTTP 请求已执行；临时检查服务已关闭；未开启 AutoDL 服务 |
+| 总体 | partial / science unvalidated；不因数值模型弱于某个基线而停下其他分支 |
+
+[运行与进度](ALL_MODULE_ALPHA_CN.md) · [准入与边界](ALPHA_DATA_AUDIT_CN.md) · [本地成绩](../reports/all_module_alpha/LOCAL_RESULT_CN.md)
+
+## 历史：v0.4.0 首个重构 pilot
 
 最后核验：2026-10-02。科学定义沿用 v0.2 的 DC01–DC04、M01–M14 和五类不同 biotime 坐标；正式数值代码只有 `src/vdc/` 一条路径。
 
