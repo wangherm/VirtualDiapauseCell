@@ -1,0 +1,55 @@
+{
+  "run_kind": "research_candidate",
+  "scientific_success": false,
+  "test_split_evaluated": false,
+  "validation_hidden_reconstruction": {
+    "by_study": {
+      "PMID41104926_GSE288723": {
+        "status": "computed",
+        "n_observed": 59,
+        "mse": 0.0003642599305839174,
+        "mae": 0.015167752345451707,
+        "r2": 0.9743670599878239,
+        "biological_units": 12
+      }
+    },
+    "macro_study_mse": 0.0003642599305839174,
+    "pooled": {
+      "status": "computed",
+      "n_observed": 59,
+      "mse": 0.0003642599305839174,
+      "mae": 0.015167752345451707,
+      "r2": 0.9743670599878239
+    }
+  },
+  "training_mean_hidden_baseline": {
+    "by_study": {
+      "PMID41104926_GSE288723": {
+        "status": "computed",
+        "n_observed": 59,
+        "mse": 0.0003821255442645943,
+        "mae": 0.015942988618793976,
+        "r2": 0.9731098582884128,
+        "biological_units": 12
+      }
+    },
+    "macro_study_mse": 0.0003821255442645943,
+    "pooled": {
+      "status": "computed",
+      "n_observed": 59,
+      "mse": 0.0003821255442645943,
+      "mae": 0.015942988618793976,
+      "r2": 0.9731098582884128
+    }
+  },
+  "clock": {
+    "status": "unavailable"
+  },
+  "steps_completed": 50,
+  "checkpoint_selection": "validation_hidden_mse_scaled + weighted_clock_mse",
+  "limitations": [
+    "Validation reconstruction concerns artificial extra corruption, not latent biological truth",
+    "Task-level study metrics are reported; no population generalisation claim is made",
+    "No calibrated uncertainty or functional depth is fitted"
+  ]
+}

@@ -11,3 +11,7 @@ models/
 *.safetensors
 *.pt
 *.ckpt
+
+data/prepared/
+.pytest_cache/
+*.egg-info/

@@ -1,0 +1,8 @@
+{
+  "software_smoke": "passed",
+  "origin": "synthetic",
+  "biological_validation": "not_run",
+  "qwen_execution": "not_run",
+  "deployment": "not_run",
+  "weights_may_be_promoted": false
+}

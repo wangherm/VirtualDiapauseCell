@@ -1,0 +1,57 @@
+{
+  "accession": "GSE288723",
+  "source_file_manifest": {
+    "version": 1,
+    "accession": "GSE288723",
+    "retrieved_date": "2026-10-02",
+    "annotation_source_generated": "2026-05-21T09:09",
+    "mutable_source_policy": "Checksum-locked; future drift fails and requires an explicit new snapshot review",
+    "files": {
+      "expression": {
+        "file": "GSE288723_raw_counts.csv.gz",
+        "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE288nnn/GSE288723/suppl/GSE288723_raw_counts.csv.gz",
+        "sha256": "236b863fe51ad0872951bfb5e773490134caed18ad582861c8197ac0e2526d1c",
+        "bytes": 2192793
+      },
+      "metadata": {
+        "file": "GSE288723_family.soft.gz",
+        "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE288nnn/GSE288723/soft/GSE288723_family.soft.gz",
+        "sha256": "d33be3295a295d05df691d18350a6d5b9453c4346b12595994b6c88b746aba4e",
+        "bytes": 4906
+      },
+      "annotations": {
+        "file": "wb_2026-05-21.gaf.gz",
+        "url": "https://current.geneontology.org/annotations/wb.gaf.gz",
+        "sha256": "bda92f6642cc68a16e485ba32eb5890320855895185b9cbcd448f52cf698fed2",
+        "bytes": 3849912
+      }
+    }
+  },
+  "downloaded_expression_samples": 54,
+  "genes": 19909,
+  "prepared_samples": 36,
+  "programmes": 24,
+  "unavailable_anchors": [
+    "GO:0002376",
+    "GO:0007049"
+  ],
+  "splits": {
+    "train": 12,
+    "validation": 12,
+    "test": 12
+  },
+  "split_policy": "unit_holdout_with_conservative_replicate_blocks",
+  "fractional_counts_preserved": true,
+  "clock_labels": "unavailable",
+  "internal_data_used": false,
+  "prior_holdouts_reassigned": false,
+  "biological_generalisation_validated": false,
+  "limitations": [
+    "One study; shared culture/batch lineage across conditions is not fully deposited",
+    "Replicate blocks are conservative grouping, not proven longitudinal matching",
+    "GO direct annotations are incomplete overlapping proxies, not measured pathway activity",
+    "Elapsed hours are metadata, never molecular-clock supervision",
+    "Global per-cell RNA abundance is not recoverable from these relative measurements"
+  ],
+  "bundle_fingerprint": "1c593ee04dcf25bd2ed729fb5bcc40a5e9a2a494e7ed860dfb64d8f04aaa6433"
+}

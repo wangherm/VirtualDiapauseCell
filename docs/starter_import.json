@@ -1,0 +1,130 @@
+{
+  "source_zip_sha256": "3ef9358227406926611e3aa4136d94c91240dcbcafb803c8a1be5005fd5454f7",
+  "imported_files": [
+    {
+      "path": "src/vdc/cli.py",
+      "original_sha256": "985bd2c5d9199fb9c90581a18cc09b773cc619ff22f6a6f7d464156e770845b3"
+    },
+    {
+      "path": "src/vdc/contracts.py",
+      "original_sha256": "0e7e0b011104c2a76fa07bdeea043625c3d6fdfa370ca1a4a509fc48619c09b9"
+    },
+    {
+      "path": "src/vdc/evaluate.py",
+      "original_sha256": "e84eb097a2d044594f091c277f197df3525080c3485bd7aded78b3de24b7374b"
+    },
+    {
+      "path": "src/vdc/io.py",
+      "original_sha256": "397d299f8b6c8090fef23db0e2479edd67c76536a0d70a79f08cb6d48eb06fd9"
+    },
+    {
+      "path": "src/vdc/knowledge.py",
+      "original_sha256": "3b76bba2986491322cbbb9416b4defe57f86e0aa6060bdf3c40daf2fc86b0bf9"
+    },
+    {
+      "path": "src/vdc/knowledge_train.py",
+      "original_sha256": "dbd13ae6ab4d91d2f02df5ab8bdc41f83745f137d9795e8068fcd731c6f961ac"
+    },
+    {
+      "path": "src/vdc/metrics.py",
+      "original_sha256": "06a2c3fbaf2e0754333ba3346663bc3d073938e091085f4a7de35acf897c8ebd"
+    },
+    {
+      "path": "src/vdc/observation.py",
+      "original_sha256": "1a776a89094059cb77709c8a17dd1e6e473d88497368c96aa50c47ac72559728"
+    },
+    {
+      "path": "src/vdc/release.py",
+      "original_sha256": "5c8dcc3f3901811d706b0391eb4241d571457efca536dcdf0b82b71b9ba7406a"
+    },
+    {
+      "path": "src/vdc/response.py",
+      "original_sha256": "7b49f263a5c7124c251430eb0f88537fb7600c00617b7925ed0fa7d0715ae95b"
+    },
+    {
+      "path": "src/vdc/service.py",
+      "original_sha256": "1312a44db2c4ee3ecfb2b22db080999c022d777f2e3bebac39ae1d1ba6a396e6"
+    },
+    {
+      "path": "src/vdc/state.py",
+      "original_sha256": "14bb21114d38235395e43a05d1d8f2a9f75b82359094d7481726f9ec0b22e8aa"
+    },
+    {
+      "path": "src/vdc/waves.py",
+      "original_sha256": "a67cfd9c2ef66d98182e4b10549f76be843781bd59c191b9dd13d0f0a260371e"
+    },
+    {
+      "path": "src/vdc/__init__.py",
+      "original_sha256": "8b633926c1735ecd10edd62af91b3fcffc43bf893e7bfd76c612fec175def3ae"
+    },
+    {
+      "path": "src/vdc/__main__.py",
+      "original_sha256": "cf7390a2508a0fcad4777a4a629fc5212ab655cb45845975995f835676a834e3"
+    },
+    {
+      "path": "tests/conftest.py",
+      "original_sha256": "c028121aa0e0b1bacab60d176081bcd0796e0a4e29ac561a7a1128f09df8057c"
+    },
+    {
+      "path": "tests/fixtures.py",
+      "original_sha256": "105066cc21485bab0e3964149577893e8eecb568937aede13fa27ed26c2dc012"
+    },
+    {
+      "path": "tests/test_contracts.py",
+      "original_sha256": "55b0f4af87f1c2ee93ec9946df47394d9b597b18cc22a8e6b561572a9be01d1d"
+    },
+    {
+      "path": "tests/test_knowledge_release.py",
+      "original_sha256": "2f2db627dd7dbec6810f5e4cc1dcaf60f3bec2306b37757398c2f7a7865a25cb"
+    },
+    {
+      "path": "tests/test_state.py",
+      "original_sha256": "2088a8818f02772b095c86c79688f8c047929853d10089c14339f33bf07772d0"
+    },
+    {
+      "path": "tests/test_waves_response.py",
+      "original_sha256": "c57c77b7707dbbc25580c112b45a0cc376c8d421fbff2d9d5f4cfe17cf4fc8d2"
+    },
+    {
+      "path": "tests/__init__.py",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "configs/module_registry.yaml",
+      "original_sha256": "6bd4badc566feb4ad141cbf3700f1ebec96da0fe756e8c129e55d217c56e0e3f"
+    },
+    {
+      "path": "configs/state_candidate.yaml",
+      "original_sha256": "d7f70453281e1e1fbca4f16ff35a4d7fb6dcb54b1625e2b1ddd1991be8a54807"
+    },
+    {
+      "path": "configs/state_smoke.yaml",
+      "original_sha256": "f946399c06d85d7fa736c91b7289875be0ec35023528cdd07ee4e472ae69e0e8"
+    },
+    {
+      "path": "scripts/doctor.py",
+      "original_sha256": "0ae0311228491ee6a6c0ea53d8405566defa01593a5579f35b99c0f56e16953c"
+    },
+    {
+      "path": "scripts/smoke.py",
+      "original_sha256": "939d54fa11dcf3af7b933065d00a8de2c58193c459eb9ecd3d220ca0c9385552"
+    },
+    {
+      "path": "docs/DATA_CONTRACTS_CN.md",
+      "original_sha256": "6e12aa7b1b6119de88de3e5691ed8fcef0723176baf808fb3fbb2d575222e0bd"
+    },
+    {
+      "path": "docs/RELEASE_PROTOCOL_CN.md",
+      "original_sha256": "c8117afbd0985bf59e08056a4aed0d57065b7daae49cd3c945ebfc6d931c5c53"
+    },
+    {
+      "path": "pyproject.toml",
+      "original_sha256": "b59cc682bf11f136573f1eef8007be7eef3c04f55f70fe7aa2c9a7125a96995f"
+    }
+  ],
+  "excluded": [
+    "references (private/design material)",
+    "evidence (historical, not rerun results)",
+    "standalone README and handoff"
+  ]
+}

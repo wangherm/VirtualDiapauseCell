@@ -1,4 +1,4 @@
-name: Validate definitions
+name: Validate definitions and modular framework
 on: [push, pull_request]
 permissions:
   contents: read
@@ -11,5 +11,24 @@ jobs:
         with:
           python-version: '3.12'
       - run: python scripts/validate_catalogue.py
-      - run: python -m unittest discover -s tests -v
+      - run: python -m unittest discover -s tests -p test_catalogue.py -v
       - run: bash -n scripts/archive_factorbridge.sh
+  software:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - run: python -m pip install -e '.[test]'
+      - run: python scripts/doctor.py
+      - run: python -m pytest -q --junitxml=work/ci_tests.xml
+      - run: python scripts/smoke.py --out work/ci_synthetic
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: software-verification
+          path: |
+            work/ci_tests.xml
+            work/ci_synthetic/status.json

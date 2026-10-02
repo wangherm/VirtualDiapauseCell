@@ -22,7 +22,9 @@ class CatalogueTests(unittest.TestCase):
         doc=json.loads(path.read_text(encoding='utf-8')); fn(doc)
         path.write_text(json.dumps(doc),encoding='utf-8')
     def test_current_snapshot(self):
-        self.assertFalse(validator.validate(self.root)['training_ready'])
+        result = validator.validate(self.root)
+        self.assertFalse(result['training_ready'])
+        self.assertEqual(result['expression_datasets_downloaded'], 1)
     def test_unreviewed_gold_rejected(self):
         self.mutate('evidence_seed.json',lambda d:d['records'][0].update(training_eligible=True))
         with self.assertRaisesRegex(ValueError,'gold'): validator.validate(self.root)

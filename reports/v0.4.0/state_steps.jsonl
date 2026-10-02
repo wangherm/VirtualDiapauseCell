@@ -1,0 +1,5 @@
+{"step": 10, "train_reconstruction": 0.9916806221008301, "train_clock": null, "validation_hidden_mse_scaled": 0.9953185319900513, "validation_clock_mse": null, "selection_score": 0.9953185319900513}
+{"step": 20, "train_reconstruction": 0.9614946246147156, "train_clock": null, "validation_hidden_mse_scaled": 0.9352699518203735, "validation_clock_mse": null, "selection_score": 0.9352699518203735}
+{"step": 30, "train_reconstruction": 0.9399175047874451, "train_clock": null, "validation_hidden_mse_scaled": 0.8957497477531433, "validation_clock_mse": null, "selection_score": 0.8957497477531433}
+{"step": 40, "train_reconstruction": 0.9299269914627075, "train_clock": null, "validation_hidden_mse_scaled": 0.8984712958335876, "validation_clock_mse": null, "selection_score": 0.8984712958335876}
+{"step": 50, "train_reconstruction": 0.9139797687530518, "train_clock": null, "validation_hidden_mse_scaled": 0.8693660497665405, "validation_clock_mse": null, "selection_score": 0.8693660497665405}

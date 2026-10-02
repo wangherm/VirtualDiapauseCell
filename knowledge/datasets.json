@@ -1,5 +1,5 @@
 {
-  "version": "0.1.0",
+  "version": "0.4.0",
   "project_local_inventory": true,
   "datasets": [
     {
@@ -87,6 +87,45 @@
       "status": "candidate_not_admitted"
     },
     {
+      "id": "DS_GSE288723_PILOT",
+      "source_id": null,
+      "source_url": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE288723",
+      "accession": "GSE288723",
+      "priority": 1,
+      "role": "bounded_development_pilot",
+      "downloaded": true,
+      "files": [
+        {
+          "file": "GSE288723_raw_counts.csv.gz",
+          "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE288nnn/GSE288723/suppl/GSE288723_raw_counts.csv.gz",
+          "sha256": "236b863fe51ad0872951bfb5e773490134caed18ad582861c8197ac0e2526d1c",
+          "bytes": 2192793
+        },
+        {
+          "file": "GSE288723_family.soft.gz",
+          "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE288nnn/GSE288723/soft/GSE288723_family.soft.gz",
+          "sha256": "d33be3295a295d05df691d18350a6d5b9453c4346b12595994b6c88b746aba4e",
+          "bytes": 4906
+        },
+        {
+          "file": "wb_2026-05-21.gaf.gz",
+          "url": "https://current.geneontology.org/annotations/wb.gaf.gz",
+          "sha256": "bda92f6642cc68a16e485ba32eb5890320855895185b9cbcd448f52cf698fed2",
+          "bytes": 3849912
+        }
+      ],
+      "split": "predeclared_unit_holdout",
+      "training_eligible": true,
+      "status": "admitted_reconstruction_only",
+      "admission_manifest": "configs/public_pilot_sources.json",
+      "admission_report": "reports/v0.4.0/public_admission.json",
+      "admission_blockers": [
+        "Molecular clock labels unavailable",
+        "Cross-condition batch/cohort lineage incomplete; no across-study generalisation claim",
+        "UV/L3 arms not admitted to this first numeric pilot"
+      ]
+    },
+    {
       "id": "DS_INTERNAL_KILLIFISH",
       "source_id": null,
       "accession": null,
@@ -102,5 +141,6 @@
       "training_eligible": false,
       "status": "locked"
     }
-  ]
+  ],
+  "inventory_scope": "Audited local snapshot; remote users must verify/download files independently"
 }

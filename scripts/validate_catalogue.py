@@ -74,7 +74,13 @@ def validate(root=ROOT):
         require(e['partition']=='unassigned' and e['internal_derived'] is False, 'Evidence split/internal boundary violated')
     for d in datasets:
         require(d['source_id'] is None or d['source_id'] in sids, 'Unknown dataset source')
-        require(d['training_eligible'] is False, 'No dataset has completed admission')
+        if d['role']=='bounded_development_pilot':
+            require(d['id']=='DS_GSE288723_PILOT' and d['accession']=='GSE288723', 'Unknown pilot admission')
+            require(d['split']=='predeclared_unit_holdout' and d['status']=='admitted_reconstruction_only', 'Pilot scope changed')
+            require(d['downloaded'] is True and d['training_eligible'] is True and len(d['files'])==3, 'Incomplete pilot admission')
+            require(all(re.fullmatch(r'[0-9a-f]{64}', f.get('sha256','')) and f['url'].startswith('https://') for f in d['files']), 'Unverified pilot file')
+            continue
+        require(d['training_eligible'] is False, 'No other dataset has completed admission')
         require(d['downloaded'] is False and d['files']==[], 'This definition snapshot has no expression files')
         require(bool(d['admission_blockers']), 'Missing dataset admission audit')
         if d['role']=='frozen_test':
@@ -95,7 +101,9 @@ def validate(root=ROOT):
     require(meta['gene_membership_downloaded'] is False,'Ontology terms are not gene sets')
     return dict(status='passed',scope='definition_consistency_only',core_tasks=len(cids),coordinate_definitions=len(axes),modules=len(modules),submodules=len(subids),
                 sources=len(sources),evidence_notes=len(evidence),datasets=len(datasets),go_terms=len(ids),
-                expression_datasets_downloaded=0,training_ready=False,model_training_executed=False)
+                expression_datasets_downloaded=sum(d["downloaded"] for d in datasets),
+                training_ready=False,training_executed_by_this_command=False,
+                runtime_status="See reports/v0.4.0; this command only audits the catalogue")
 
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__)

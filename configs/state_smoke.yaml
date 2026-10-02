@@ -1,0 +1,10 @@
+hidden_dim: 16
+latent_dim: 8
+layers: 1
+heads: 2
+learning_rate: 0.003
+clock_weight: 1.0
+corrupt_fraction: 0.2
+additive_noise: 0.02
+seed: 42
+validation_every: 5

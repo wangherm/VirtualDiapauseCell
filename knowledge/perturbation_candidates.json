@@ -1,0 +1,454 @@
+{
+  "version": "0.4.0",
+  "source_zip_sha256": "3ef9358227406926611e3aa4136d94c91240dcbcafb803c8a1be5005fd5454f7",
+  "warning": "22 candidate arms/resources, not 22 independent studies; supplied claims are not new verification",
+  "records": [
+    {
+      "record_id": "VDP001",
+      "accession": "GSE185815",
+      "study_family": "Singh_2024_GSE185817",
+      "system": "N. furzeri；单胚胎；Diapause / Development",
+      "perturbation": "REST、FOXO3a、FOXO3b、PPARAb、PPARG；scrambled sgRNA 与未注射 WT 对照",
+      "intervention_kind": "F0_CRISPR_KO",
+      "assay": "bulk_RNA_seq_single_embryo",
+      "time_axis_type": "endpoint",
+      "time_design": "6-day diapause / development 端点；不是连续 Exit",
+      "proposed_task": "预测相同状态下的 KO 表达效应；区分表达位移与真正退出休眠",
+      "restrictions": "F0 编辑效率/嵌合性须保留；不是每胚胎纯合稳定 KO。PPARAa 早期致死，不能算成功 RNA 组。REST/FOXO 位移不等于退出；PPARG 无明显效应仅限该实验。",
+      "source_urls": [
+        "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE185815",
+        "https://pmc.ncbi.nlm.nih.gov/articles/PMC11970524/"
+      ],
+      "review_status": "supplied_candidate_requires_primary_source_admission",
+      "training_eligible": false,
+      "real_response_training": "not_run",
+      "protected_role": "existing_VAL_L4_OOD_do_not_reassign"
+    },
+    {
+      "record_id": "VDP002",
+      "accession": "PRJNA503701",
+      "study_family": "Hu_2020_CBX7",
+      "system": "N. furzeri GRZ；diapause 胚胎",
+      "perturbation": "CBX7 CRISPR 突变；WT",
+      "intervention_kind": "genetic_KO",
+      "assay": "bulk_RNA_seq_and_separate_phenotypes",
+      "time_axis_type": "endpoint_with_separate_duration_phenotypes",
+      "time_design": "KO RNA 2个月 diapause；另有维护时长/肌肉表型",
+      "proposed_task": "预测维护失败相关表达；用肌肉保存和维持时间作独立表型检验",
+      "restrictions": "有两个独立突变品系的功能证据，但 Fig.5 RNA 具体是 Mutant 1；不能宣称两个品系完整 RNA 均已确认。99 experiments 不等于99独立KO胚胎。",
+      "source_urls": [
+        "https://pmc.ncbi.nlm.nih.gov/articles/PMC7532943/",
+        "https://www.ncbi.nlm.nih.gov/bioproject/PRJNA503701/"
+      ],
+      "review_status": "supplied_candidate_requires_primary_source_admission",
+      "training_eligible": false,
+      "real_response_training": "not_run",
+      "protected_role": "existing_VAL_L4_OOD_do_not_reassign"
+    },
+    {
+      "record_id": "VDP003",
+      "accession": "GSE221467",
+      "study_family": "Stotzel_2024_GSE221470",
+      "system": "Mus musculus；培养 ESC；mTOR-induced dormancy",
+      "perturbation": "Tet1/Tet2 DKO × INK128；WT",
+      "intervention_kind": "genetic_KO_plus_drug",
+      "assay": "bulk_RNA_seq",
+      "time_axis_type": "time_after_inhibition",
+      "time_design": "WT 至144h，DKO至72h；没有DKO144h RNA条目",
+      "proposed_task": "比较休眠建立过程的 WT/KO waves，解释维持身份能力受损",
+      "restrictions": "诱导时间不是Exit时间；不从母系列266样本推断RNA数；缺失晚期不能自动标为细胞死亡；与GSE245229同家族分组。",
+      "source_urls": [
+        "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE221467",
+        "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE221470",
+        "https://www.nature.com/articles/s41594-024-01313-7"
+      ],
+      "review_status": "supplied_candidate_requires_primary_source_admission",
+      "training_eligible": false,
+      "real_response_training": "not_run"
+    },
+    {
+      "record_id": "VDP004",
+      "accession": "GSE245229",
+      "study_family": "Stotzel_2024_GSE221470",
+      "system": "Mus musculus；TET dormancy 研究补充 RNA",
+      "perturbation": "精确扰动/恢复组别待 GSM 核对",
+      "intervention_kind": "unresolved",
+      "assay": "bulk_RNA_seq",
+      "time_axis_type": "unresolved",
+      "time_design": "不可由同论文其他实验推断",
+      "proposed_task": "补全 TET 家族 RNA 臂；暂不放入训练",
+      "restrictions": "12不是已确认12个反激活样本；不得预填TFE3/VC/恢复标签。",
+      "source_urls": [
+        "https://www.ncbi.nlm.nih.gov/bioproject/1027433",
+        "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE245229",
+        "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE221470"
+      ],
+      "review_status": "supplied_candidate_requires_primary_source_admission",
+      "training_eligible": false,
+      "real_response_training": "not_run"
+    },
+    {
+      "record_id": "VDP005",
+      "accession": "GSE202844",
+      "study_family": "Collignon_2023_GSE202848",
+      "system": "Mus musculus E14 ESC；FBS/LIF 与 paused",
+      "perturbation": "Mettl3 KO × mTOR inhibitor INK128；WT",
+      "intervention_kind": "genetic_KO_plus_drug",
+      "assay": "bulk_RNA_seq",
+      "time_axis_type": "endpoint",
+      "time_design": "控制/paused 培养2周",
+      "proposed_task": "预测 RNA 修饰缺失对休眠表达、增殖和程序的状态依赖效应",
+      "restrictions": "原始counts、细胞数/ERCC校准logcounts分开；2025更正把论文Fig.1f diapause E3.5改为E6.5，不把错误胚龄复制进知识库；不是Exit时序。",
+      "source_urls": [
+        "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE202844",
+        "https://www.nature.com/articles/s41556-023-01212-x",
+        "https://www.nature.com/articles/s41556-025-01664-3"
+      ],
+      "review_status": "supplied_candidate_requires_primary_source_admission",
+      "training_eligible": false,
+      "real_response_training": "not_run"
+    },
+    {
+      "record_id": "VDP006",
+      "accession": "GSE228733",
+      "study_family": "Collignon_2023_GSE202848",
+      "system": "Mus musculus E14 ESC；WT(dCas_Alkbh5)；paused",
+      "perturbation": "Mycn-gRNA2 / Mycn-gRNA3 vs NT-gRNA；dCas–ALKBH5 定点RNA修饰干预",
+      "intervention_kind": "targeted_epitranscriptomic_perturbation",
+      "assay": "bulk_RNA_seq",
+      "time_axis_type": "endpoint",
+      "time_design": "选后暂停5天；不是release时间序列",
+      "proposed_task": "把 Mycn RNA 修饰机制与 Mettl3 全局 KO 联系；判断 RNA 稳定性介导的 programme 变化",
+      "restrictions": "不是 Mycn nuclease KO，也不是普通转录抑制 CRISPRi；同一Mycn两个guide不是两个独立基因任务；保持原始construct名。",
+      "source_urls": [
+        "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE202848",
+        "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE228733",
+        "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM7135722",
+        "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM7135712"
+      ],
+      "review_status": "supplied_candidate_requires_primary_source_admission",
+      "training_eligible": false,
+      "real_response_training": "not_run"
+    },
+    {
+      "record_id": "VDP007",
+      "accession": "GSE228734",
+      "study_family": "Collignon_2023_GSE202848",
+      "system": "Mus musculus；WT / Mettl3 KO paused ESC",
+      "perturbation": "Mettl3 KO；4-thiouridine pulse-chase",
+      "intervention_kind": "genetic_KO_plus_label_chase",
+      "assay": "SLAM_seq",
+      "time_axis_type": "label_chase_time",
+      "time_design": "0、1、3、8h是RNA标签追踪；细胞持续paused",
+      "proposed_task": "约束RNA周转与wave，不用于训练Exit clock",
+      "restrictions": "标签洗脱≠mTOR抑制剂撤药；不能把该时轴叫dormancy exit。SLAM-seq与稳态RNA分层。",
+      "source_urls": [
+        "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE228734",
+        "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE202848",
+        "https://www.nature.com/articles/s41556-023-01212-x"
+      ],
+      "review_status": "supplied_candidate_requires_primary_source_admission",
+      "training_eligible": false,
+      "real_response_training": "not_run"
+    },
+    {
+      "record_id": "VDP008",
+      "accession": "GSE303716",
+      "study_family": "Furlan_2026_GSE303717",
+      "system": "Mus musculus E14 ESC；对照/pausing",
+      "perturbation": "Smad2 KO 两个克隆 × INK128；WT",
+      "intervention_kind": "genetic_KO_plus_drug",
+      "assay": "bulk_RNA_seq",
+      "time_axis_type": "endpoint",
+      "time_design": "培养/暂停12h",
+      "proposed_task": "预测Smad2缺失的状态依赖脂质/转录效应；与PPARG机制对接",
+      "restrictions": "2026-06-22公开；两KO克隆不是两个基因；论文Pparg救援结果不得自动写成该RNA系列中的double-KO组；normalized counts不能当raw counts。",
+      "source_urls": [
+        "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE303716",
+        "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM9134549",
+        "https://pubmed.ncbi.nlm.nih.gov/42551436/"
+      ],
+      "review_status": "supplied_candidate_requires_primary_source_admission",
+      "training_eligible": false,
+      "real_response_training": "not_run"
+    },
+    {
+      "record_id": "VDP009",
+      "accession": "GSE302996",
+      "study_family": "Furlan_2026_GSE303717",
+      "system": "Mus musculus ESC；Smad2研究",
+      "perturbation": "Smad2 KO × pausing",
+      "intervention_kind": "genetic_KO_plus_drug",
+      "assay": "ATAC_seq",
+      "time_axis_type": "endpoint",
+      "time_design": "12h",
+      "proposed_task": "RNA响应的染色质补充证据",
+      "restrictions": "不是表达RNA；不假定与RNA来自逐样本配对材料；须建立原始replicate crosswalk。",
+      "source_urls": [
+        "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE302996",
+        "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE303717"
+      ],
+      "review_status": "supplied_candidate_requires_primary_source_admission",
+      "training_eligible": false,
+      "real_response_training": "not_run"
+    },
+    {
+      "record_id": "VDP010",
+      "accession": "GSE291659",
+      "study_family": "Mak_2025_TFEB_TGFb",
+      "system": "C. elegans；adult reproductive diapause (ARD)",
+      "perturbation": "hlh-30(tm1978)、daf-1(m40)、双突变；N2",
+      "intervention_kind": "single_and_double_mutants_plus_refeeding",
+      "assay": "bulk_RNA_seq",
+      "time_axis_type": "arrest_then_refeeding",
+      "time_design": "48h ARD；其后12h refeeding",
+      "proposed_task": "预测休眠后恢复受阻与遗传抑制/救援；基因型×恢复交互",
+      "restrictions": "成体生殖diapause，不是dauer；12h只有一个恢复终点，不能支持精细连续wave时间；masterTable列含义/单位需核对。",
+      "source_urls": [
+        "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE291659",
+        "https://www.nature.com/articles/s43587-025-00911-4"
+      ],
+      "review_status": "supplied_candidate_requires_primary_source_admission",
+      "training_eligible": false,
+      "real_response_training": "not_run"
+    },
+    {
+      "record_id": "VDP011",
+      "accession": "GSE288723",
+      "study_family": "Totska_2025_Dauer_AgeReversal",
+      "system": "C. elegans；daf-2(e1370) dauer；L3参照",
+      "perturbation": "不同dauer维持时长；释放；UV；不是完整WT/KO对照",
+      "intervention_kind": "history_by_release_by_UV",
+      "assay": "bulk_RNA_seq",
+      "time_axis_type": "days_in_arrest_and_hours_after_release",
+      "time_design": "dauer 1/4/15/30d；release 0/6/24h；UV仅选定组",
+      "proposed_task": "直接检验维持历史如何改变exit波形，以及UV是否影响这种恢复",
+      "restrictions": "时长不等于已测深度；daf-2是诱导背景；不能把54写为54独立基因扰动；论文DNA修复双突变表型不自动属于本RNA组；UV原始处理/时间要复核。",
+      "source_urls": [
+        "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE288723",
+        "https://onlinelibrary.wiley.com/doi/10.1111/acel.70253",
+        "https://pmc.ncbi.nlm.nih.gov/articles/PMC12686545/"
+      ],
+      "review_status": "metadata_and_expression_verified",
+      "training_eligible": false,
+      "real_response_training": "not_run",
+      "admitted_scope": "untreated_dauer_exit_reconstruction_only; UV response pending"
+    },
+    {
+      "record_id": "VDP012",
+      "accession": "E-MTAB-3386",
+      "study_family": "Scognamiglio_2016_Myc",
+      "system": "Mus musculus；2i naive ESC",
+      "perturbation": "c-Myc/Mycn 双删除；Cre设计",
+      "intervention_kind": "genetic_double_KO",
+      "assay": "bulk_RNA_seq",
+      "time_axis_type": "time_after_recombination",
+      "time_design": "论文确认24/96h删除与96h表型；不直接指派RNA所有时间",
+      "proposed_task": "建立Myc依赖biosynthetic dormancy的表达干预对照",
+      "restrictions": "RNA对照包含部分删除背景，不能自动写成WT；mRNA救援是另一实验；和GSE74337同研究，不能跨train/test。",
+      "source_urls": [
+        "https://www.ebi.ac.uk/biostudies/arrayexpress/studies/E-MTAB-3386",
+        "https://www.sciencedirect.com/science/article/pii/S0092867415016979"
+      ],
+      "review_status": "supplied_candidate_requires_primary_source_admission",
+      "training_eligible": false,
+      "real_response_training": "not_run"
+    },
+    {
+      "record_id": "VDP013",
+      "accession": "GSE74337",
+      "study_family": "Scognamiglio_2016_Myc",
+      "system": "Mus musculus；naive ESC",
+      "perturbation": "Myc药理抑制与撤药",
+      "intervention_kind": "drug_and_washout",
+      "assay": "microarray",
+      "time_axis_type": "time_after_drug_and_washout",
+      "time_design": "论文MYCi60h；撤药后48h",
+      "proposed_task": "可逆性与释放后的程序恢复；跨平台补充",
+      "restrictions": "这是药物+撤药microarray，不是双KO RNAseq；单48h释放终点不构成密集wave。",
+      "source_urls": [
+        "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE74337",
+        "https://www.sciencedirect.com/science/article/pii/S0092867415016979"
+      ],
+      "review_status": "supplied_candidate_requires_primary_source_admission",
+      "training_eligible": false,
+      "real_response_training": "not_run"
+    },
+    {
+      "record_id": "VDP014",
+      "accession": "GSE129599",
+      "study_family": "Gal_2023_HIRA",
+      "system": "S. pombe；氮饥饿quiescence",
+      "perturbation": "hip1Δ (HIRA)；WT；复氮",
+      "intervention_kind": "genetic_KO_plus_refeeding",
+      "assay": "bulk_RNA_seq",
+      "time_axis_type": "arrest_then_refeeding",
+      "time_design": "序列明确Q和复氮；RNA具体小时仍待GSM协议",
+      "proposed_task": "模型识别生长响应与细胞周期重新进入的分离、恢复能力丧失",
+      "restrictions": "论文1天/4天功能实验不自动等于RNA全部时点；不能把12份写成已完整核验的密集时序。",
+      "source_urls": [
+        "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE129599"
+      ],
+      "review_status": "supplied_candidate_requires_primary_source_admission",
+      "training_eligible": false,
+      "real_response_training": "not_run"
+    },
+    {
+      "record_id": "VDP015",
+      "accession": "GSE213459",
+      "study_family": "Garg_2023_GSE217953",
+      "system": "S. pombe；磷饥饿",
+      "perturbation": "maf1Δ vs WT",
+      "intervention_kind": "genetic_KO_by_starvation_time",
+      "assay": "bulk_RNA_seq",
+      "time_axis_type": "time_after_phosphate_withdrawal",
+      "time_design": "0/4/8/12/24/36/48h",
+      "proposed_task": "检验WT与突变的进入/维护wave分叉以及失活/死亡风险机制",
+      "restrictions": "初期是饥饿响应非全程确认G0；三重复是否聚合在处理矩阵须检查；不能把每个时间独立当新研究。",
+      "source_urls": [
+        "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE213459",
+        "https://academic.oup.com/nar/article/51/7/3094/7041946"
+      ],
+      "review_status": "supplied_candidate_requires_primary_source_admission",
+      "training_eligible": false,
+      "real_response_training": "not_run"
+    },
+    {
+      "record_id": "VDP016",
+      "accession": "GSE166789",
+      "study_family": "Cucinotta_2021_RSC",
+      "system": "S. cerevisiae；quiescence exit",
+      "perturbation": "RSC/Sth1 depletion；IAA vs control；nutrient repletion",
+      "intervention_kind": "protein_depletion_plus_refeeding",
+      "assay": "nascent_RNA_and_chromatin",
+      "time_axis_type": "minutes_after_refeeding",
+      "time_design": "RNA: Q与10min；部分chromatin有0/5/10/240min，不能混为同一RNA时序",
+      "proposed_task": "早期转录恢复与染色质准备的机制证据",
+      "restrictions": "4tU新生RNA不是稳态RNA；IAA介导depletion不是删除株；每个4tU组生物重复需run-level复核。",
+      "source_urls": [
+        "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE166789",
+        "https://elifesciences.org/articles/67033"
+      ],
+      "review_status": "supplied_candidate_requires_primary_source_admission",
+      "training_eligible": false,
+      "real_response_training": "not_run"
+    },
+    {
+      "record_id": "VDP017",
+      "accession": "GSE184821",
+      "study_family": "Both_2022_Ketone_MuSC",
+      "system": "Mus musculus；FACS muscle stem cells",
+      "perturbation": "ketone bodies vs PBS",
+      "intervention_kind": "metabolic_drug_perturbation",
+      "assay": "bulk_RNA_seq",
+      "time_axis_type": "endpoint",
+      "time_design": "准确给药与取材间隔待GSM；不是RNA恢复时序",
+      "proposed_task": "以延迟激活和应激存活作为功能depth参照",
+      "restrictions": "somatic quiescence，不是胚胎diapause；本RNA臂不是p53 KO；原文是激活/修复变慢而应激存活提升，勿混称恢复更快。",
+      "source_urls": [
+        "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE184821"
+      ],
+      "review_status": "supplied_candidate_requires_primary_source_admission",
+      "training_eligible": false,
+      "real_response_training": "not_run"
+    },
+    {
+      "record_id": "VDP018",
+      "accession": "GSE190765",
+      "study_family": "Fong_2022_Rb_NSC",
+      "system": "Mus musculus；adult neural stem cells",
+      "perturbation": "Rb-family triple KO vs control",
+      "intervention_kind": "genetic_triple_KO",
+      "assay": "bulk_RNA_seq",
+      "time_axis_type": "endpoint",
+      "time_design": "状态端点；精确培养条件与时间待核对",
+      "proposed_task": "泛增殖解除与休眠程序的对照",
+      "restrictions": "既往因属于基因扰动而不适合二分类筛查被排除，并非数据质量失败；不能把Rb解除当完整diapause exit。",
+      "source_urls": [
+        "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE190765"
+      ],
+      "review_status": "supplied_candidate_requires_primary_source_admission",
+      "training_eligible": false,
+      "real_response_training": "not_run"
+    },
+    {
+      "record_id": "VDP019",
+      "accession": "PRJEB80774 / HAS-POMBE-BARSEQ",
+      "study_family": "Hassan_2026_Consortium",
+      "system": "S. pombe spores；pooled deletion library",
+      "perturbation": "全基因组删除库；长期保持/热处理",
+      "intervention_kind": "pooled_deletion_fitness_screen",
+      "assay": "Bar_seq_phenotype",
+      "time_axis_type": "spore_duration_and_heat_endpoint",
+      "time_design": "旧目录2周、1/2/5/6月及6月热处理",
+      "proposed_task": "存活/维持/应激耐受功能监督，非gene-expression response",
+      "restrictions": "Bar-seq读出经过萌发及再生长，混合存活/萌发/增长适合度；不是3206 KO全转录组。与killifish/yeast组学同总项目须拆分。",
+      "source_urls": [
+        "https://www.ebi.ac.uk/ena/browser/view/PRJEB80774",
+        "https://doi.org/10.64898/2026.05.08.723705"
+      ],
+      "review_status": "supplied_candidate_requires_primary_source_admission",
+      "training_eligible": false,
+      "real_response_training": "not_run"
+    },
+    {
+      "record_id": "VDP020",
+      "accession": "LIT-TFEB-mESC-CRISPR",
+      "study_family": "Mak_2025_TFEB_TGFb",
+      "system": "Mus musculus ESC；paused/proliferating",
+      "perturbation": "全基因组 pooled CRISPR screen",
+      "intervention_kind": "pooled_CRISPR_fitness_screen",
+      "assay": "guide_abundance_phenotype",
+      "time_axis_type": "selection_endpoint",
+      "time_design": "paused与proliferating筛选终点；guide矩阵协议待补",
+      "proposed_task": "筛选维持paused状态所需基因；功能先验/独立检验",
+      "restrictions": "不是Perturb-seq；不能生成不存在的KO表达向量；同GSE291659论文家族，防文献/数据泄漏。",
+      "source_urls": [
+        "https://www.nature.com/articles/s43587-025-00911-4"
+      ],
+      "review_status": "supplied_candidate_requires_primary_source_admission",
+      "training_eligible": false,
+      "real_response_training": "not_run"
+    },
+    {
+      "record_id": "VDP021",
+      "accession": "PRJNA1088238",
+      "study_family": "BmSdh2_2025_Silkworm",
+      "system": "Bombyx mori；胚胎diapause",
+      "perturbation": "BmSdh2 full/partial loss-of-function；含RNAseq与代谢/脂质证据",
+      "intervention_kind": "KO_phenotype_RNA_genotype_pending",
+      "assay": "RNA_seq_plus_separate_metabolomics_phenotypes",
+      "time_axis_type": "endpoint",
+      "time_design": "diapause-destined vs non-diapause/KO表型分开",
+      "proposed_task": "远物种功能对照：剂量效应与diapause维护",
+      "restrictions": "不能把论文中KO功能证据自动认定为SRA中KO转录组；RNA初筛主要DD/ND，具体KO RNA待确认。",
+      "source_urls": [
+        "https://pmc.ncbi.nlm.nih.gov/articles/PMC12594423/",
+        "https://www.ncbi.nlm.nih.gov/bioproject/PRJNA1088238"
+      ],
+      "review_status": "supplied_candidate_requires_primary_source_admission",
+      "training_eligible": false,
+      "real_response_training": "not_run"
+    },
+    {
+      "record_id": "VDP022",
+      "accession": "GSE249392",
+      "study_family": "BET_MAPK_GenesDev_2025_2026",
+      "system": "Mus musculus；diapause-like ESC",
+      "perturbation": "mTOR/BET相关处理；MAPK负调控机制；RNA中具体KD组待核验",
+      "intervention_kind": "chemical_perturbation_KD_arm_pending",
+      "assay": "RNA_related_assays_pending_manifest",
+      "time_axis_type": "unresolved",
+      "time_design": "不由论文机制标题推断时序",
+      "proposed_task": "补充营养信号与MAPK反应的控制机制；暂不进入训练",
+      "restrictions": "不把论文DUSP/Sprouty knockdown表型当成已公开KD RNA；先获取系列元数据再决定采用哪个实验臂。",
+      "source_urls": [
+        "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE249392",
+        "https://pubmed.ncbi.nlm.nih.gov/41381364/"
+      ],
+      "review_status": "supplied_candidate_requires_primary_source_admission",
+      "training_eligible": false,
+      "real_response_training": "not_run"
+    }
+  ]
+}

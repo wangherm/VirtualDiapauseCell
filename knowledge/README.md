@@ -1,5 +1,6 @@
 # Definition data contract
 
+> 定义快照说明：本文保留项目设计与数据边界。v0.4.0 的代码、真实执行和能力状态以 `docs/MODULAR_INTEGRATION_CN.md`、`docs/STATUS.md` 及 `reports/v0.4.0/` 为准。
 This directory contains a **definition snapshot**, not a training dataset.
 
 | File | Records | Meaning |

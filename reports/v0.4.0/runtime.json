@@ -1,0 +1,15 @@
+{
+  "python": "3.12.14",
+  "platform": "Windows",
+  "cuda_available": false,
+  "torch_cuda": null,
+  "qwen_weights_loaded": false,
+  "packages": {
+    "torch": "2.14.1+cpu",
+    "numpy": "2.5.3",
+    "scipy": "1.18.1",
+    "PyYAML": "6.0.3",
+    "pytest": "9.1.1",
+    "fastapi": "0.142.2"
+  }
+}

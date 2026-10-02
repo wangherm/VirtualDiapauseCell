@@ -1,0 +1,41 @@
+{
+  "date": "2026-10-02",
+  "starter_package_manifest_files_verified": 52,
+  "starter_package_hash_mismatches": 0,
+  "synthetic_integration": "passed",
+  "public_pilot_steps": 50,
+  "public_pilot_run": "runs/public_pilot_20261002b",
+  "initial_test_attempt": "52 passed; 15 setup errors due to existing Windows temp-directory ACL; preserved in local work/initial_tests.xml",
+  "test_temp_remedy": "Fresh project-local basetemp; no test disabled",
+  "numerical_results_unchanged_after_lineage_guard": true,
+  "qwen_gpu_smoke": "not_run",
+  "qwen_training": "not_run",
+  "real_response_training": "not_run",
+  "research_approval": "not_approved",
+  "server_execution": "not_run",
+  "private_data_used": false,
+  "source_files": {
+    "src/vdc/__init__.py": "8b633926c1735ecd10edd62af91b3fcffc43bf893e7bfd76c612fec175def3ae",
+    "src/vdc/__main__.py": "cf7390a2508a0fcad4777a4a629fc5212ab655cb45845975995f835676a834e3",
+    "src/vdc/cli.py": "985bd2c5d9199fb9c90581a18cc09b773cc619ff22f6a6f7d464156e770845b3",
+    "src/vdc/contracts.py": "679fb5224e4a79fe61389dee5ae99c585a76c852ea470d0e24232d09abe8c300",
+    "src/vdc/evaluate.py": "b8837e35af0e0cfdf6214021c8232272eaeb69ab480c9b2be40c12b02961aeed",
+    "src/vdc/io.py": "397d299f8b6c8090fef23db0e2479edd67c76536a0d70a79f08cb6d48eb06fd9",
+    "src/vdc/knowledge.py": "3b76bba2986491322cbbb9416b4defe57f86e0aa6060bdf3c40daf2fc86b0bf9",
+    "src/vdc/knowledge_train.py": "dbd13ae6ab4d91d2f02df5ab8bdc41f83745f137d9795e8068fcd731c6f961ac",
+    "src/vdc/metrics.py": "06a2c3fbaf2e0754333ba3346663bc3d073938e091085f4a7de35acf897c8ebd",
+    "src/vdc/observation.py": "6f0157a587ec4039a51ca95204ac949755c5043210f34daab6dc196a3534e4c9",
+    "src/vdc/release.py": "5c8dcc3f3901811d706b0391eb4241d571457efca536dcdf0b82b71b9ba7406a",
+    "src/vdc/response.py": "e7811a20fa717d8ff1519e2cf6b60b122c3fc856235a2ebf313fbb318a6f271c",
+    "src/vdc/service.py": "1312a44db2c4ee3ecfb2b22db080999c022d777f2e3bebac39ae1d1ba6a396e6",
+    "src/vdc/state.py": "a66dbd989f1d60f5917628804ab38e2f62d0bec982d1ea90c3a91780542ddeb8",
+    "src/vdc/waves.py": "a67cfd9c2ef66d98182e4b10549f76be843781bd59c191b9dd13d0f0a260371e"
+  },
+  "tests_passed": 73,
+  "tests_failed": 0,
+  "tests_skipped": 0,
+  "warnings": [
+    "Starlette httpx TestClient deprecation"
+  ],
+  "source_hash_normalization": "UTF-8 source with LF line endings"
+}

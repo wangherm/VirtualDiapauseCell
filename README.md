@@ -2,7 +2,7 @@
 
 A biotime-centred model of diapause state, gene/TF waves and programme dynamics, grounded in context-specific biological evidence.
 
-**独立新项目，2026-10-01 建立。当前交付是模块定义、公开来源目录、知识记录契约与离线校验工具；尚未训练模型，也未证明细胞状态或未来响应预测能力。** FactorBridge 已归档，仅供方法参考，不是本项目依赖。
+**独立新项目，2026-10-01 建立。当前 v0.4.0 已整合可运行的模块化框架，完成 CPU 工程验证与一份公开数据的小规模重构试点；尚未验证 diapause clock、扰动预测或功能 depth。** FactorBridge 已归档，仅供方法参考，不是本项目依赖。
 
 ## 核心优先级 v0.2
 
@@ -20,7 +20,7 @@ A biotime-centred model of diapause state, gene/TF waves and programme dynamics,
 | 核查论文与数据库 | [证据与来源](docs/SOURCES_CN.md) / [来源注册表](knowledge/sources.json) |
 | 决定哪些数据真正可用 | [数据纳入目录](knowledge/datasets.json) |
 | 借鉴旧项目、在同一服务器独立部署 | [FactorBridge 参考与服务器说明](docs/FACTORBRIDGE_AND_SERVER_CN.md) |
-| 确认本次做了什么 | [当前定义状态](docs/STATUS.md) |
+| 确认本次做了什么 | [当前实施状态](docs/STATUS.md) |
 
 ## 定义
 
@@ -36,11 +36,24 @@ A biotime-centred model of diapause state, gene/TF waves and programme dynamics,
 
 ## 当前可以运行
 
+[模块整合与真实试点](docs/MODULAR_INTEGRATION_CN.md) · [运行说明](docs/RUN_MODULAR_CN.md) · [实际结果](reports/v0.4.0/RESULTS_CN.md)
+
+完整框架：
+
+```bash
+python -m pip install -e ".[test]"
+python scripts/doctor.py
+python -m pytest -q
+python scripts/smoke.py --out work/synthetic_new_run
+```
+
+仅校验定义目录：
+
 仅需 Python 3.10+，无 GPU、无第三方 Python 依赖：
 
 ```bash
 python scripts/validate_catalogue.py
-python -m unittest discover -s tests -v
+python -m unittest discover -s tests -p test_catalogue.py -v
 ```
 
 校验引用、模块标识、GO 快照、证据审核状态与数据准入边界。通过只表示定义文件自洽，不代表生物学证据已人工审核或可开始训练。
@@ -51,8 +64,8 @@ python -m unittest discover -s tests -v
 python scripts/fetch_go_anchors.py --output-dir outputs/go_refresh
 ```
 
-当前 `knowledge/` 的文献笔记全部是待领域专家审阅的来源摘要，`training_eligible=false`。GO 术语仅用于检索与定义；不是已确认的基因成员集。
+当前 `knowledge/` 的文献笔记全部是待领域专家审阅的来源摘要，`training_eligible=false`。全局功能词典的 GO 锚点用于定义；首个公共试点另外按有校验值的 GO/WormBase 快照构造了 24 个直接成员 programme，其覆盖与限制见试点报告。
 
 ## 项目边界
 
-不复制旧训练集、adapter、PCA 弱标签或 ageing 主导的混合训练分布。不建多 agent、RL 或 14 个独立 LLM。暂不下载大表达矩阵、不启动正式训练；先完成来源审核、数据准入与独立评价协议。公共仓库不保存内部数据、整篇受限论文或服务器日志。
+不复制旧训练集、adapter、PCA 弱标签或 ageing 主导的混合训练分布。不建多 agent、RL 或 14 个独立 LLM。当前仅接入已审核的一份公共数据；不启动全目录下载、Qwen 长训练或全量联合训练。公共仓库不保存内部数据、整篇受限论文或服务器日志。

@@ -1,0 +1,231 @@
+{
+  "public_data": "GSE288723",
+  "reconstruction": "executed_on_real_expression",
+  "independent_evaluation": "within_study_conservative_replicate_blocks_only",
+  "state_baselines": {
+    "model": {
+      "full_originally_observed": {
+        "by_study": {
+          "PMID41104926_GSE288723": {
+            "status": "computed",
+            "n_observed": 288,
+            "mse": 0.0004076252151982134,
+            "mae": 0.016123009790640533,
+            "r2": 0.9755047903032963,
+            "biological_units": 12
+          }
+        },
+        "macro_study_mse": 0.0004076252151982134,
+        "pooled": {
+          "status": "computed",
+          "n_observed": 288,
+          "mse": 0.0004076252151982134,
+          "mae": 0.016123009790640533,
+          "r2": 0.9755047903032963
+        }
+      },
+      "additional_hidden": {
+        "by_study": {
+          "PMID41104926_GSE288723": {
+            "status": "computed",
+            "n_observed": 53,
+            "mse": 0.000374700615380539,
+            "mae": 0.015375587087616606,
+            "r2": 0.9805217183009921,
+            "biological_units": 12
+          }
+        },
+        "macro_study_mse": 0.000374700615380539,
+        "pooled": {
+          "status": "computed",
+          "n_observed": 53,
+          "mse": 0.000374700615380539,
+          "mae": 0.015375587087616606,
+          "r2": 0.9805217183009921
+        }
+      }
+    },
+    "input_with_train_mean_for_missing": {
+      "full_originally_observed": {
+        "by_study": {
+          "PMID41104926_GSE288723": {
+            "status": "computed",
+            "n_observed": 288,
+            "mse": 7.209588987308957e-05,
+            "mae": 0.003444361571584725,
+            "r2": 0.995667579249598,
+            "biological_units": 12
+          }
+        },
+        "macro_study_mse": 7.209588987308957e-05,
+        "pooled": {
+          "status": "computed",
+          "n_observed": 288,
+          "mse": 7.209588987308957e-05,
+          "mae": 0.003444361571584725,
+          "r2": 0.995667579249598
+        }
+      },
+      "additional_hidden": {
+        "by_study": {
+          "PMID41104926_GSE288723": {
+            "status": "computed",
+            "n_observed": 53,
+            "mse": 0.00038656929015729486,
+            "mae": 0.015270697321953639,
+            "r2": 0.9799047420239161,
+            "biological_units": 12
+          }
+        },
+        "macro_study_mse": 0.00038656929015729486,
+        "pooled": {
+          "status": "computed",
+          "n_observed": 53,
+          "mse": 0.00038656929015729486,
+          "mae": 0.015270697321953639,
+          "r2": 0.9799047420239161
+        }
+      }
+    },
+    "training_mean": {
+      "full_originally_observed": {
+        "by_study": {
+          "PMID41104926_GSE288723": {
+            "status": "computed",
+            "n_observed": 288,
+            "mse": 0.00042016756487169574,
+            "mae": 0.01631068940494313,
+            "r2": 0.9747510894185462,
+            "biological_units": 12
+          }
+        },
+        "macro_study_mse": 0.00042016756487169574,
+        "pooled": {
+          "status": "computed",
+          "n_observed": 288,
+          "mse": 0.00042016756487169574,
+          "mae": 0.01631068940494313,
+          "r2": 0.9747510894185462
+        }
+      },
+      "additional_hidden": {
+        "by_study": {
+          "PMID41104926_GSE288723": {
+            "status": "computed",
+            "n_observed": 53,
+            "mse": 0.00038656929015729486,
+            "mae": 0.015270697321953639,
+            "r2": 0.9799047420239161,
+            "biological_units": 12
+          }
+        },
+        "macro_study_mse": 0.00038656929015729486,
+        "pooled": {
+          "status": "computed",
+          "n_observed": 53,
+          "mse": 0.00038656929015729486,
+          "mae": 0.015270697321953639,
+          "r2": 0.9799047420239161
+        }
+      }
+    }
+  },
+  "clock_training": "not_run_no_admitted_molecular_clock_labels",
+  "biotime_waves": "not_run_no_admitted_coordinate",
+  "chronological_curves": {
+    "status": "executed",
+    "coordinate": "elapsed_hours_since_dauer_exit_NOT_biotime",
+    "degree": 1,
+    "distinct_times": 3,
+    "test_metrics_by_history": {
+      "1": {
+        "by_study": {
+          "PMID41104926_GSE288723": {
+            "status": "computed",
+            "n_observed": 72,
+            "mse": 4.3506274551201747e-05,
+            "mae": 0.003988305799604498,
+            "r2": 0.9973907013641836,
+            "biological_units": 3
+          }
+        },
+        "macro_study_mse": 4.3506274551201747e-05,
+        "pooled": {
+          "status": "computed",
+          "n_observed": 72,
+          "mse": 4.3506274551201747e-05,
+          "mae": 0.003988305799604498,
+          "r2": 0.9973907013641836
+        }
+      },
+      "4": {
+        "by_study": {
+          "PMID41104926_GSE288723": {
+            "status": "computed",
+            "n_observed": 72,
+            "mse": 0.00013919404970983137,
+            "mae": 0.008175794964908464,
+            "r2": 0.9917829925152549,
+            "biological_units": 3
+          }
+        },
+        "macro_study_mse": 0.00013919404970983137,
+        "pooled": {
+          "status": "computed",
+          "n_observed": 72,
+          "mse": 0.00013919404970983137,
+          "mae": 0.008175794964908464,
+          "r2": 0.9917829925152549
+        }
+      },
+      "15": {
+        "by_study": {
+          "PMID41104926_GSE288723": {
+            "status": "computed",
+            "n_observed": 72,
+            "mse": 5.2704818528377506e-05,
+            "mae": 0.005578582015235882,
+            "r2": 0.9968487074225314,
+            "biological_units": 3
+          }
+        },
+        "macro_study_mse": 5.2704818528377506e-05,
+        "pooled": {
+          "status": "computed",
+          "n_observed": 72,
+          "mse": 5.2704818528377506e-05,
+          "mae": 0.005578582015235882,
+          "r2": 0.9968487074225314
+        }
+      },
+      "30": {
+        "by_study": {
+          "PMID41104926_GSE288723": {
+            "status": "computed",
+            "n_observed": 72,
+            "mse": 4.777794691909978e-05,
+            "mae": 0.004879497273091391,
+            "r2": 0.9970514667321636,
+            "biological_units": 3
+          }
+        },
+        "macro_study_mse": 4.777794691909978e-05,
+        "pooled": {
+          "status": "computed",
+          "n_observed": 72,
+          "mse": 4.777794691909978e-05,
+          "mae": 0.004879497273091391,
+          "r2": 0.9970514667321636
+        }
+      }
+    },
+    "limitation": "One training pool per time and history; no fine peaks, lags or mechanistic claims"
+  },
+  "real_perturbation_training": "not_run",
+  "functional_depth": "unavailable",
+  "qwen": "not_run",
+  "research_approval": "not_approved",
+  "deployment": "not_run",
+  "internal_killifish_used": false,
+  "world_model_validated": false
+}

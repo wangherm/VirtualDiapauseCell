@@ -1,0 +1,46 @@
+version: '0.4.0'
+execution: single_repository_single_machine
+scientific_modules: [DC01, DC02, DC03, DC04]
+functional_domains: [M01, M02, M03, M04, M05, M06, M07, M08, M09, M10, M11, M12, M13, M14]
+functional_definition: knowledge/modules.json
+scientific_definition: knowledge/core_tasks.json
+components:
+  data:
+    implementation: [contracts.py, observation.py]
+    depends_on: []
+    public_data_connected: true
+    admission: reports/v0.4.0/public_admission.json
+  knowledge:
+    implementation: [knowledge.py, knowledge_train.py]
+    depends_on: []
+    qwen_weights_executed: false
+  state:
+    implementation: [state.py]
+    depends_on: [data]
+    scientific_tasks: [DC01_history_record_only, DC02, DC04_observation_reconstruction]
+    biological_validation: not_run
+  waves:
+    implementation: [waves.py]
+    depends_on: [data]
+    optional_input: frozen_clock
+    scientific_tasks: [DC03, DC04]
+    biological_validation: not_run
+  endpoint_response:
+    implementation: [response.py]
+    depends_on: [data]
+    input_representation: programme_or_frozen_encoder_with_hash
+    biological_validation: not_run
+  timed_transition:
+    implementation: [response.py]
+    depends_on: [data]
+    input_representation: programme_or_frozen_encoder_with_hash
+    biological_validation: not_run
+  functional_readout:
+    implementation: [response.py]
+    depends_on: [data]
+    restriction: measured_continuous_endpoint_and_protocol_only
+    universal_depth_model: false
+  research_release:
+    implementation: [release.py, service.py]
+    initial_served_capabilities: [programme_reconstruction, clock]
+    public_service: false

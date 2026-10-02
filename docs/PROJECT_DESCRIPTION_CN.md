@@ -1,5 +1,6 @@
 # Virtual Diapause Cell：合作讨论说明
 
+> 定义快照说明：本文保留项目设计与数据边界。v0.4.0 的代码、真实执行和能力状态以 `docs/MODULAR_INTEGRATION_CN.md`、`docs/STATUS.md` 及 `reports/v0.4.0/` 为准。
 版本 0.2，2026-10-02。本文是新项目的研究定义，不是实验结果报告。
 
 ## 项目主线与优先级
