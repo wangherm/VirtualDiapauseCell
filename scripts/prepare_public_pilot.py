@@ -5,6 +5,9 @@ import csv
 import gzip
 import io
 import re
+import time
+from http.client import IncompleteRead
+import urllib.error
 import urllib.request
 from collections import defaultdict
 from pathlib import Path
@@ -25,14 +28,45 @@ def fetch_locked(entry, directory, download):
         req = urllib.request.Request(entry['url'], headers={
             'User-Agent': 'VirtualDiapauseCell/0.4', 'Accept': 'application/json'})
         temporary = path.with_suffix(path.suffix + '.partial')
-        with urllib.request.urlopen(req, timeout=60) as response, temporary.open('wb') as output:
-            while block := response.read(1024 * 1024):
-                output.write(block)
-        if sha256(temporary) != entry['sha256']:
-            raise ValueError(f'Source changed: {entry["file"]}; review a new snapshot explicitly')
-        temporary.replace(path)
+        # A fully verified temporary file can survive an interrupted rename.
+        if temporary.exists() and sha256(temporary) == entry['sha256']:
+            temporary.replace(path)
+        else:
+            for attempt in range(1, 6):
+                print(f'DOWNLOAD {entry["file"]}: attempt {attempt}/5, from byte 0', flush=True)
+                try:
+                    # Files are small; restart an incomplete file instead of assuming
+                    # the server honours Range requests or retaining unverified bytes.
+                    received, next_percent = 0, 10
+                    with urllib.request.urlopen(req, timeout=180) as response, temporary.open('wb') as output:
+                        while block := response.read(64 * 1024):
+                            output.write(block)
+                            received += len(block)
+                            if received > entry['bytes']:
+                                raise ValueError(f'Source size changed: {entry["file"]}; review explicitly')
+                            percent = 100 * received // entry['bytes']
+                            if percent >= next_percent:
+                                print(f'{entry["file"]}: {percent}% ({received}/{entry["bytes"]} bytes)', flush=True)
+                                next_percent = (percent // 10 + 1) * 10
+                    if received != entry['bytes']:
+                        raise ConnectionError(f'Incomplete download: {received}/{entry["bytes"]} bytes')
+                except (TimeoutError, ConnectionError, urllib.error.URLError, IncompleteRead) as exc:
+                    if isinstance(exc, urllib.error.HTTPError) and exc.code not in {408, 429, 500, 502, 503, 504}:
+                        raise
+                    print(f'DOWNLOAD FAILED {entry["file"]}: {type(exc).__name__}: {exc}', flush=True)
+                    if attempt == 5:
+                        raise
+                    delay = 5 * attempt
+                    print(f'Retrying in {delay}s; verified other files will be reused.', flush=True)
+                    time.sleep(delay)
+                    continue
+                if sha256(temporary) != entry['sha256']:
+                    raise ValueError(f'Source changed: {entry["file"]}; review a new snapshot explicitly')
+                temporary.replace(path)
+                break
     if sha256(path) != entry['sha256']:
         raise ValueError(f'Checksum mismatch: {path}')
+    print(f'VERIFIED {entry["file"]}', flush=True)
     return path
 
 

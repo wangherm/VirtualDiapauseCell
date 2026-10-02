@@ -20,6 +20,8 @@ Windows 激活命令为 `.venv\Scripts\Activate.ps1`。`--basetemp` 必须选择
 
 每次选择新输出目录。默认不访问网络；加 `--download` 才获取清单中的三个文件。镜像内容如果变化，校验会明确失败；请审核新版本，不能删掉校验绕过。
 
+下载显示文件名、尝试次数和字节进度。网络超时或暂时性服务错误最多尝试 5 次，每次读取超时为 180 秒。已完整校验的缓存复用；小文件的未完成下载从头重试，不假设服务器支持断点续传。SHA256 不匹配不会重试后默许通过。若在数据下载阶段失败，更新代码后可以直接重跑下面的数据准备和试点命令，使用新的输出目录，无需重做已经通过的软件测试。
+
 ```bash
 python scripts/prepare_public_pilot.py --download --out data/prepared/GSE288723_v1
 python -m vdc audit data/prepared/GSE288723_v1
