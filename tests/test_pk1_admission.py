@@ -91,7 +91,14 @@ def test_assigned_summary_must_match_counts(tmp_path):
 
 
 def test_prepare_bulk_selects_admitted_columns_before_numeric_parsing(tmp_path,monkeypatch):
+    import builtins
     from vdc.pk1_data import prepare_killifish
+    original_import=builtins.__import__
+    def no_optional_hdf5(name,*args,**kwargs):
+        if name=='h5py' or name.startswith('h5py.'):
+            raise ModuleNotFoundError('bulk preparation must not require optional h5py')
+        return original_import(name,*args,**kwargs)
+    monkeypatch.setattr(builtins,'__import__',no_optional_hdf5)
     inp=tmp_path/'input';inp.mkdir()
     counts=inp/'bulk_counts.csv'
     counts.write_text('Geneid,a_sorted,b_sorted,reserved_sorted\ng1,1,2,DO_NOT_PARSE\ng2,4,2,DO_NOT_PARSE\ng3,2,4,DO_NOT_PARSE\n')

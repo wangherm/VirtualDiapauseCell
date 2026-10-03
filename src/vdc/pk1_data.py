@@ -226,7 +226,6 @@ def _rows(policy, entries, suffix=''):
 
 
 def prepare_killifish(private_root, out, annotation, feature_ids, modality):
-    import h5py
     root=Path(private_root); out=Path(out);policy,role_map=role_manifest(root/'sample_roles.json')
     if out.exists():raise FileExistsError('Prepared view is immutable; choose a new output directory')
     dropped=[]
@@ -255,6 +254,7 @@ def prepare_killifish(private_root, out, annotation, feature_ids, modality):
                     arrays.append(a['counts'][order])
             if arrays:x=np.concatenate([x,np.array(arrays)]);entries.extend(extra)
     elif modality in {'core','core_celltypes'}:
+        import h5py
         with h5py.File(root/'input/core.h5ad','r') as f:
             names=h5_column(f['obs/sample']);genes=list(h5_column(f['var/_index']))
             selected=np.isin(names,[r['sample_id'] for r in entries])
