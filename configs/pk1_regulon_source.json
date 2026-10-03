@@ -1,0 +1,11 @@
+{
+  "resource": "CelEsT v1.1",
+  "repository_commit": "687fa74dab0bd88640f0538537cac5eb7b62e0b9",
+  "file": "CelEsTv1pt1_GRN.txt",
+  "url": "https://raw.githubusercontent.com/IBMB-MFP/CelEsT-app/687fa74dab0bd88640f0538537cac5eb7b62e0b9/www/CelEsTv1pt1_GRN.txt",
+  "bytes": 14460755,
+  "sha256": "7b0707eda4ea5e3911de84ebd3fa98003a931a97010edb12bc44c3049f3f166e",
+  "mapping": "Exact unique GAF object ID, symbol or synonym; ambiguous aliases excluded",
+  "interpretation": "Unsigned target-expression proxy; network confidence is not effect sign",
+  "independent_mechanistic_validation": false
+}

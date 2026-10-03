@@ -121,6 +121,8 @@ class ResponseRegressor:
 
     def fit(self, dataset: ResponseDataset) -> "ResponseRegressor":
         d = dataset.validate()
+        from .admission import audit_internal_task
+        audit_internal_task(d.rows,d.mode)
         train = np.array([i for i, r in enumerate(d.rows) if r["split"] == "train"])
         if len(train) < 2: raise ValueError("At least two train records required")
         x = self.design(d.current, d.action, d.mode, d.elapsed)

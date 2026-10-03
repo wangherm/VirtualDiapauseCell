@@ -28,7 +28,8 @@ def audit_rows(rows: list[dict], split_policy: str) -> dict:
             raise ValueError("Duplicate observation ID")
         seen_ids.add(row["observation_id"])
         if row["origin"] == "internal" and row["split"] != "locked_test":
-            raise ValueError("This release preserves internal killifish as locked_test only.")
+            from .admission import validate_internal_row
+            validate_internal_row(row)
         if not isinstance(row["link_ids"], list) or any(not isinstance(x, str) or not x for x in row["link_ids"]):
             raise ValueError("link_ids must be globally namespaced nonempty strings")
         # A single shared control / parent / animal / modality link cannot cross splits.

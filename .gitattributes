@@ -4,3 +4,5 @@
 *.json text eol=lf
 *.jsonl text eol=lf
 *.md text eol=lf
+# Preserve source bytes and empty trailing TSV fields in public annotation snapshots.
+knowledge/snapshots/ensembl_2026-10-03/*.tsv -text whitespace=-blank-at-eol

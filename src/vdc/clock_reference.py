@@ -9,6 +9,8 @@ class ExitReference:
     reference_id = 'GSE288723_dauer_0h_to_observed_24h_v1'
 
     def fit(self, expression, genes, rows, max_genes=512):
+        from .admission import audit_internal_task
+        audit_internal_task(rows,'clock')
         x = np.asarray(expression, float)
         if x.shape != (len(rows), len(genes)) or not np.isfinite(x).all():
             raise ValueError('Finite expression and exact gene order required')

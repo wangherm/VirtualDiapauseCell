@@ -92,6 +92,23 @@ def test_frozen_semantic_buffer():
     assert m.semantic_projection.weight.requires_grad
 
 
+def test_explicit_transfer_keeps_local_scaling_and_resume_provenance(tmp_path):
+    from vdc.io import read_json
+    b=observation_fixture();fit_state(b,tmp_path/'parent',5,cfg())
+    local=observation_fixture();local.values+=10
+    local.context['species']='second_synthetic_context'
+    fit_state(local,tmp_path/'child',5,cfg(),pretrained=tmp_path/'parent')
+    m=read_json(tmp_path/'child/run.json');keys=m['transfer']['copied_parameters']
+    assert keys and all(not k.startswith(('clock_head.','semantic_projection.')) for k in keys)
+    assert 'semantics' not in keys
+    assert not np.allclose(StatePredictor.load(tmp_path/'parent').mean,StatePredictor.load(tmp_path/'child').mean)
+    fit_state(local,tmp_path/'child',10,cfg(),resume=True)
+    assert read_json(tmp_path/'child/run.json')['transfer']==m['transfer']
+    changed=observation_fixture();changed.feature_ids=list(reversed(changed.feature_ids))
+    with pytest.raises(ValueError,match='ID order'):
+        fit_state(changed,tmp_path/'bad',5,cfg(),pretrained=tmp_path/'parent')
+
+
 def test_locked_test_cannot_run_accidentally(tmp_path):
     from vdc.evaluate import evaluate_state
     b = observation_fixture(); fit_state(b, tmp_path / "r", 5, cfg())

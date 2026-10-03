@@ -128,9 +128,12 @@ def atomic_checkpoint(path: Path, state: dict) -> None:
 
 def fit_state(bundle: ObservationBundle, run_dir: str | Path, steps: int = 100,
               config: StateConfig | None = None, device: str = "cpu", resume: bool = False,
-              semantics: np.ndarray | None = None, semantic_provenance: dict | None = None) -> dict:
+              semantics: np.ndarray | None = None, semantic_provenance: dict | None = None,
+              pretrained: str | Path | None = None) -> dict:
     bundle.validate()
     b = bundle.subset([i for i, r in enumerate(bundle.rows) if r["split"] in {"train", "validation"}])
+    from .admission import audit_internal_task
+    audit_internal_task(b.rows,'state')
     cfg = config or StateConfig(); cfg.validate()
     if steps < 1:
         raise ValueError("steps must be positive")
@@ -150,6 +153,30 @@ def fit_state(bundle: ObservationBundle, run_dir: str | Path, steps: int = 100,
     if sem is not None and not semantic_provenance:
         raise ValueError("Semantic vectors require object/model/source provenance")
     model = ProgrammeStateModel(len(b.feature_ids), cfg, sem).to(device)
+    transfer = None
+    if pretrained is not None:
+        if resume:
+            raise ValueError('Transfer initialization is only applied to a fresh run')
+        parent = Path(pretrained)
+        pm = read_json(parent / 'run.json')
+        if pm['scope']['feature_ids'] != b.feature_ids:
+            raise ValueError('Transfer requires identical explicit programme ID order')
+        if any(pm['config'][k] != asdict(cfg)[k] for k in ('hidden_dim','latent_dim','layers','heads')):
+            raise ValueError('Transfer architecture differs')
+        ck = torch.load(parent / 'best.pt', map_location='cpu', weights_only=True)
+        own = model.state_dict()
+        copied = []
+        # Local normalization, semantic cache/projection and clock readout are intentionally refitted.
+        for key, value in ck['model'].items():
+            if key == 'semantics' or key.startswith(('clock_head.', 'semantic_projection.')):
+                continue
+            if key not in own or own[key].shape != value.shape:
+                raise ValueError('Incompatible transferred parameter ' + key)
+            own[key] = value; copied.append(key)
+        model.load_state_dict(own)
+        from .io import sha256
+        transfer = {'parent_checkpoint_sha256': sha256(parent/'best.pt'), 'copied_parameters': copied,
+                    'local_scaling_and_clock': True, 'parent_scope': pm['scope']}
     optimiser = torch.optim.AdamW(model.parameters(), lr=cfg.learning_rate)
     sem_hash = object_hash({"shape": list(model.semantics.shape),
                             "values": model.semantics.cpu().tolist(),
@@ -164,9 +191,11 @@ def fit_state(bundle: ObservationBundle, run_dir: str | Path, steps: int = 100,
                "is_synthetic": any(r["origin"] == "synthetic" for r in b.rows),
                "capabilities": ["programme_reconstruction"] + (["clock"] if available_clock else []),
                "science_status": "unvalidated", "uncertainty_status": "not_calibrated"}
+    summary['transfer'] = transfer
     start, best = 0, float("inf")
     if resume:
         old = read_json(run / "run.json")
+        summary['transfer'] = old.get('transfer')
         for k in ("bundle_fingerprint", "config", "semantic_hash"):
             if old[k] != summary[k]:
                 raise ValueError(f"Cannot resume: {k} changed")

@@ -6,6 +6,8 @@ A biotime-centred model of diapause state, gene/TF waves and programme dynamics,
 
 **本轮入口：[AutoDL 一键启动、进度、打包和内部界面](docs/ALL_MODULE_ALPHA_CN.md) · [数据与语料审计](docs/ALPHA_DATA_AUDIT_CN.md)**。只使用开发划分；单模块性能不作为其他分支的运行门槛。
 
+**PK1 接入增量（2026-10-03）：[私有样本准入、数据准备与公共 regulon](docs/PK1_PREPARATION_CN.md)。** 已完成数据接入及独立公共 regulon 运行；完整 PK1 联合训练和服务尚未执行。私有文件、链接与名单不在此仓库。
+
 ## 核心优先级 v0.2
 
 **状态与维护 → Exit biotime → gene/TF waves → programme/regulon waves** 构成研究主线。DC01–DC04 是核心任务，M01–M14 是功能解释层；细胞类型异步、Entry–Exit 逆转/持续变化和组成效应贯穿评价。Clock 与 programme 同时验收，不能只优化一个进程分数。

@@ -27,6 +27,8 @@ class WaveReference:
             context_id: str, feature_kind: str = "programme", degree: int = 1,
             alpha: float = 0.001, split_policy: str = "unit_holdout") -> "WaveReference":
         audit_rows(rows, split_policy)
+        from .admission import audit_internal_task
+        audit_internal_task(rows,'waves')
         t, y, mask = np.asarray(coordinate, float), np.asarray(values, float), np.asarray(mask, bool)
         if y.ndim != 2 or y.shape != mask.shape or len(t) != len(y) or len(rows) != len(t):
             raise ValueError("Invalid curve data shapes")

@@ -10,6 +10,9 @@ data/raw/
 data/processed/
 runs/
 models/
+private/
+*.local.json
+sample_roles.json
 .env
 *.safetensors
 *.pt

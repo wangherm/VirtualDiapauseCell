@@ -1,0 +1,14 @@
+{
+  "source": "https://www.ensembl.org/biomart/martservice",
+  "dataset": "nfurzeri_gene_ensembl",
+  "attributes": [
+    "ensembl_gene_id",
+    "go_id",
+    "external_gene_name"
+  ],
+  "retrieved": "2026-10-03",
+  "sha256": "1df218f870299ad5f238b26f6b9b886659156a395ef3cd9ad8f9024076ae8f45",
+  "private_gene_ids_uploaded": false,
+  "query_scope": "entire public dataset",
+  "mapping": "direct GO annotations; no descendant propagation"
+}
