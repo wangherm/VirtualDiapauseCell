@@ -129,7 +129,7 @@ def atomic_checkpoint(path: Path, state: dict) -> None:
 def fit_state(bundle: ObservationBundle, run_dir: str | Path, steps: int = 100,
               config: StateConfig | None = None, device: str = "cpu", resume: bool = False,
               semantics: np.ndarray | None = None, semantic_provenance: dict | None = None,
-              pretrained: str | Path | None = None) -> dict:
+              pretrained: str | Path | None = None, initial_weights: str | Path | None = None) -> dict:
     bundle.validate()
     b = bundle.subset([i for i, r in enumerate(bundle.rows) if r["split"] in {"train", "validation"}])
     from .admission import audit_internal_task
@@ -153,6 +153,22 @@ def fit_state(bundle: ObservationBundle, run_dir: str | Path, steps: int = 100,
     if sem is not None and not semantic_provenance:
         raise ValueError("Semantic vectors require object/model/source provenance")
     model = ProgrammeStateModel(len(b.feature_ids), cfg, sem).to(device)
+    initial_hash = None
+    if initial_weights is not None:
+        from .io import sha256
+        initial = torch.load(initial_weights, map_location='cpu', weights_only=True)
+        if initial['feature_ids'] != b.feature_ids:
+            raise ValueError('Initial feature ID order differs')
+        own = model.state_dict()
+        if set(initial['model']) != set(own):
+            raise ValueError('Initial architecture/semantic capacity differs')
+        for key, value in initial['model'].items():
+            if key == 'semantics': continue
+            if key not in own or own[key].shape != value.shape:
+                raise ValueError('Initial architecture/semantic capacity differs')
+            own[key] = value
+        model.load_state_dict(own)
+        initial_hash = sha256(initial_weights)
     transfer = None
     if pretrained is not None:
         if resume:
@@ -192,10 +208,14 @@ def fit_state(bundle: ObservationBundle, run_dir: str | Path, steps: int = 100,
                "capabilities": ["programme_reconstruction"] + (["clock"] if available_clock else []),
                "science_status": "unvalidated", "uncertainty_status": "not_calibrated"}
     summary['transfer'] = transfer
+    summary['initial_weights_sha256'] = initial_hash
     start, best = 0, float("inf")
     if resume:
         old = read_json(run / "run.json")
         summary['transfer'] = old.get('transfer')
+        if initial_hash and initial_hash != old.get('initial_weights_sha256'):
+            raise ValueError('Initial weights changed during resume')
+        summary['initial_weights_sha256'] = old.get('initial_weights_sha256')
         for k in ("bundle_fingerprint", "config", "semantic_hash"):
             if old[k] != summary[k]:
                 raise ValueError(f"Cannot resume: {k} changed")

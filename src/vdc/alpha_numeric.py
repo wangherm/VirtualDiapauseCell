@@ -210,9 +210,10 @@ def response_dataset(run, mode, variant='observed'):
     return d
 
 
-def response_task(run, mode, variant='observed'):
+def response_task(run, mode, variant='observed', output=None):
     run = Path(run); suffix = '' if variant == 'observed' else '_'+variant
-    out = run/(mode+suffix); d = response_dataset(run, mode, variant); d.save(out/'dataset')
+    out = Path(output) if output is not None else run/(mode+suffix)
+    d = response_dataset(run, mode, variant); d.save(out/'dataset')
     model = ResponseRegressor(alpha=1).fit(d); model.save(out)
     va = np.array([i for i, r in enumerate(d.rows) if r['split'] == 'validation']); tr = np.array([i for i, r in enumerate(d.rows) if r['split'] == 'train'])
     elapsed = None if d.elapsed is None else d.elapsed[va]

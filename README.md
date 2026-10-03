@@ -6,7 +6,7 @@ A biotime-centred model of diapause state, gene/TF waves and programme dynamics,
 
 **本轮入口：[AutoDL 一键启动、进度、打包和内部界面](docs/ALL_MODULE_ALPHA_CN.md) · [数据与语料审计](docs/ALPHA_DATA_AUDIT_CN.md)**。只使用开发划分；单模块性能不作为其他分支的运行门槛。
 
-**PK1 接入增量（2026-10-03）：[私有样本准入、数据准备与公共 regulon](docs/PK1_PREPARATION_CN.md)。** 已完成数据接入及独立公共 regulon 运行；完整 PK1 联合训练和服务尚未执行。私有文件、链接与名单不在此仓库。
+**PK1（2026-10-03）：[正式数值训练、进度与报告](docs/PK1_TRAINING_CN.md) · [私有样本准入与数据准备](docs/PK1_PREPARATION_CN.md)。** 新入口执行3种子 K0–K5 数值实验，复用实际 Alpha adapter；真实开发数据短预算联调已运行。完整预算需在 AutoDL 执行，扩展 Qwen 训练和 PK1 服务尚未完成。私有文件、链接与名单不在此仓库。
 
 ## 核心优先级 v0.2
 

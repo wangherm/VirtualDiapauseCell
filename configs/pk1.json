@@ -1,0 +1,30 @@
+{
+  "protocol": "PK1_first_numeric_training",
+  "knowledge_mode": "reuse_verified_alpha_adapter",
+  "state_steps": 500,
+  "public_pretraining_steps": 500,
+  "seeds": [42, 43, 44],
+  "modalities": ["bulk", "core", "core_celltypes"],
+  "routes": ["K0", "K1", "K2", "K3", "K4", "K5"],
+  "semantic_dim": 2560,
+  "semantic_shuffle_seed": 20261003,
+  "evaluation_mask_seeds": [11007, 21007, 31007, 41007, 51007],
+  "ridge_training_mask_seed": 1006,
+  "noise_seed": 20261003,
+  "noise_levels": [0.0, 0.1, 0.2, 0.4],
+  "state_config": {
+    "hidden_dim": 32, "latent_dim": 8, "layers": 1, "heads": 2,
+    "learning_rate": 0.001, "clock_weight": 1.0,
+    "corrupt_fraction": 0.2, "additive_noise": 0.05,
+    "seed": 42, "validation_every": 25
+  },
+  "model_revision": "cdbee75f17c01a7cc42f958dc650907174af0554",
+  "cpu_threads": 2,
+  "reserved_queries_enabled": false,
+  "limitations": [
+    "New numerical training; Qwen uses the actual existing Alpha adapter, not newly expanded knowledge training",
+    "No new GSE3169/GSE221467 ingestion in this first executable training round",
+    "No private heldout queries or functional depth fabrication",
+    "Legacy killifish GRN remains reference-only until its fitting units are established"
+  ]
+}
