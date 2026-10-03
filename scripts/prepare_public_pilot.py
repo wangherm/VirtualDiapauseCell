@@ -25,29 +25,43 @@ def fetch_locked(entry, directory, download):
         if not download:
             raise FileNotFoundError(f'{path}: use --download or copy the verified file')
         path.parent.mkdir(parents=True, exist_ok=True)
-        req = urllib.request.Request(entry['url'], headers={
-            'User-Agent': 'VirtualDiapauseCell/0.4', 'Accept': 'application/json'})
         temporary = path.with_suffix(path.suffix + '.partial')
         # A fully verified temporary file can survive an interrupted rename.
         if temporary.exists() and sha256(temporary) == entry['sha256']:
             temporary.replace(path)
         else:
             for attempt in range(1, 6):
-                print(f'DOWNLOAD {entry["file"]}: attempt {attempt}/5, from byte 0', flush=True)
+                offset = temporary.stat().st_size if entry.get('resume', False) and temporary.exists() else 0
+                if offset >= entry['bytes']:
+                    raise ValueError(f'Unverified complete/oversized partial: {temporary}; preserve and move it before retry')
+                headers = {'User-Agent': 'VirtualDiapauseCell/0.4', 'Accept-Encoding': 'identity'}
+                if offset: headers['Range'] = f'bytes={offset}-'
+                req = urllib.request.Request(entry['url'], headers=headers)
+                print(f'DOWNLOAD {entry["file"]}: attempt {attempt}/5, from byte {offset}', flush=True)
                 try:
-                    # Files are small; restart an incomplete file instead of assuming
-                    # the server honours Range requests or retaining unverified bytes.
-                    received, next_percent = 0, 10
-                    with urllib.request.urlopen(req, timeout=180) as response, temporary.open('wb') as output:
-                        while block := response.read(64 * 1024):
-                            output.write(block)
-                            received += len(block)
-                            if received > entry['bytes']:
-                                raise ValueError(f'Source size changed: {entry["file"]}; review explicitly')
-                            percent = 100 * received // entry['bytes']
-                            if percent >= next_percent:
-                                print(f'{entry["file"]}: {percent}% ({received}/{entry["bytes"]} bytes)', flush=True)
-                                next_percent = (percent // 10 + 1) * 10
+                    # Resume is opt-in and requires a matching Content-Range;
+                    # promotion always requires the pinned full-file checksum.
+                    with urllib.request.urlopen(req, timeout=180) as response:
+                        if offset and response.status == 206:
+                            match = re.fullmatch(r'bytes (\d+)-(\d+)/(\d+)', response.headers.get('Content-Range', ''))
+                            if not match or int(match[1]) != offset or int(match[3]) != entry['bytes'] or int(match[2]) != entry['bytes']-1:
+                                raise ValueError('Invalid Content-Range; refusing to append')
+                        elif offset and response.status == 200:
+                            print('Server ignored Range; restarting this file explicitly', flush=True)
+                            offset = 0
+                        elif offset:
+                            raise ValueError('Unexpected resume response status')
+                        received, next_percent = offset, (100*offset//entry['bytes']//10+1)*10
+                        with temporary.open('ab' if offset else 'wb') as output:
+                            while block := response.read(64 * 1024):
+                                received += len(block)
+                                if received > entry['bytes']:
+                                    raise ValueError(f'Source size changed: {entry["file"]}; review explicitly')
+                                output.write(block)
+                                percent = 100 * received // entry['bytes']
+                                if percent >= next_percent:
+                                    print(f'{entry["file"]}: {percent}% ({received}/{entry["bytes"]} bytes)', flush=True)
+                                    next_percent = (percent // 10 + 1) * 10
                     if received != entry['bytes']:
                         raise ConnectionError(f'Incomplete download: {received}/{entry["bytes"]} bytes')
                 except (TimeoutError, ConnectionError, urllib.error.URLError, IncompleteRead) as exc:

@@ -1,0 +1,126 @@
+{
+  "schema": "pk2-public-files-v1",
+  "as_of": "2026-10-03",
+  "studies": {
+    "GSE221467": [
+      {
+        "file": "GSE221467_family.soft.gz",
+        "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE221nnn/GSE221467/soft/GSE221467_family.soft.gz",
+        "bytes": 3483,
+        "sha256": "4165c733b9caf2b9b44cb275891d29f43c22a39d400c16b73f7a396840d8e40f",
+        "resume": true,
+        "kind": "family_soft"
+      },
+      {
+        "file": "GSE221467_RAW.tar",
+        "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE221nnn/GSE221467/suppl/GSE221467_RAW.tar",
+        "bytes": 16148480,
+        "sha256": "e7a67bc64042e1b2895dfe47a10ab33e7f5d4e227d5c1d60f0a1e0ae07d7c27c",
+        "resume": true,
+        "kind": "processed_data"
+      }
+    ],
+    "GSE202844": [
+      {
+        "file": "GSE202844_family.soft.gz",
+        "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE202nnn/GSE202844/soft/GSE202844_family.soft.gz",
+        "bytes": 3634,
+        "sha256": "69edc7e9da900766cba43da2a0f0cb3855fff91fedf6290ac9ad89511d7f8a8b",
+        "resume": true,
+        "kind": "family_soft"
+      },
+      {
+        "file": "GSE202844_M3KO_RNAseq_logcounts_cell_number_normalized.txt.gz",
+        "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE202nnn/GSE202844/suppl/GSE202844_M3KO_RNAseq_logcounts_cell_number_normalized.txt.gz",
+        "bytes": 940553,
+        "sha256": "a401a7358204139ae6f9097fd102c45bd12c3fbfaec5b72802d44b49cd774dd5",
+        "resume": true,
+        "kind": "processed_data"
+      },
+      {
+        "file": "GSE202844_M3KO_RNAseq_raw_counts_with_ERCCs.txt.gz",
+        "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE202nnn/GSE202844/suppl/GSE202844_M3KO_RNAseq_raw_counts_with_ERCCs.txt.gz",
+        "bytes": 446900,
+        "sha256": "763a4b216be31a3e28d3b710e578a5d4aae14c7527506ad8c5d9e94d27b2cd5e",
+        "resume": true,
+        "kind": "processed_data"
+      }
+    ],
+    "GSE303716": [
+      {
+        "file": "GSE303716_family.soft.gz",
+        "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE303nnn/GSE303716/soft/GSE303716_family.soft.gz",
+        "bytes": 4179,
+        "sha256": "2115fdfa0399579f8e11ef4ce3418e2cca8d4d68d831df34120754eb9d48b30e",
+        "resume": true,
+        "kind": "family_soft"
+      },
+      {
+        "file": "GSE303716_RNA-Seq_Smad2_Ctrl_processed_datafile.txt.gz",
+        "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE303nnn/GSE303716/suppl/GSE303716_RNA-Seq_Smad2_Ctrl_processed_datafile.txt.gz",
+        "bytes": 761255,
+        "sha256": "cff89c8dabbe02e2d2090c33c4695ddb6041f8fc7744f5722ed376e17bf2cda6",
+        "resume": true,
+        "kind": "processed_data"
+      },
+      {
+        "file": "GSE303716_RNA-Seq_Smad2_Paused_processed_datafile.txt.gz",
+        "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE303nnn/GSE303716/suppl/GSE303716_RNA-Seq_Smad2_Paused_processed_datafile.txt.gz",
+        "bytes": 768323,
+        "sha256": "92452c32b67716914fb81fa5457c0d669501127a7a2f81369277b454b8641fb1",
+        "resume": true,
+        "kind": "processed_data"
+      }
+    ],
+    "GSE124109": [
+      {
+        "file": "GSE124109_family.soft.gz",
+        "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE124nnn/GSE124109/soft/GSE124109_family.soft.gz",
+        "bytes": 3473,
+        "sha256": "d2f4feca901b21f5a5e77e7ace6194ba7d799ceea2b65904a6b78a86d5349e77",
+        "resume": true,
+        "kind": "family_soft"
+      },
+      {
+        "file": "GSE124109_genes.processed.fpkm_table.txt.gz",
+        "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE124nnn/GSE124109/suppl/GSE124109_genes.processed.fpkm_table.txt.gz",
+        "bytes": 1233615,
+        "sha256": "e07c984115f583eda9e0281a2c32066d1f672020d238fdbd322f39e6effc6b07",
+        "resume": true,
+        "kind": "processed_data"
+      }
+    ],
+    "GSE104616": [
+      {
+        "file": "GSE104616_family.soft.gz",
+        "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE104nnn/GSE104616/soft/GSE104616_family.soft.gz",
+        "bytes": 11990274,
+        "sha256": "cdcc17ddb453695594ebcfb55c75a6545ae5f96ec7131945dacb6d76a9c9f960",
+        "resume": true,
+        "kind": "family_soft"
+      },
+      {
+        "file": "GSE104616_NHDF_1_matrix_data.txt.gz",
+        "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE104nnn/GSE104616/suppl/GSE104616_NHDF_1_matrix_data.txt.gz",
+        "bytes": 3197924,
+        "sha256": "38ff9a396a340ad9055fa70b4fe491c2434d83dc73f4c8650098f9ecaf71202a",
+        "resume": true,
+        "kind": "processed_data"
+      }
+    ],
+    "GSE3169": [
+      {
+        "file": "GSE3169_family.soft.gz",
+        "url": "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE3nnn/GSE3169/soft/GSE3169_family.soft.gz",
+        "bytes": 154707035,
+        "sha256": "6e9c1240306c9ffac595582e6777bc64b7c78d39c4670d15a11fdb94926f73e2",
+        "resume": true,
+        "kind": "family_soft"
+      }
+    ]
+  },
+  "optional_not_in_default": [
+    "GSE223093"
+  ],
+  "policy": "acquisition and format audit only; no automatic training admission or private heldout access"
+}

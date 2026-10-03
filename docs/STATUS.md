@@ -1,4 +1,8 @@
-# 实施状态：All-Module Alpha
+# 实施状态
+
+2026-10-03 PK2 更新：[抓取与部署](PK2_SERVER_SETUP_CN.md)。已实现并实际解析六个新增公共研究，来源文件逐一锁定 SHA256；已实现冻结 PK1 开发权重的 loopback 服务与独立进程重启验证。AutoDL 执行由用户启动。PK2 多研究训练、R0–R6 和新 Qwen 扩训尚未执行。以下保留历史轮次的当时状态，不代表现在所有能力仍为 not_run。
+
+## 历史：All-Module Alpha
 
 2026-10-02 新进展：全模块任务调度、真实数值分支、Qwen 一轮 SFT 与语义对照入口、内部 experimental API/界面已经接入同一代码路径。数值分支已在本地 CPU 实际执行，GPU 分支等待用户在 AutoDL 运行；不可将本地总体写成全部完成。
 

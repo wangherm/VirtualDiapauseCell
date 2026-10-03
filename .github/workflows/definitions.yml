@@ -13,6 +13,7 @@ jobs:
       - run: python scripts/validate_catalogue.py
       - run: python -m unittest discover -s tests -p test_catalogue.py -v
       - run: bash -n scripts/archive_factorbridge.sh
+      - run: bash -n scripts/launch_pk2_acquire.sh && bash -n scripts/launch_pk2_service.sh
   software:
     runs-on: ubuntu-latest
     steps:

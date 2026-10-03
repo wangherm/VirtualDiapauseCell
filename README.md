@@ -6,7 +6,9 @@ A biotime-centred model of diapause state, gene/TF waves and programme dynamics,
 
 **本轮入口：[AutoDL 一键启动、进度、打包和内部界面](docs/ALL_MODULE_ALPHA_CN.md) · [数据与语料审计](docs/ALPHA_DATA_AUDIT_CN.md)**。只使用开发划分；单模块性能不作为其他分支的运行门槛。
 
-**PK1（2026-10-03）：[正式数值训练、进度与报告](docs/PK1_TRAINING_CN.md) · [私有样本准入与数据准备](docs/PK1_PREPARATION_CN.md)。** 新入口执行3种子 K0–K5 数值实验，复用实际 Alpha adapter；真实开发数据短预算联调已运行。完整预算需在 AutoDL 执行，扩展 Qwen 训练和 PK1 服务尚未完成。私有文件、链接与名单不在此仓库。
+**当前 PK2 入口：[公共数据抓取、开发服务部署与进度](docs/PK2_SERVER_SETUP_CN.md)。** 六个新增研究使用实际文件校验值；已完成的 PK1 开发模型可冻结后在 loopback 服务调用。这次入口不执行 PK2 扩训队列或新 Qwen 训练，下载也不自动代表训练准入。私有文件、链接与名单不在此仓库。
+
+**PK1：[正式数值训练、进度与报告](docs/PK1_TRAINING_CN.md) · [私有样本准入与数据准备](docs/PK1_PREPARATION_CN.md)。** 3种子 K0–K5 数值实验，复用实际 Alpha adapter；执行状态和结果以实际 run 工件为准。
 
 ## 核心优先级 v0.2
 
@@ -36,7 +38,7 @@ A biotime-centred model of diapause state, gene/TF waves and programme dynamics,
 2. 状态与动态：分别登记 biotime 坐标，恢复 gene/TF 与 programme waves 的形状和幅度，并保留细胞类型异步、参考偏离及独立功能终点。
 3. 转移：给定当前状态、时间间隔、条件与历史，预测后续分布；需要真实时间或干预数据。
 
-知识范围可广，首个数值任务须窄：优先审计公开胚胎 diapause / reactivation 数据。昆虫 diapause、dauer、细胞 quiescence、植物种子及微生物 dormancy 分层记录，不共用无条件 clock。内部 killifish 继续锁定；论文结果、K13 和 M4 等派生对象也不自动导入训练。
+知识范围可广，数值任务按来源和背景分别审计。昆虫 diapause、dauer、细胞 quiescence、植物种子及微生物 dormancy 分层记录，不共用无条件 clock。内部 killifish 仅已批准的开发样本可用于拟合，其余预留角色保持锁定；论文结果、K13 和 M4 等派生对象不自动导入训练。
 
 ## 当前可以运行
 
@@ -72,4 +74,4 @@ python scripts/fetch_go_anchors.py --output-dir outputs/go_refresh
 
 ## 项目边界
 
-不复制旧训练集、adapter、PCA 弱标签或 ageing 主导的混合训练分布。不建多 agent、RL 或 14 个独立 LLM。当前仅接入已审核的一份公共数据；不启动全目录下载、Qwen 长训练或全量联合训练。公共仓库不保存内部数据、整篇受限论文或服务器日志。
+不复制 FactorBridge 的旧训练集、adapter、PCA 弱标签或 ageing 主导的混合训练分布。不建多 agent、RL 或 14 个独立 LLM。数据按显式来源队列下载，按任务单独准入；不将 accession、下载记录或规划任务计为已完成训练。公共仓库不保存内部数据、整篇受限论文或服务器日志。
