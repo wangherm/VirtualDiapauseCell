@@ -173,8 +173,9 @@ def waves_task(run):
     write_json(out/'result.json', reports)
 
 
-def response_dataset(run, mode, variant='observed'):
-    run = Path(run); b = ObservationBundle.load(run/'data/ard' if mode == 'endpoint' else run/'clock_reference/bundle')
+def response_dataset(run, mode, variant='observed', observed_bundle=None):
+    if observed_bundle is not None and variant!='observed':raise ValueError('Raw observed override cannot use a fitted state')
+    run = Path(run); b = ObservationBundle.load(observed_bundle if observed_bundle is not None else run/'data/ard' if mode == 'endpoint' else run/'clock_reference/bundle')
     current_values = b.values
     representation = object_hash(b.scope)
     if variant != 'observed':

@@ -28,6 +28,7 @@ class StateConfig:
     additive_noise: float = 0.05
     seed: int = 42
     validation_every: int = 10
+    encoder_kind: str = 'programme_transformer'
 
     def validate(self) -> None:
         if self.hidden_dim <= 0 or self.heads <= 0 or self.hidden_dim % self.heads:
@@ -38,10 +39,12 @@ class StateConfig:
             raise ValueError("Invalid corruption parameters")
         if self.learning_rate <= 0 or self.clock_weight < 0:
             raise ValueError("Invalid learning rate / task weight")
+        if self.encoder_kind not in {'programme_transformer','gene_mlp'}:
+            raise ValueError('Unknown numerical encoder')
 
 
 class ProgrammeStateModel(nn.Module):
-    def __init__(self, n_features: int, config: StateConfig, semantics: torch.Tensor | None = None):
+    def __init__(self, n_features: int, config: StateConfig, semantics: torch.Tensor | None = None, n_contexts: int = 1):
         super().__init__()
         config.validate()
         self.config = config
@@ -61,8 +64,13 @@ class ProgrammeStateModel(nn.Module):
         self.query = nn.Linear(config.latent_dim, d)
         self.programme_head = nn.Sequential(nn.Linear(2 * d, d), nn.GELU(), nn.Linear(d, 1))
         self.clock_head = nn.Linear(config.latent_dim, 1)
+        if config.encoder_kind=='gene_mlp':
+            self.gene_encoder=nn.Sequential(nn.Linear(3*n_features,d),nn.GELU(),nn.Linear(d,config.latent_dim))
+        if n_contexts>1:
+            self.context_readout=nn.Embedding(n_contexts,2*n_features)
+            nn.init.zeros_(self.context_readout.weight)
 
-    def forward(self, values: torch.Tensor, mask: torch.Tensor, coverage: torch.Tensor) -> dict:
+    def forward(self, values: torch.Tensor, mask: torch.Tensor, coverage: torch.Tensor, context_index=None) -> dict:
         if values.ndim != 2 or values.shape != mask.shape or coverage.shape != values.shape:
             raise ValueError("Invalid input shapes")
         if values.shape[1] != self.feature_id.num_embeddings or not mask.any(1).all():
@@ -70,13 +78,20 @@ class ProgrammeStateModel(nn.Module):
         object_vectors = self.feature_id.weight + self.semantic_projection(self.semantics)
         numeric = torch.stack((torch.where(mask, values, 0), mask.float(),
                                torch.where(mask, coverage, 0)), dim=-1)
-        token = self.numeric(numeric) + object_vectors[None]
-        encoded = self.encoder(token, src_key_padding_mask=~mask)
-        pooled = (encoded * mask[..., None]).sum(1) / mask.sum(1, keepdim=True)
-        z = self.to_latent(pooled)
+        if self.config.encoder_kind=='gene_mlp':
+            z=self.gene_encoder(numeric.flatten(1))
+        else:
+            token = self.numeric(numeric) + object_vectors[None]
+            encoded = self.encoder(token, src_key_padding_mask=~mask)
+            pooled = (encoded * mask[..., None]).sum(1) / mask.sum(1, keepdim=True)
+            z = self.to_latent(pooled)
         query = self.query(z)[:, None, :].expand(-1, values.shape[1], -1)
         objects = object_vectors[None].expand(values.shape[0], -1, -1)
         reconstructed = self.programme_head(torch.cat((query, objects), dim=-1)).squeeze(-1)
+        if hasattr(self,'context_readout'):
+            if context_index is None:raise ValueError('Multi-study model requires explicit context')
+            slope,offset=self.context_readout(context_index).chunk(2,dim=-1)
+            reconstructed=reconstructed*(1+slope)+offset
         return {"latent": z, "programme": reconstructed, "clock": self.clock_head(z).squeeze(-1)}
 
 
@@ -129,7 +144,8 @@ def atomic_checkpoint(path: Path, state: dict) -> None:
 def fit_state(bundle: ObservationBundle, run_dir: str | Path, steps: int = 100,
               config: StateConfig | None = None, device: str = "cpu", resume: bool = False,
               semantics: np.ndarray | None = None, semantic_provenance: dict | None = None,
-              pretrained: str | Path | None = None, initial_weights: str | Path | None = None) -> dict:
+              pretrained: str | Path | None = None, initial_weights: str | Path | None = None,
+              transfer_mode: str = 'shared_model', checkpoint_steps=(), multi_context: bool = False) -> dict:
     bundle.validate()
     b = bundle.subset([i for i, r in enumerate(bundle.rows) if r["split"] in {"train", "validation"}])
     from .admission import audit_internal_task
@@ -147,12 +163,25 @@ def fit_state(bundle: ObservationBundle, run_dir: str | Path, steps: int = 100,
         raise FileExistsError("Use a new run directory or --resume; results are immutable by default")
     run.mkdir(parents=True, exist_ok=True)
     tr_weights = study_unit_weights([b.rows[i] for i in train])
-    mu, scale = train_scaling(b.values[train], b.mask[train], tr_weights)
+    contexts=sorted({r['study_family'] for r in b.rows}) if multi_context else []
+    ci=np.array([contexts.index(r['study_family']) for r in b.rows]) if contexts else None
+    if contexts:
+        scalers=[]
+        for i in range(len(contexts)):
+            idx=train[ci[train]==i]
+            if not len(idx):raise ValueError('Context without training observations')
+            # Programme absent in this study remains masked; other studies may support it.
+            available=b.mask[idx].any(0);mean=np.zeros(len(b.feature_ids),np.float32);std=np.ones_like(mean)
+            if available.any():mean[available],std[available]=train_scaling(b.values[idx][:,available],b.mask[idx][:,available],study_unit_weights([b.rows[j] for j in idx]))
+            scalers.append((mean,std))
+        mu,scale=map(np.stack,zip(*scalers));row_mu,row_scale=mu[ci],scale[ci]
+    else:
+        mu, scale = train_scaling(b.values[train], b.mask[train], tr_weights);row_mu,row_scale=mu,scale
     torch.manual_seed(cfg.seed)
     sem = None if semantics is None else torch.as_tensor(semantics, dtype=torch.float32)
     if sem is not None and not semantic_provenance:
         raise ValueError("Semantic vectors require object/model/source provenance")
-    model = ProgrammeStateModel(len(b.feature_ids), cfg, sem).to(device)
+    model = ProgrammeStateModel(len(b.feature_ids), cfg, sem,max(1,len(contexts))).to(device)
     initial_hash = None
     if initial_weights is not None:
         from .io import sha256
@@ -160,7 +189,7 @@ def fit_state(bundle: ObservationBundle, run_dir: str | Path, steps: int = 100,
         if initial['feature_ids'] != b.feature_ids:
             raise ValueError('Initial feature ID order differs')
         own = model.state_dict()
-        if set(initial['model']) != set(own):
+        if set(initial['model']) != {k for k in own if not k.startswith('context_readout.')}:
             raise ValueError('Initial architecture/semantic capacity differs')
         for key, value in initial['model'].items():
             if key == 'semantics': continue
@@ -171,6 +200,7 @@ def fit_state(bundle: ObservationBundle, run_dir: str | Path, steps: int = 100,
         initial_hash = sha256(initial_weights)
     transfer = None
     if pretrained is not None:
+        if transfer_mode not in {'shared_model','encoder_only'}:raise ValueError('Unknown transfer mode')
         if resume:
             raise ValueError('Transfer initialization is only applied to a fresh run')
         parent = Path(pretrained)
@@ -184,15 +214,16 @@ def fit_state(bundle: ObservationBundle, run_dir: str | Path, steps: int = 100,
         copied = []
         # Local normalization, semantic cache/projection and clock readout are intentionally refitted.
         for key, value in ck['model'].items():
-            if key == 'semantics' or key.startswith(('clock_head.', 'semantic_projection.')):
+            if key == 'semantics' or key.startswith(('clock_head.', 'semantic_projection.','context_readout.')):
                 continue
+            if transfer_mode=='encoder_only' and not key.startswith(('numeric.','feature_id.','encoder.','to_latent.','gene_encoder.')):continue
             if key not in own or own[key].shape != value.shape:
                 raise ValueError('Incompatible transferred parameter ' + key)
             own[key] = value; copied.append(key)
         model.load_state_dict(own)
         from .io import sha256
         transfer = {'parent_checkpoint_sha256': sha256(parent/'best.pt'), 'copied_parameters': copied,
-                    'local_scaling_and_clock': True, 'parent_scope': pm['scope']}
+                    'local_scaling_and_clock': True, 'parent_scope': pm['scope'],'mode':transfer_mode}
     optimiser = torch.optim.AdamW(model.parameters(), lr=cfg.learning_rate)
     sem_hash = object_hash({"shape": list(model.semantics.shape),
                             "values": model.semantics.cpu().tolist(),
@@ -209,6 +240,7 @@ def fit_state(bundle: ObservationBundle, run_dir: str | Path, steps: int = 100,
                "science_status": "unvalidated", "uncertainty_status": "not_calibrated"}
     summary['transfer'] = transfer
     summary['initial_weights_sha256'] = initial_hash
+    if contexts:summary['contexts']=contexts
     start, best = 0, float("inf")
     if resume:
         old = read_json(run / "run.json")
@@ -219,6 +251,7 @@ def fit_state(bundle: ObservationBundle, run_dir: str | Path, steps: int = 100,
         for k in ("bundle_fingerprint", "config", "semantic_hash"):
             if old[k] != summary[k]:
                 raise ValueError(f"Cannot resume: {k} changed")
+        if old.get('contexts',[])!=summary.get('contexts',[]):raise ValueError('Cannot resume: study contexts changed')
         ck = torch.load(run / "last.pt", map_location=device, weights_only=True)
         model.load_state_dict(ck["model"]); optimiser.load_state_dict(ck["optimiser"])
         start, best = ck["step"], ck["best_score"]
@@ -226,7 +259,8 @@ def fit_state(bundle: ObservationBundle, run_dir: str | Path, steps: int = 100,
             raise ValueError("Requested total steps precede the saved checkpoint")
     write_json(run / "run.json", summary)
     tensor = lambda a, dtype=torch.float32: torch.as_tensor(a, dtype=dtype, device=device)
-    x = tensor(np.where(b.mask, (b.values - mu) / scale, 0))
+    x = tensor(np.where(b.mask, (b.values - row_mu) / row_scale, 0))
+    ctx=tensor(ci,torch.long) if contexts else None
     mask, cov = tensor(b.mask, torch.bool), tensor(b.coverage)
     targets, clock_mask = tensor(b.clock), tensor(b.clock_mask, torch.bool)
     weights = tensor(tr_weights)
@@ -240,7 +274,7 @@ def fit_state(bundle: ObservationBundle, run_dir: str | Path, steps: int = 100,
         model.train()
         xx, mm, cc, _ = corrupt(x[train], mask[train], cov[train], cfg.corrupt_fraction,
                                 cfg.additive_noise, cfg.seed + step)
-        out = model(xx, mm, cc)
+        out = model(xx, mm, cc,None if ctx is None else ctx[train])
         recon = masked_weighted_mse(out["programme"], x[train], mask[train], weights)
         closs = masked_weighted_mse(out["clock"], targets[train], clock_mask[train], weights)
         loss = recon + (cfg.clock_weight * closs if available_clock else 0)
@@ -248,10 +282,10 @@ def fit_state(bundle: ObservationBundle, run_dir: str | Path, steps: int = 100,
             raise RuntimeError("Non-finite loss; run stopped without replacing prior valid checkpoint")
         optimiser.zero_grad(); loss.backward()
         nn.utils.clip_grad_norm_(model.parameters(), 1.0); optimiser.step()
-        if (step + 1) % cfg.validation_every == 0 or step + 1 == steps:
+        if (step + 1) % cfg.validation_every == 0 or step + 1 == steps or step+1 in checkpoint_steps:
             model.eval()
             with torch.no_grad():
-                vo = model(vx, vm, vc)
+                vo = model(vx, vm, vc,None if ctx is None else ctx[valid])
                 vr = masked_weighted_mse(vo["programme"], x[valid], hidden, vt)
                 vclock = masked_weighted_mse(vo["clock"], targets[valid], clock_mask[valid], vt)
                 score = float(vr + (cfg.clock_weight * vclock if available_clock else 0))
@@ -270,17 +304,19 @@ def fit_state(bundle: ObservationBundle, run_dir: str | Path, steps: int = 100,
             atomic_checkpoint(run / "last.pt", ck)
             if improved:
                 atomic_checkpoint(run / "best.pt", ck)
+            if step+1 in checkpoint_steps:atomic_checkpoint(run/f'step_{step+1}.pt',ck)
     predictor = StatePredictor.load(run, device=device)
     # This validation view hides only additional measurements, never biological replicates.
     with torch.no_grad():
-        raw = predictor.model(vx, vm, vc)
-    pred = raw["programme"].cpu().numpy() * scale + mu
+        raw = predictor.model(vx, vm, vc,None if ctx is None else ctx[valid])
+    vm_scale,vm_mean=(row_scale[valid],row_mu[valid]) if contexts else (scale,mu)
+    pred = raw["programme"].cpu().numpy() * vm_scale + vm_mean
     report = {
         "run_kind": "synthetic_software_test" if summary["is_synthetic"] else "research_candidate",
         "scientific_success": False, "test_split_evaluated": False,
         "validation_hidden_reconstruction": grouped_metrics(pred, b.values[valid], hidden.cpu().numpy(),
                                                              [b.rows[i] for i in valid]),
-        "training_mean_hidden_baseline": grouped_metrics(np.broadcast_to(mu, pred.shape), b.values[valid],
+        "training_mean_hidden_baseline": grouped_metrics(np.broadcast_to(vm_mean, pred.shape), b.values[valid],
                                                           hidden.cpu().numpy(), [b.rows[i] for i in valid]),
         "clock": grouped_metrics(raw["clock"].cpu().numpy(), b.clock[valid], b.clock_mask[valid],
                                   [b.rows[i] for i in valid]) if available_clock else {"status": "unavailable"},
@@ -306,7 +342,7 @@ class StatePredictor:
         run = Path(run_dir); m = read_json(run / "run.json")
         ck = torch.load(run / "best.pt", map_location=device, weights_only=True)
         cfg = StateConfig(**m["config"])
-        model = ProgrammeStateModel(len(m["scope"]["feature_ids"]), cfg, ck["model"]["semantics"]).to(device)
+        model = ProgrammeStateModel(len(m["scope"]["feature_ids"]), cfg, ck["model"]["semantics"],max(1,len(m.get('contexts',[])))).to(device)
         model.load_state_dict(ck["model"])
         return cls(model, ck["mean"].cpu().numpy(), ck["scale"].cpu().numpy(), m, device)
 
@@ -314,12 +350,16 @@ class StatePredictor:
         b = bundle.validate()
         if b.scope != self.manifest["scope"]:
             raise ValueError("Context/feature/preprocessing/clock reference mismatch; explicit calibration is required")
-        x = np.where(b.mask, (b.values - self.mean) / self.scale, 0)
+        contexts=self.manifest.get('contexts',[])
+        ci=np.array([contexts.index(r['study_family']) for r in b.rows]) if contexts else None
+        mean,scale=(self.mean[ci],self.scale[ci]) if contexts else (self.mean,self.scale)
+        x = np.where(b.mask, (b.values - mean) / scale, 0)
         with torch.no_grad():
             out = self.model(torch.as_tensor(x, dtype=torch.float32, device=self.device),
                              torch.as_tensor(b.mask, device=self.device),
-                             torch.as_tensor(b.coverage, dtype=torch.float32, device=self.device))
-        return {"programme": out["programme"].cpu().numpy() * self.scale + self.mean,
+                             torch.as_tensor(b.coverage, dtype=torch.float32, device=self.device),
+                             None if ci is None else torch.as_tensor(ci,dtype=torch.long,device=self.device))
+        return {"programme": out["programme"].cpu().numpy() * scale + mean,
                 "latent": out["latent"].cpu().numpy(),
                 "clock": out["clock"].cpu().numpy() if "clock" in self.manifest["capabilities"] else None,
                 "measured_mask": b.mask.copy(), "uncertainty_status": "not_calibrated",

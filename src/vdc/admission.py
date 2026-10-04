@@ -62,7 +62,23 @@ def validate_internal_row(row, purpose='development'):
     if row.get('admission_hash') != policy['approval']['content_hash']:
         raise ValueError('Internal bundle and role policy differ')
     if purpose == 'development':
-        if record['role'] != 'development' or row['split'] != record['split']:
+        expected=record['split']
+        if row.get('development_fold_hash'):
+            fold_path=os.environ.get('VDC_DEVELOPMENT_FOLD')
+            if not fold_path:raise ValueError('Explicit development fold manifest required')
+            fold=read_json(fold_path)
+            if object_hash({k:v for k,v in fold.items() if k!='hash'})!=row['development_fold_hash'] or fold['hash']!=row['development_fold_hash']:
+                raise ValueError('Development fold signature mismatch')
+            if fold['parent_approval_hash']!=policy['approval']['content_hash'] or fold['protocol']!='PK2_development_resampling':
+                raise ValueError('Development fold has wrong parent/protocol')
+            links={}
+            for sample_key,split in fold['assignments'].items():
+                source=samples.get(sample_key,{})
+                if source.get('role')!='development' or split not in {'train','validation'}:raise ValueError('Fold attempted to unlock reserved material')
+                for link in source['link_ids']+[sample_key,source['biological_unit']]+([source['cohort_id']] if source.get('cohort_id') else []):
+                    if links.setdefault(link,split)!=split:raise ValueError('Fold crosses linked material/cohort')
+            expected=fold['assignments'].get(key)
+        if record['role'] != 'development' or row['split'] != expected:
             raise ValueError('Reserved/query sample cannot enter development')
     elif purpose not in record.get('allowed_tasks', []):
         raise ValueError('Task is not admitted for this internal sample')

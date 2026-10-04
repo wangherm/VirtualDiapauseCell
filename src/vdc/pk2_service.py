@@ -104,6 +104,14 @@ def create_app(snapshot):
     def envelope(result):return jsonable({'mode':m['profile'],'snapshot_id':m['snapshot_id'],'science_status':'unvalidated','result':result})
     @app.get('/health')
     def health():return {'status':'ready','snapshot_id':m['snapshot_id'],'mode':m['profile']}
+    @app.get('/analyses')
+    def analyses():return envelope(m.get('analyses',{}))
+    @app.get('/analysis')
+    def analysis(module:str):
+        entry=m.get('analyses',{}).get(module)
+        if not entry:raise HTTPException(422,'Unknown analysis')
+        report=read_json(root/entry['report']) if entry.get('report') else None
+        return envelope({'identity':entry,'saved_evaluation':report,'new_prediction_executed':False})
     @app.get('/capabilities')
     def capabilities():return {k:m[k] for k in ['profile','snapshot_id','models','views','public_models','query_policy','qwen_live_generation']}
     @app.get('/samples')

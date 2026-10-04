@@ -1,0 +1,15 @@
+{
+  "protocol": "PK2_full_development_queue",
+  "cpu_workers": 2,
+  "cpu_threads": 2,
+  "semantic_dim": 2560,
+  "semantic_shuffle_seed": 20261004,
+  "mask_repetitions": 10,
+  "reserved_queries_enabled": false,
+  "model_revision": "cdbee75f17c01a7cc42f958dc650907174af0554",
+  "qwen_quantized": false,
+  "state_config": {"hidden_dim":32,"latent_dim":8,"layers":1,"heads":2,"learning_rate":0.001,"clock_weight":1.0,"corrupt_fraction":0.2,"additive_noise":0.05,"seed":42,"validation_every":25},
+  "source_sets": {"P-W":["GSE288723"],"P-M":["GSE202844","GSE221467"],"P-R":["GSE202844","GSE221467","GSE288723","GSE291659","GSE124109"],"P-X":["GSE202844","GSE221467","GSE288723","GSE291659","GSE124109","GSE3169"]},
+  "knowledge_scope": "Expanded source-audited corpus; actual size and families measured, no fabricated quota",
+  "completion_rule": "Drain all ready enabled jobs; report failures/data/resource gaps separately; no full-science-success claim"
+}

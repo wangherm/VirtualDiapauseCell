@@ -1,0 +1,343 @@
+{
+  "sources": [
+    {
+      "paper_id": "PMC12672694",
+      "doi": "10.1038/s41598-025-27154-y",
+      "source_ref": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12672694/",
+      "study_family": "LIT_Eurygaster_integriceps",
+      "split": "train",
+      "source_locator": "Abstract",
+      "abstract_sha256": "37eca1eac0bdc054ecdbb90d4e84e5dc605e15fe65241a84a8cf7fa9edf0cc00",
+      "retrieved": "2026-10-04",
+      "numerical_label_source": false
+    },
+    {
+      "paper_id": "PMC12192293",
+      "doi": "10.1371/journal.pone.0316065",
+      "source_ref": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12192293/",
+      "study_family": "LIT_Lymantria_dispar",
+      "split": "train",
+      "source_locator": "Abstract",
+      "abstract_sha256": "14a57c748b3b2342b97ca437e32818ee78c8443229f3694fc00cea0e6ca65031",
+      "retrieved": "2026-10-04",
+      "numerical_label_source": false
+    },
+    {
+      "paper_id": "PMC12594423",
+      "doi": "10.1371/journal.pgen.1011933",
+      "source_ref": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12594423/",
+      "study_family": "LIT_Bombyx_mori",
+      "split": "train",
+      "source_locator": "Abstract",
+      "abstract_sha256": "c1109d722ff783bdadfa167be75c3141b147bd77ca776b667e8ef5bf93776673",
+      "retrieved": "2026-10-04",
+      "numerical_label_source": false
+    },
+    {
+      "paper_id": "PMC11881891",
+      "doi": "10.1126/sciadv.adt1763",
+      "source_ref": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11881891/",
+      "study_family": "LIT_Mus_musculus",
+      "split": "train",
+      "source_locator": "Abstract",
+      "abstract_sha256": "7f402e20737fbfc2fc346149d01f99e349dea4bb3b06538835ba816edaff2f91",
+      "retrieved": "2026-10-04",
+      "numerical_label_source": false
+    },
+    {
+      "paper_id": "PMC12492533",
+      "doi": "10.1186/s12915-025-02408-3",
+      "source_ref": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12492533/",
+      "study_family": "LIT_Leptinotarsa_decemlineata",
+      "split": "train",
+      "source_locator": "Abstract",
+      "abstract_sha256": "9d5beb446a3e51e17c01f8f826d5716085026552218a44671e00f3bdf4eaac1f",
+      "retrieved": "2026-10-04",
+      "numerical_label_source": false
+    },
+    {
+      "paper_id": "PMC12337301",
+      "doi": "10.1073/pnas.2513020122",
+      "source_ref": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12337301/",
+      "study_family": "LIT_Nasonia_vitripennis",
+      "split": "validation",
+      "source_locator": "Abstract",
+      "abstract_sha256": "e6f8aee2788b8570bd6341a1f1dcce649fa21765ff51226b6870d54f0ef268fc",
+      "retrieved": "2026-10-04",
+      "numerical_label_source": false
+    },
+    {
+      "paper_id": "PMC12135272",
+      "doi": "10.1186/s12915-025-02258-z",
+      "source_ref": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12135272/",
+      "study_family": "LIT_Amphitetranychus_viennensis",
+      "split": "train",
+      "source_locator": "Abstract",
+      "abstract_sha256": "36c78f3427e3e0a3c38ff9c2deb49b3a69b43d873a7164acd01bec055405b89d",
+      "retrieved": "2026-10-04",
+      "numerical_label_source": false
+    },
+    {
+      "paper_id": "PMC12136294",
+      "doi": "10.1371/journal.pone.0322332",
+      "source_ref": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12136294/",
+      "study_family": "LIT_Leguminivora_glycinivorella",
+      "split": "train",
+      "source_locator": "Abstract",
+      "abstract_sha256": "30946a07cdf2902b1de13d65f2e47ba6fcdc69f95b0fecac84ccaf0ecfa90cb5",
+      "retrieved": "2026-10-04",
+      "numerical_label_source": false
+    },
+    {
+      "paper_id": "PMC11928864",
+      "doi": "10.1016/j.isci.2025.111761",
+      "source_ref": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11928864/",
+      "study_family": "LIT_Arma_chinensis",
+      "split": "train",
+      "source_locator": "Abstract",
+      "abstract_sha256": "ae60ff2d03087404fd75ca4b02ae54433ac574a869b06aa5cd5e3eb0210820e3",
+      "retrieved": "2026-10-04",
+      "numerical_label_source": false
+    },
+    {
+      "paper_id": "PMC11855619",
+      "doi": "10.3390/genes16020175",
+      "source_ref": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11855619/",
+      "study_family": "LIT_Artemia",
+      "split": "train",
+      "source_locator": "Abstract",
+      "abstract_sha256": "b2d63a9c1f95e98d6afef9ad5425c3f3a2276f97213bf9dd6678440137b8c286",
+      "retrieved": "2026-10-04",
+      "numerical_label_source": false
+    },
+    {
+      "paper_id": "PMC11992794",
+      "doi": "10.1186/s12864-025-11572-3",
+      "source_ref": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11992794/",
+      "study_family": "LIT_Helicoverpa_armigera",
+      "split": "train",
+      "source_locator": "Abstract",
+      "abstract_sha256": "9cff2de97aa7fa5f2200d6f61fae89104f8cd076054c505964db020503426275",
+      "retrieved": "2026-10-04",
+      "numerical_label_source": false
+    },
+    {
+      "paper_id": "PMC12574224",
+      "doi": "10.1186/s12864-025-12163-y",
+      "source_ref": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12574224/",
+      "study_family": "LIT_Aphidoletes_aphidimyza",
+      "split": "train",
+      "source_locator": "Abstract",
+      "abstract_sha256": "2d2ccb485403c3ab64da5edb1157202f6cedaf49a36ca8c5cf825ca8a132a68c",
+      "retrieved": "2026-10-04",
+      "numerical_label_source": false
+    },
+    {
+      "paper_id": "PMC12283071",
+      "doi": "10.7554/elife.98142",
+      "source_ref": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12283071/",
+      "study_family": "LIT_Drosophila_melanogaster",
+      "split": "train",
+      "source_locator": "Abstract",
+      "abstract_sha256": "2bea853a7ae8985009ada781926a4ae7b17a7f17eb02d61fe4114553a7554d9c",
+      "retrieved": "2026-10-04",
+      "numerical_label_source": false
+    },
+    {
+      "paper_id": "PMC11388385",
+      "doi": "10.1073/pnas.2407057121",
+      "source_ref": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11388385/",
+      "study_family": "LIT_Pieris_napi",
+      "split": "validation",
+      "source_locator": "Abstract",
+      "abstract_sha256": "3664a60d03712e0776f6a5c1d6cf22d0fc1becfb7e3dade0d282c2e23aa30a52",
+      "retrieved": "2026-10-04",
+      "numerical_label_source": false
+    },
+    {
+      "paper_id": "PMC11314584",
+      "doi": "10.3390/molecules29153472",
+      "source_ref": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11314584/",
+      "study_family": "LIT_Loxostege_sticticalis",
+      "split": "train",
+      "source_locator": "Abstract",
+      "abstract_sha256": "c025bfd3d9989b6fee89d8460066e340bf1784df7fb36622624d083b4815fba1",
+      "retrieved": "2026-10-04",
+      "numerical_label_source": false
+    },
+    {
+      "paper_id": "PMC12467714",
+      "doi": "10.3390/biology14091147",
+      "source_ref": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12467714/",
+      "study_family": "LIT_Sitodiplosis_mosellana",
+      "split": "train",
+      "source_locator": "Abstract",
+      "abstract_sha256": "731ac01e6ca2244bfb627904fa2780a9d7f180ae0d2c99d0362e64bf26f6c024",
+      "retrieved": "2026-10-04",
+      "numerical_label_source": false
+    },
+    {
+      "paper_id": "PMC11122395",
+      "doi": "10.3390/insects15050299",
+      "source_ref": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11122395/",
+      "study_family": "LIT_Aphidoletes_aphidimyza",
+      "split": "train",
+      "source_locator": "Abstract",
+      "abstract_sha256": "6fd8ef4a5f588a9d2ff243ccfeaf49d09cd64be170a83954abc44ffc51db74a6",
+      "retrieved": "2026-10-04",
+      "numerical_label_source": false
+    },
+    {
+      "paper_id": "PMC12039007",
+      "doi": "10.1186/s12864-025-11459-3",
+      "source_ref": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12039007/",
+      "study_family": "LIT_Coccinella_septempunctata",
+      "split": "train",
+      "source_locator": "Abstract",
+      "abstract_sha256": "1a2e266bd9248f1bcfd1b5f7ee304b17c4197c9732565b89654d1cf2625ece39",
+      "retrieved": "2026-10-04",
+      "numerical_label_source": false
+    },
+    {
+      "paper_id": "PMC12280943",
+      "doi": "10.1073/pnas.2510550122",
+      "source_ref": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12280943/",
+      "study_family": "LIT_Harmonia_axyridis",
+      "split": "train",
+      "source_locator": "Abstract",
+      "abstract_sha256": "abc62a5f85753c0e7f8f9c0d68925164cffec982d4828c18d8b48cce0e9c1563",
+      "retrieved": "2026-10-04",
+      "numerical_label_source": false
+    },
+    {
+      "paper_id": "PMC11847486",
+      "doi": "10.7717/peerj.18966",
+      "source_ref": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11847486/",
+      "study_family": "LIT_Bombyx_mori",
+      "split": "train",
+      "source_locator": "Abstract",
+      "abstract_sha256": "5fdde05480bcd27618cae99058dcd06cffdfce72f98b3a52e56cf53960532be1",
+      "retrieved": "2026-10-04",
+      "numerical_label_source": false
+    },
+    {
+      "paper_id": "PMC12734136",
+      "doi": "10.3390/insects16121192",
+      "source_ref": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12734136/",
+      "study_family": "LIT_Arma_chinensis",
+      "split": "train",
+      "source_locator": "Abstract",
+      "abstract_sha256": "00f0dda11e0428b3154e8a1ea5d313a03f19f36b5f2ee1dd8425af373e22c824",
+      "retrieved": "2026-10-04",
+      "numerical_label_source": false
+    },
+    {
+      "paper_id": "PMC11237089",
+      "doi": "10.1038/s41467-024-50111-8",
+      "source_ref": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11237089/",
+      "study_family": "LIT_Caenorhabditis_elegans",
+      "split": "train",
+      "source_locator": "Abstract",
+      "abstract_sha256": "51978660ff3fc314eaddf1577852ba285c174c7724f2255af8d380a86cedc6d4",
+      "retrieved": "2026-10-04",
+      "numerical_label_source": false
+    },
+    {
+      "paper_id": "PMC11678774",
+      "doi": "10.3390/insects15120989",
+      "source_ref": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11678774/",
+      "study_family": "LIT_Bombyx_mori",
+      "split": "train",
+      "source_locator": "Abstract",
+      "abstract_sha256": "dd76d84ae8641db73b8a4a6eb6bca917ceb7351c3ab1293468c7933cd95ed2b3",
+      "retrieved": "2026-10-04",
+      "numerical_label_source": false
+    },
+    {
+      "paper_id": "PMC11962415",
+      "doi": "10.1073/pnas.2422328122",
+      "source_ref": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11962415/",
+      "study_family": "LIT_Colaphellus_bowringi",
+      "split": "train",
+      "source_locator": "Abstract",
+      "abstract_sha256": "bca321b506e1ef7c2c28e1ccb05fb7a7911b17b3c1bc98cb0d6a06a5be46a448",
+      "retrieved": "2026-10-04",
+      "numerical_label_source": false
+    },
+    {
+      "paper_id": "PMC12296141",
+      "doi": "10.3390/insects16070649",
+      "source_ref": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12296141/",
+      "study_family": "LIT_Sitodiplosis_mosellana",
+      "split": "train",
+      "source_locator": "Abstract",
+      "abstract_sha256": "de0534883a7df84087cefc1a6994747abab5e6933779464ec14031c282c7a9ef",
+      "retrieved": "2026-10-04",
+      "numerical_label_source": false
+    },
+    {
+      "paper_id": "PMC11926538",
+      "doi": "10.1093/jisesa/ieaf027",
+      "source_ref": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11926538/",
+      "study_family": "LIT_Chrysoperla_nipponensis",
+      "split": "validation",
+      "source_locator": "Abstract",
+      "abstract_sha256": "fd4772670830ce469682ba1de59a916f0e219220f3cfd362ed2c5e19f49faa77",
+      "retrieved": "2026-10-04",
+      "numerical_label_source": false
+    },
+    {
+      "paper_id": "PMC11303210",
+      "doi": "10.3389/fphys.2024.1440531",
+      "source_ref": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11303210/",
+      "study_family": "LIT_Arma_chinensis",
+      "split": "train",
+      "source_locator": "Abstract",
+      "abstract_sha256": "2810cd80637917b7eba14e80e1cfa5ca264dfd35d9bc55e8f2210b6e97ba7d1e",
+      "retrieved": "2026-10-04",
+      "numerical_label_source": false
+    },
+    {
+      "paper_id": "PMC10869763",
+      "doi": "10.1016/j.cris.2024.100073",
+      "source_ref": "https://pmc.ncbi.nlm.nih.gov/articles/PMC10869763/",
+      "study_family": "LIT_Choristoneura_fumiferana",
+      "split": "train",
+      "source_locator": "Abstract",
+      "abstract_sha256": "2c78c3e83301bc796e9d06a356a4d3fcc01a94845130a97fe8221f23c3ce722e",
+      "retrieved": "2026-10-04",
+      "numerical_label_source": false
+    },
+    {
+      "paper_id": "PMC10914810",
+      "doi": "10.1038/s42003-024-05944-w",
+      "source_ref": "https://pmc.ncbi.nlm.nih.gov/articles/PMC10914810/",
+      "study_family": "LIT_Capreolus_capreolus",
+      "split": "validation",
+      "source_locator": "Abstract",
+      "abstract_sha256": "e0f64ba4871c36c7bbf4e2c3adfbc4c5c08d9cdaee5895e577fe7e1996063db0",
+      "retrieved": "2026-10-04",
+      "numerical_label_source": false
+    },
+    {
+      "paper_id": "PMC11641180",
+      "doi": "10.3390/ijms252312976",
+      "source_ref": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11641180/",
+      "study_family": "LIT_Galeruca_daurica",
+      "split": "validation",
+      "source_locator": "Abstract",
+      "abstract_sha256": "c4c2e9188622cc203eaafce913298d9b4c1ace13e7fa083aceae034626a887a3",
+      "retrieved": "2026-10-04",
+      "numerical_label_source": false
+    }
+  ],
+  "source_count": 30,
+  "conservative_family_count": 24,
+  "limits": [
+    "Abstract-level source comparison only; not full-paper expert review",
+    "Mostly insect evidence; not a unified cross-species mechanism or clock",
+    "No old numerical-outcome or private killifish paper included",
+    "Three task types per paper are not independent biological evidence",
+    "30 new papers are fewer independent family groups; 800-record goal not reached"
+  ]
+}
