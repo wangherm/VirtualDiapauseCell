@@ -193,7 +193,7 @@ def evidence_cases(records, balanced=False):
     return cases
 
 
-def evaluate_knowledge(records, output, model_name, revision, adapter=None, allow_download=False, evidence_modes=False, balanced_evidence=False):
+def evaluate_knowledge(records, output, model_name, revision, adapter=None, allow_download=False, evidence_modes=False, balanced_evidence=False, clean_evidence=False):
     require_gpu();tok=_tokenizer(model_name,revision,allow_download);model=_base(model_name,revision,allow_download)
     if adapter:
         from peft import PeftModel
@@ -201,9 +201,12 @@ def evaluate_knowledge(records, output, model_name, revision, adapter=None, allo
     model.eval();rows=[]
     import copy
     from .knowledge import retrieve
-    cases=evidence_cases(records,balanced=True) if balanced_evidence else []
+    if clean_evidence:
+        from .application_knowledge import clean_cases
+        cases=clean_cases(records)
+    else:cases=evidence_cases(records,balanced=True) if balanced_evidence else []
     for original in records:
-        if balanced_evidence:break
+        if balanced_evidence or clean_evidence:break
         if original['split']!='validation':continue
         cases.append((original,'given_evidence'))
         if evidence_modes:
@@ -226,10 +229,12 @@ def evaluate_knowledge(records, output, model_name, revision, adapter=None, allo
         except (ValueError,TypeError):parsed={};valid=False
         if not valid:parsed={}
         expected=json.loads(r['completion'])
-        rows.append({'record_id':r['record_id'],'evidence_mode':mode,'answer':answer,'expected':expected,'valid_json':valid,
+        rows.append({'record_id':r['record_id'],'study_family':r['study_family'],'evidence_mode':mode,'answer':answer,'expected':expected,'valid_json':valid,
+            'evaluation_partition':'shared_withholding_control' if r.get('usage')=='shared_withholding_control' else 'new_source_families' if r.get('usage')=='evaluation_only' else 'previously_used_development_families',
             'prompt':r['prompt'],'input_tokens':int(inputs['input_ids'].shape[1]),'retrieval':r.get('evaluation_inputs'),
             'exact_fields':{k:parsed.get(k)==expected[k] for k in ('source','context','uncertain')},
-            'answer_exact':parsed.get('answer')==expected['answer']})
+              'answer_exact':parsed.get('answer')==expected['answer']})
+        if clean_evidence and len(rows)%10==0:print(f'KNOWLEDGE_EVAL {len(rows)}/{len(cases)}',flush=True)
     if not rows:raise ValueError('No held-out questions')
     write_json(Path(output)/'answers.json',rows)
     if adapter:
@@ -243,14 +248,23 @@ def evaluate_knowledge(records, output, model_name, revision, adapter=None, allo
     if paired:mode_scores['addressed_mixed']={'n':len(paired),'exact_answer_rate':sum(r['answer_exact'] for r in paired)/len(paired),
         'answerable':sum(r['expected']['answer']!='unknown' for r in paired),
         'always_unknown_answer_rate':sum(r['expected']['answer']=='unknown' for r in paired)/len(paired)}
+    partitions={partition:{mode:{'n':len(items),'exact_answer_rate':sum(r['answer_exact'] for r in items)/len(items)}
+        for mode in sorted({r['evidence_mode'] for r in rows})
+        for items in [[r for r in rows if r['evidence_mode']==mode and r['evaluation_partition']==partition]] if items}
+        for partition in sorted({r['evaluation_partition'] for r in rows})}
+    families={family:{mode:{'n':len(items),'exact_answer_rate':sum(r['answer_exact'] for r in items)/len(items)}
+        for mode in sorted({r['evidence_mode'] for r in rows})
+        for items in [[r for r in rows if r['study_family']==family and r['evidence_mode']==mode]] if items}
+        for family in sorted({r['study_family'] for r in rows})}
     rows=[r for r in rows if r['evidence_mode']=='given_evidence']
     write_json(Path(output)/'evaluation.json',{'by_evidence_mode':mode_scores,'weight_kind':'domain_adapter' if adapter else 'base','n':len(rows),
         'format_rate':sum(r['valid_json'] for r in rows)/len(rows),'exact_answer_rate':sum(r['answer_exact'] for r in rows)/len(rows),
         'exact_context_rate':sum(r['exact_fields']['context'] for r in rows)/len(rows),'exact_source_rate':sum(r['exact_fields']['source'] for r in rows)/len(rows),
         'uncertain_field_accuracy':sum(r['exact_fields']['uncertain'] for r in rows)/len(rows),
-        'protocol':'addressed_evidence_withholding_v1' if balanced_evidence else 'legacy_evidence_v1',
+        'protocol':'all_visible_fields_v2' if clean_evidence else 'addressed_evidence_withholding_v1' if balanced_evidence else 'legacy_evidence_v1',
+        'by_partition':partitions,'by_family':families,
         'limitations':['Source-addressed lookup and withholding are controlled evidence-use tests, not general search or closed-book knowledge accuracy',
-        'Adapter was selected using these development paper families; this is not an independent knowledge test',
+          'Previously used development families are not independent; newly added evaluation-only families are reported separately',
         'Small family-held-out evidence extraction, not comprehensive knowledge validation',
         'Canonical text match undercounts paraphrases; saved answers require expert factual review',
         'Public papers may occur in base pretraining'],'science_status':'unvalidated'})

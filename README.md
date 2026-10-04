@@ -1,5 +1,7 @@
 # Virtual Diapause Cell
 
+**最新入口：[冻结候选后的真实样本应用、知识重评与 AutoDL 启动](docs/PK3_APPLICATION_CN.md)。** 复用修复后的 PK2 权重；本轮不重新运行 171 条训练。预留查询先冻结，热应激原始 counts 待补，现有标准化表达仅作独立描述性替代。服务器执行由用户启动，结果以该次 run 的工件为准。下面保留此前轮次入口。
+
 A biotime-centred model of diapause state, gene/TF waves and programme dynamics, grounded in context-specific biological evidence.
 
 **独立新项目，2026-10-01 建立。当前推进 All-Module Alpha：复用 v0.4.0 数值模块，实际运行公开数据上的状态、候选 clock、gene/TF/programme waves、端点、转移及组级功能读出。Qwen GPU 分支由 AutoDL 实际运行后记录结果；整体科学能力仍未验证，expression-to-depth 不可用。** FactorBridge 已归档，仅供方法参考，不是本项目依赖。

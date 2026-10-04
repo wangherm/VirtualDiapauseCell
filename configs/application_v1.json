@@ -1,0 +1,32 @@
+{
+  "protocol": "PK3_frozen_retrospective_application_v1",
+  "seed_policy": "common_prespecified_seed_42_no_ensemble_no_reserved_selection",
+  "candidates": {
+    "bulk": ["adapt_R0_bulk_42", "sem_R0_bulk_new_domain_42", "sem_R3_bulk_base_42"],
+    "core": ["adapt_R0_core_pool_42", "adapt_R2_core_pool_42", "adapt_R5_core_pool_42"],
+    "core_celltypes": ["adapt_R0_core_pool_celltype_42", "sem_R0_core_pool_celltype_new_domain_42"]
+  },
+  "allowed_query_roles": ["reserved_evaluation", "temporal_query", "prediction_only"],
+  "tasks": ["current_expression_location", "overlap_free_hidden_gene_readout"],
+  "hidden_gene_limit": 256,
+  "hidden_gene_partition": "sha256(gene_id) prefix modulo 5 equals zero",
+  "readout_ridge_alpha": 1.0,
+  "min_programme_coverage": 0.5,
+  "min_genes_per_programme": 3,
+  "min_cells_per_type": 20,
+  "normalisation": "log1p(counts/library_total*10000), original within-sample rank programmes",
+  "missing_genes": "exact frozen gene universe required; otherwise unsupported",
+  "cross_material": "explicit frozen representation projection; applicability stress test, not calibrated transfer",
+  "wave_extrapolation": false,
+  "future_prediction": "unsupported_without_development_fitted_killifish_transition_and_matching_protocol",
+  "expression_depth": "unavailable_no_matched_functional_labels",
+  "evaluation_scope": "design-informed retrospective application; thesis-informed material, not prospective blind validation",
+  "model_selection_after_queries": false,
+  "stress_substitute": {
+    "raw_counts": "pending_user_source",
+    "input": "archived normalised raw.X only, never scaled X or inferred counts",
+    "reference_conditions": {"Stress Developing": "Developing", "Stress Early Diapause": "Early Diapause"},
+    "fit": "original train controls only, before application freeze",
+    "output": "descriptive programme difference; no model clock, depth or stress prediction"
+  }
+}
