@@ -122,3 +122,27 @@ screen -L -Logfile "$WEB_JOB/restart.log" -dmS "vdc_pk2_restart_$(date -u +%H%M%
 本地已使用13个真实文件完成六组抓取/解析；已有真实开发数据的短预算 PK1 模型完成独立 HTTP 查询、停止、重启一致性检查。这个本地检查不是对服务器完整训练结果的重新评价，也没有启动 AutoDL 服务。
 
 下一步是根据抓取后的实际矩阵和元数据完成 grouped split、programme 映射及来源准入，接入多研究预训练与扩展知识训练。当前下载和服务命令不会自动执行这些尚未实现的训练任务。
+
+## 6. 打包这轮报告
+
+```bash
+cd /root/autodl-tmp/VirtualDiapauseCell
+.venv-autodl-vdc/bin/python scripts/pack_pk2_report.py
+```
+
+自动读取 `LATEST_PK2_ACQUIRE.txt` 和 `LATEST_PK2_SERVICE.txt`，在项目同级 `vdc-private/reports/` 生成 `VDC_PK2_PRIVATE_report_*.zip`。包内包括中文汇总、下载状态、公共样本元数据、服务身份、评价、独立 HTTP 验证、开发预测和日志；不包含表达数组、权重、完整私有样本名单或虚拟环境。日志超过5 MiB只收末尾并标明截断。会检查ZIP和每个收录文件的哈希。
+
+即使一条分支失败或尚未完成也可打包；缺少分支和当前状态如实记录。不会停止服务、重新训练或重新请求预测。这个包可能含开发样本标识，请私下传递，不要推送公共 GitHub。
+
+旧服务器没有此脚本时，可只取得打包脚本，不修改正在运行的项目代码：
+
+```bash
+(
+  set -euo pipefail
+  cd /root/autodl-tmp/VirtualDiapauseCell
+  git -c http.version=HTTP/1.1 fetch origin main
+  PACKER="$(mktemp /tmp/vdc_pack_pk2_XXXXXX.py)"
+  git show origin/main:scripts/pack_pk2_report.py > "$PACKER"
+  .venv-autodl-vdc/bin/python "$PACKER" --repo "$PWD"
+)
+```
