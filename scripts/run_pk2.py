@@ -65,7 +65,12 @@ def build_plan(c):
     for mode in ['endpoint','transition']:add('composed_'+mode,'analysis',['pretrain_P-R_42','source_P-R','public_reuse'],priority=20,analysis='composed_'+mode)
     add('cross_platform_waves','analysis',['data_GSE3169','public_reuse'],priority=20,analysis='cross_platform_waves')
     add('knowledge_base_evaluation','knowledge_eval',['corpus'],resource='gpu',priority=11)
+    if c.get('repair_from'):
+        add('knowledge_balanced_base','knowledge_balanced',['corpus'],resource='gpu',priority=11,adapter=False)
+        add('knowledge_balanced_domain','knowledge_balanced',['corpus','select_adapter'],resource='gpu',priority=11,adapter=True)
+        add('repair_summary','repair_summary',[j['job_id'] for j in jobs]+['knowledge_balanced_base','knowledge_balanced_domain'],priority=89)
     add('register_pk2','register',[j['job_id'] for j in jobs]+[k for k,v in tasks.items() if v['kind'] in {'waves','analysis','type_waves'}],priority=90)
+    if c.get('repair_from'):tasks['register_pk2']['depends'].append('repair_summary')
     for task in tasks.values():
         if task['resource']=='gpu' and 'benchmark' not in task['depends']:task['depends'].append('benchmark')
     return tasks
@@ -104,15 +109,10 @@ def worker(run,name):
         benchmark(private/'prepared/bulk',out,c)
     elif kind=='numeric':
         from vdc.pk2_numeric import train_job
-        from vdc.pk1_numeric import semantic_cache
+        from vdc.pk2_semantics import load_semantics
         job=p['job'];inp=base/job['bundle_task'];fold=inp/'fold.json'
         if fold.exists():os.environ['VDC_DEVELOPMENT_FOLD']=str(fold)
-        sem=None;provenance=None
-        if job.get('semantics') in {'base','domain','shuffle'}:
-            which='base' if job['semantics']=='base' else 'domain'
-            sem,provenance=semantic_cache(base/('embeddings_'+which),features,'frozen_base' if which=='base' else 'domain_adapter')
-            if job['semantics']=='shuffle':
-                permutation=np.random.default_rng(c['semantic_shuffle_seed']).permutation(len(sem));sem=sem[permutation];provenance={**provenance,'permutation':permutation.tolist(),'ablation':'shuffled_domain'}
+        sem,provenance=load_semantics(base,job,features,c)
         parent=base/job['parent_task']/'model' if job.get('parent_task') else None
         device=read_json(base/'benchmark/profile.json')['numeric_device']
         torch.set_num_threads(read_json(base/'benchmark/profile.json')['numeric_threads_requested'])
@@ -153,6 +153,13 @@ def worker(run,name):
     elif kind=='knowledge_eval':
         from vdc.knowledge_train import evaluate_knowledge
         evaluate_knowledge(read_jsonl(base/'corpus/corpus.jsonl'),out,c['model_path'],c['model_revision'],evidence_modes=True)
+    elif kind=='knowledge_balanced':
+        from vdc.knowledge_train import evaluate_knowledge
+        adapter=base/read_json(base/'select_adapter/selection.json')['selected']['job']/'trained/adapter' if p['adapter'] else None
+        evaluate_knowledge(read_jsonl(base/'corpus/corpus.jsonl'),out,c['model_path'],c['model_revision'],adapter=adapter,balanced_evidence=True)
+    elif kind=='repair_summary':
+        from vdc.pk2_repair import summary
+        summary(run,out)
     elif kind=='waves':
         from vdc.pk1_numeric import waves_task
         waves_task(private/'prepared'/p['view'],base/('input_'+p['view']),base/p['state']/'model',out,ROOT/'knowledge/snapshots/ensembl_2026-10-03/nfurzeri_go.tsv')
@@ -173,6 +180,11 @@ def status_report(run,plan,statuses):
         'full_research_plan_completed':False,'tasks':statuses,'updated':utc(),'reserved_queries':False,'server_execution_claim':'Only this actual process and its recorded workers'}
     manifest=read_json(run/'run_manifest.json')
     result['integration_only']=manifest.get('integration_only',False)
+    if (run/'repair_import.json').exists():
+        imported=read_json(run/'repair_import.json')
+        result['repair']={'source_signature':imported['source_signature'],
+            'original_artifacts_modified':False,'new_qwen_training_requested':False,
+            'targeted_numeric_retrains':sum(plan[n]['kind']=='numeric' for n in imported['invalidated_tasks'] if n in plan)}
     write_json(run/'queue_status.json',result)
     lines=['# PK2 全队列执行记录','',f'逻辑训练任务：{len(logical)}；状态：{result["status"]}。',
         '短预算工程联调，不是正式训练。' if result['integration_only'] else '本次使用任务清单的正式预算；是否完成以各工件为准。',
@@ -188,11 +200,18 @@ def orchestrate(a):
     if c['reserved_queries_enabled']:raise ValueError('This runner does not unlock reserved queries')
     c.update(private_root=str(a.private_root.resolve()),pk1_run=str(a.pk1_run.resolve()),acquire_run=str(a.acquire_run.resolve()),
         public_raw=str(a.public_raw.resolve()),model_path=str(a.model_path.resolve()) if a.model_path else '',integration_steps=a.integration_steps)
+    if a.repair_from:c.update(repair_from=str(a.repair_from.resolve()),service_port=a.service_port or 8767)
+    elif a.service_port:c['service_port']=a.service_port
     run=a.run.resolve();run.mkdir(parents=True,exist_ok=True);plan=build_plan(c);hw=hardware();gpu=hw['cuda_available']
     for name,t in plan.items():t['argv']=[sys.executable,'-u',str(Path(__file__).resolve()),'--run',str(run),'--worker',name]
-    signature=object_hash({'config':c,'code':source_fingerprint(),'roles':sha256(a.private_root/'sample_roles.json'),
+    signature_fields={'config':c,'code':source_fingerprint(),'roles':sha256(a.private_root/'sample_roles.json'),
         'pk1_manifest':sha256(a.pk1_run/'module_status.json'),'acquisition':sha256(a.acquire_run/'acquisition_status.json'),
-        'dependencies':{n:importlib.metadata.version(n) for n in ['torch','numpy','scipy']}})
+        'dependencies':{n:importlib.metadata.version(n) for n in ['torch','numpy','scipy']}}
+    signature=object_hash(signature_fields)
+    if a.repair_from:
+        old=read_json(a.repair_from/'run_manifest.json');old_config=read_json(a.repair_from/'config.json')
+        if object_hash({**signature_fields,'config':old_config,'code':old['code']})!=old['signature']:
+            raise ValueError('Repair source input roles, PK1/acquisition manifests or numerical environment changed')
     with exclusive_run(run):
         if (run/'run_manifest.json').exists():
             if not a.resume or read_json(run/'run_manifest.json')['signature']!=signature:raise ValueError('Resume requires identical source/config/input/environment signature')
@@ -208,9 +227,14 @@ def orchestrate(a):
                 for dep in plan[pending.pop()]['depends']:
                     if dep not in selected:selected.add(dep);pending.append(dep)
         statuses=read_json(run/'queue_status.json')['tasks'] if (run/'queue_status.json').exists() else {n:{'status':'pending'} for n in plan}
+        if a.repair_from and not (run/'queue_status.json').exists():
+            from vdc.pk2_repair import import_verified
+            imported=import_verified(a.repair_from,run,plan,c,verify_inventory,inventory)
+            statuses.update(imported)
         for n,s in statuses.items():
             if s['status'] in {'evaluated_new','completed','reused_verified'}:
                 if not verify_inventory(run/'tasks'/n,s['files']):raise ValueError('Completed artifact changed: '+n)
+            elif a.repair_from and s['status']=='inapplicable':continue
             elif n not in selected:s.update(status='not_requested',reason='Explicit local/integration selection; not whole-queue completion')
             else:s.update(status='pending')
         active={};(run/'logs').mkdir(exist_ok=True);success={'completed','evaluated_new','reused_verified'};last_heartbeat=0
@@ -230,11 +254,11 @@ def orchestrate(a):
                 for name,t in plan.items():
                     s=statuses[name]
                     if s['status'] not in {'pending','ready'}:continue
-                    if t['kind'] in {'register','select_adapter'}:
+                    if t['kind'] in {'register','select_adapter','repair_summary'}:
                         if all(statuses[d]['status'] not in {'pending','ready','running'} for d in t['depends']):s['status']='ready'
                         continue
                     if any(statuses[d]['status'] in {'failed','blocked_data','blocked_dependency','blocked_resource','inapplicable'} for d in t['depends']):
-                        s.update(status='blocked_dependency',reason='; '.join(d+':'+statuses[d]['status'] for d in t['depends'] if statuses[d]['status'] not in success));continue
+                        s.update(status='blocked_dependency',reason='; '.join(d+':'+statuses[d]['status'] for d in t['depends'] if statuses[d]['status'] in {'failed','blocked_data','blocked_dependency','blocked_resource','inapplicable'}));continue
                     if all(statuses[d]['status'] in success for d in t['depends']):s['status']='ready'
                     if t['resource']=='gpu' and not gpu:s.update(status='blocked_resource',reason='No actual CUDA GPU in this execution environment')
                 ready=sorted([n for n,s in statuses.items() if s['status']=='ready'],key=lambda n:(plan[n]['priority'],not plan[n]['params'].get('job',{}).get('prefer_first_seed',True),n))
@@ -275,6 +299,7 @@ if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--run',type=Path,required=True);p.add_argument('--worker');p.add_argument('--qwen-evaluate')
     p.add_argument('--config',type=Path,default=ROOT/'configs/pk2_train.json');p.add_argument('--private-root',type=Path);p.add_argument('--pk1-run',type=Path);p.add_argument('--acquire-run',type=Path)
     p.add_argument('--public-raw',type=Path,default=ROOT/'data/raw/pk2_public');p.add_argument('--model-path',type=Path);p.add_argument('--resume',action='store_true');p.add_argument('--only',nargs='+');p.add_argument('--integration-steps',type=int)
+    p.add_argument('--repair-from',type=Path);p.add_argument('--service-port',type=int)
     a=p.parse_args()
     if a.worker:
         try:worker(a.run,a.worker)

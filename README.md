@@ -6,7 +6,7 @@ A biotime-centred model of diapause state, gene/TF waves and programme dynamics,
 
 **本轮入口：[AutoDL 一键启动、进度、打包和内部界面](docs/ALL_MODULE_ALPHA_CN.md) · [数据与语料审计](docs/ALPHA_DATA_AUDIT_CN.md)**。只使用开发划分；单模块性能不作为其他分支的运行门槛。
 
-**当前 PK2 入口：[全训练队列、启动、进度和打包](docs/PK2_FULL_TRAINING_CN.md)。** 171个逻辑任务已映射到执行命令，新增多研究预训练、R0–R6、六条新Qwen轨迹及开发泛化检查。实际服务器训练由用户启动；本地短预算联调不代表正式训练完成。私有文件、链接与名单不在此仓库。[上一批抓取与PK1冻结服务](docs/PK2_SERVER_SETUP_CN.md)继续保留。
+**当前 PK2 入口：[已有训练的定向修复与续跑](docs/PK2_TARGETED_REPAIR_CN.md) · [首次全队列执行](docs/PK2_FULL_TRAINING_CN.md)。** 修复领域语义误路由和逐 pool 外层 checkpoint 选择；兼容结果逐文件核验后复用。服务器运行由用户启动，本地测试不代表补跑已经执行。私有文件、链接与名单不在此仓库。[上一批抓取与PK1冻结服务](docs/PK2_SERVER_SETUP_CN.md)继续保留。
 
 **PK1：[正式数值训练、进度与报告](docs/PK1_TRAINING_CN.md) · [私有样本准入与数据准备](docs/PK1_PREPARATION_CN.md)。** 3种子 K0–K5 数值实验，复用实际 Alpha adapter；执行状态和结果以实际 run 工件为准。
 

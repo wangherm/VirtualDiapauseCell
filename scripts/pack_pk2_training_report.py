@@ -8,11 +8,12 @@ def pack(run,out=None):
     if out.is_relative_to(run):raise ValueError('Archive must be outside run')
     if not (run/'queue_status.json').exists():raise ValueError('Not an initialized full training queue')
     files=[];omitted=[]
-    root_names={'REPORT_CN.md','queue_status.json','run_manifest.json','hardware.json','resources.json','resource_history.jsonl','console.log','exit_code.txt','plan.json'}
+    root_names={'REPORT_CN.md','queue_status.json','run_manifest.json','hardware.json','resources.json','resource_history.jsonl','console.log','exit_code.txt','plan.json','repair_import.json'}
     report_names={'result.json','failure.json','phase.json','metrics.json','run.json','reload.json','profile.json','manifest.json','selection.json',
         'evaluation.json','evaluation_scope.json','reuse.json','verification.json','training_log.json','status.json','source_set.json','expression_contract.json','input.json','subset.json',
         'mask_metrics.json','feature_metrics.json','contrasts.json','rows.json','answers.json','steps.jsonl','audit.json','service_manifest.json',
-        'predictions.npz','mask_predictions.npz','validation.npz','double_mutant.npz','simulated_deviation.npz'}
+        'predictions.npz','mask_predictions.npz','validation.npz','double_mutant.npz','simulated_deviation.npz',
+        'semantic_input.json','embeddings.json','embeddings.npz','corpus.jsonl','predictions.json','process_0.log','process_1.log','service.log','COMPARISON_CN.md'}
     out.parent.mkdir(parents=True,exist_ok=True)
     with zipfile.ZipFile(out,'x',zipfile.ZIP_DEFLATED) as archive:
         for p in sorted(run.rglob('*')):

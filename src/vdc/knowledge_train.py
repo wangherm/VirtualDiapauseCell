@@ -151,7 +151,49 @@ def fit_knowledge(records, run_dir, model_name, revision, max_steps=40, max_leng
         'science_status':'unvalidated','new_process_evaluation':'pending','scope':'small_source_curated_extraction_pilot_not_all_dormancy_knowledge'})
 
 
-def evaluate_knowledge(records, output, model_name, revision, adapter=None, allow_download=False, evidence_modes=False):
+def evidence_cases(records, balanced=False):
+    """Source-addressed retrieval diagnostic; never claim general RAG or closed-book accuracy.
+
+    The frozen inference index may contain validation documents, but no completions.
+    Paired withholding removes the entire requested source from the supplied evidence.
+    """
+    import copy
+    index={}
+    for r in records:
+        if r.get('reviewed') is not True or r['split'] not in {'train','validation'}:continue
+        user=r['prompt'][-1]['content']
+        context=user.split('Context:',1)[1].split('\n',1)[0].strip() if 'Context:' in user else ''
+        entry={'source_ref':r['source_ref'],'source_locator':r.get('source_locator',''),
+               'context':context,'text':r['text'],'evidence_type':r.get('evidence_type')}
+        index[object_hash(entry)]=entry
+    cases=[]
+    for original in records:
+        if original['split']!='validation':continue
+        r=copy.deepcopy(original)
+        r['evaluation_inputs']={'retrieval':'original supplied evidence','documents':[]}
+        cases.append((r,'given_evidence'))
+        if not balanced:continue
+        user=original['prompt'][-1]['content'];prefix=user.split('\nEvidence',1)[0]
+        question=user.rsplit('Question:',1)[-1]
+        context=user.split('Context:',1)[1].split('\n',1)[0].strip() if 'Context:' in user else ''
+        key=(original['source_ref'],original.get('source_locator',''),context)
+        selected=[{'document_id':ident,**d} for ident,d in sorted(index.items())
+                  if (d['source_ref'],d['source_locator'],d['context'])==key]
+        if not any(d['text']==original['text'] for d in selected):raise ValueError('Addressed evidence not present in frozen index')
+        for mode,docs in [('addressed_supported',selected),('addressed_withheld',[])]:
+            r=copy.deepcopy(original)
+            text='\n'.join(d['source_ref']+' ['+d['source_locator']+'] '+str(d['evidence_type'])+': '+d['text'] for d in docs) or 'None supplied.'
+            r['prompt']=[{'role':'system','content':'Use only supplied evidence from the requested source and context. Return JSON with answer, context, source, uncertain. If unsupported by the supplied evidence, answer unknown and uncertain true.'},
+                         {'role':'user','content':prefix+'\nEvidence: '+text+'\nQuestion: '+question}]
+            if mode=='addressed_withheld':
+                expected=json.loads(r['completion']);expected.update(answer='unknown',uncertain=True);r['completion']=json.dumps(expected)
+            r['evaluation_inputs']={'retrieval':'exact source_ref + source_locator + context lookup; paired whole-source withholding',
+                'index_hash':object_hash(index),'documents':docs,'index_includes_validation_documents_for_inference_only':True}
+            cases.append((r,mode))
+    return cases
+
+
+def evaluate_knowledge(records, output, model_name, revision, adapter=None, allow_download=False, evidence_modes=False, balanced_evidence=False):
     require_gpu();tok=_tokenizer(model_name,revision,allow_download);model=_base(model_name,revision,allow_download)
     if adapter:
         from peft import PeftModel
@@ -159,8 +201,9 @@ def evaluate_knowledge(records, output, model_name, revision, adapter=None, allo
     model.eval();rows=[]
     import copy
     from .knowledge import retrieve
-    cases=[]
+    cases=evidence_cases(records,balanced=True) if balanced_evidence else []
     for original in records:
+        if balanced_evidence:break
         if original['split']!='validation':continue
         cases.append((original,'given_evidence'))
         if evidence_modes:
@@ -184,6 +227,7 @@ def evaluate_knowledge(records, output, model_name, revision, adapter=None, allo
         if not valid:parsed={}
         expected=json.loads(r['completion'])
         rows.append({'record_id':r['record_id'],'evidence_mode':mode,'answer':answer,'expected':expected,'valid_json':valid,
+            'prompt':r['prompt'],'input_tokens':int(inputs['input_ids'].shape[1]),'retrieval':r.get('evaluation_inputs'),
             'exact_fields':{k:parsed.get(k)==expected[k] for k in ('source','context','uncertain')},
             'answer_exact':parsed.get('answer')==expected['answer']})
     if not rows:raise ValueError('No held-out questions')
@@ -192,12 +236,21 @@ def evaluate_knowledge(records, output, model_name, revision, adapter=None, allo
         write_json(Path(output)/'reload.json',{'new_process':True,'status':'passed_actual_adapter_load_and_generation',
             'adapter_files':{p.name:sha256(p) for p in sorted(Path(adapter).iterdir()) if p.is_file()},
             'base_revision':revision})
-    mode_scores={mode:{'n':len(items),'exact_answer_rate':sum(r['answer_exact'] for r in items)/len(items),'uncertain_accuracy':sum(r['exact_fields']['uncertain'] for r in items)/len(items)} for mode in sorted({r['evidence_mode'] for r in rows}) for items in [[r for r in rows if r['evidence_mode']==mode]]}
+    mode_scores={mode:{'n':len(items),'exact_answer_rate':sum(r['answer_exact'] for r in items)/len(items),'uncertain_accuracy':sum(r['exact_fields']['uncertain'] for r in items)/len(items),
+        'answerable':sum(r['expected']['answer']!='unknown' for r in items),
+        'always_unknown_answer_rate':sum(r['expected']['answer']=='unknown' for r in items)/len(items)} for mode in sorted({r['evidence_mode'] for r in rows}) for items in [[r for r in rows if r['evidence_mode']==mode]]}
+    paired=[r for r in rows if r['evidence_mode'].startswith('addressed_')]
+    if paired:mode_scores['addressed_mixed']={'n':len(paired),'exact_answer_rate':sum(r['answer_exact'] for r in paired)/len(paired),
+        'answerable':sum(r['expected']['answer']!='unknown' for r in paired),
+        'always_unknown_answer_rate':sum(r['expected']['answer']=='unknown' for r in paired)/len(paired)}
     rows=[r for r in rows if r['evidence_mode']=='given_evidence']
     write_json(Path(output)/'evaluation.json',{'by_evidence_mode':mode_scores,'weight_kind':'domain_adapter' if adapter else 'base','n':len(rows),
         'format_rate':sum(r['valid_json'] for r in rows)/len(rows),'exact_answer_rate':sum(r['answer_exact'] for r in rows)/len(rows),
         'exact_context_rate':sum(r['exact_fields']['context'] for r in rows)/len(rows),'exact_source_rate':sum(r['exact_fields']['source'] for r in rows)/len(rows),
         'uncertain_field_accuracy':sum(r['exact_fields']['uncertain'] for r in rows)/len(rows),
-        'limitations':['Small family-held-out evidence extraction, not comprehensive knowledge validation',
+        'protocol':'addressed_evidence_withholding_v1' if balanced_evidence else 'legacy_evidence_v1',
+        'limitations':['Source-addressed lookup and withholding are controlled evidence-use tests, not general search or closed-book knowledge accuracy',
+        'Adapter was selected using these development paper families; this is not an independent knowledge test',
+        'Small family-held-out evidence extraction, not comprehensive knowledge validation',
         'Canonical text match undercounts paraphrases; saved answers require expert factual review',
         'Public papers may occur in base pretraining'],'science_status':'unvalidated'})

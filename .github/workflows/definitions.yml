@@ -15,6 +15,7 @@ jobs:
       - run: bash -n scripts/archive_factorbridge.sh
       - run: bash -n scripts/launch_pk2_acquire.sh && bash -n scripts/launch_pk2_service.sh
       - run: bash -n scripts/install_pk2_release.sh && bash -n scripts/launch_pk2_training.sh
+      - run: bash -n scripts/install_pk2_repair.sh && bash -n scripts/resume_pk2_training.sh
   software:
     runs-on: ubuntu-latest
     steps:

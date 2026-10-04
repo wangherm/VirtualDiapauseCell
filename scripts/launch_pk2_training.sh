@@ -38,4 +38,8 @@ echo 'PK2 full development queue; 171 logical slots. No reserved queries. PK1 se
 args=(--run "$RUN_DIR" --private-root "$VDC_PRIVATE_ROOT" --pk1-run "$VDC_PK1_RUN"
   --acquire-run "$VDC_ACQUIRE_RUN" --public-raw "$VDC_PK2_RAW" --model-path "$VDC_QWEN_MODEL")
 if [[ "${VDC_RESUME:-0}" == 1 ]]; then args+=(--resume); fi
+if [[ -n "${VDC_PK2_REPAIR_FROM:-}" ]]; then
+  echo 'Targeted repair: verify and copy compatible results; retrain 24 semantic conditions + 18 fixed-budget pool folds. No new Qwen training.'
+  args+=(--repair-from "$VDC_PK2_REPAIR_FROM" --service-port "${VDC_PK2_SERVICE_PORT:-8767}")
+fi
 "$PY" -u scripts/run_pk2.py "${args[@]}"

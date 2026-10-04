@@ -13,8 +13,17 @@ def register(run,out):
         target=snapshot/relative;target.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(source,target);files[relative]=sha256(target)
     for name,s in statuses.items():
         spec=plan[name];j=spec['params'].get('job',{})
-        if s['status']!='evaluated_new' or j.get('family') not in {'killifish_adaptation','semantic_increment','feature_resolution'}:continue
+        if s['status'] not in {'evaluated_new','reused_verified'} or j.get('family') not in {'killifish_adaptation','semantic_increment','feature_resolution'}:continue
         source=run/'tasks'/name;verify_files(source,s['files']);meta=read_json(source/'model/run.json')
+        semantic_check=None
+        if j.get('family')=='semantic_increment':
+            from .pk2_semantics import load_semantics,check_forward,validate_semantics
+            from .state import StatePredictor
+            from .contracts import ObservationBundle
+            bundle=ObservationBundle.load(run/'tasks'/j['bundle_task']/'bundle')
+            vectors,provenance=load_semantics(run/'tasks',j,bundle.feature_ids,c)
+            semantic_check=validate_semantics(j,vectors,provenance,bundle.feature_ids,c['semantic_dim'])
+            semantic_check['forward_check']=check_forward(StatePredictor.load(source/'model'),bundle.subset(bundle.indices('validation')),vectors)
         if meta['is_synthetic']:raise ValueError('Synthetic model cannot become a PK2 research snapshot')
         input_task=j['bundle_task'];view=input_task.removeprefix('input_');views[view]=input_task
         for file in ['run.json','best.pt','metrics.json']:cp(source/'model'/file,name+'/'+file)
@@ -22,7 +31,8 @@ def register(run,out):
         registry[name]={'view':view,'route':j.get('route',j.get('feature_view')),'seed':j.get('seed',42),
             'checkpoint_sha256':sha256(source/'model/best.pt'),'training_steps':read_json(source/'model/metrics.json')['steps_completed'],
             'scope':meta['scope'],'science_status':'unvalidated','wave':None,'source_job':name,
-            'semantic_provenance':meta.get('semantic_provenance'),'transfer':meta.get('transfer')}
+            'semantic_provenance':meta.get('semantic_provenance'),'transfer':meta.get('transfer'),
+            'semantic_check':semantic_check,'execution':s['status'],'reuse_source_signature':s.get('reuse_source_signature')}
         wave='waves_'+view
         if statuses.get(wave,{}).get('status')=='completed':
             w=read_json(run/'tasks'/wave/'result.json')
@@ -57,7 +67,7 @@ def register(run,out):
     deployment={'status':'not_started_in_this_environment'}
     if sys.platform.startswith('linux') and c.get('integration_steps') is None:
         if not shutil.which('screen'):raise RuntimeError('screen missing; PK2 snapshot verified but service not started')
-        port=8766
+        port=c.get('service_port',8766)
         with socket.socket() as s:s.bind(('127.0.0.1',port))
         session='vdc_pk2_models_'+str(int(time.time()))
         subprocess.run(['screen','-L','-Logfile',str(out/'service.log'),'-dmS',session,sys.executable,

@@ -145,7 +145,10 @@ def fit_state(bundle: ObservationBundle, run_dir: str | Path, steps: int = 100,
               config: StateConfig | None = None, device: str = "cpu", resume: bool = False,
               semantics: np.ndarray | None = None, semantic_provenance: dict | None = None,
               pretrained: str | Path | None = None, initial_weights: str | Path | None = None,
-              transfer_mode: str = 'shared_model', checkpoint_steps=(), multi_context: bool = False) -> dict:
+              transfer_mode: str = 'shared_model', checkpoint_steps=(), multi_context: bool = False,
+              checkpoint_selection: str = 'validation') -> dict:
+    if checkpoint_selection not in {'validation', 'fixed_final'}:
+        raise ValueError('Unknown checkpoint selection protocol')
     bundle.validate()
     b = bundle.subset([i for i, r in enumerate(bundle.rows) if r["split"] in {"train", "validation"}])
     from .admission import audit_internal_task
@@ -239,11 +242,14 @@ def fit_state(bundle: ObservationBundle, run_dir: str | Path, steps: int = 100,
                "capabilities": ["programme_reconstruction"] + (["clock"] if available_clock else []),
                "science_status": "unvalidated", "uncertainty_status": "not_calibrated"}
     summary['transfer'] = transfer
+    summary['checkpoint_selection_protocol'] = checkpoint_selection
     summary['initial_weights_sha256'] = initial_hash
     if contexts:summary['contexts']=contexts
     start, best = 0, float("inf")
     if resume:
         old = read_json(run / "run.json")
+        if old.get('checkpoint_selection_protocol', 'validation') != checkpoint_selection:
+            raise ValueError('Cannot resume: checkpoint selection protocol changed')
         summary['transfer'] = old.get('transfer')
         if initial_hash and initial_hash != old.get('initial_weights_sha256'):
             raise ValueError('Initial weights changed during resume')
@@ -284,20 +290,22 @@ def fit_state(bundle: ObservationBundle, run_dir: str | Path, steps: int = 100,
         nn.utils.clip_grad_norm_(model.parameters(), 1.0); optimiser.step()
         if (step + 1) % cfg.validation_every == 0 or step + 1 == steps or step+1 in checkpoint_steps:
             model.eval()
-            with torch.no_grad():
-                vo = model(vx, vm, vc,None if ctx is None else ctx[valid])
-                vr = masked_weighted_mse(vo["programme"], x[valid], hidden, vt)
-                vclock = masked_weighted_mse(vo["clock"], targets[valid], clock_mask[valid], vt)
-                score = float(vr + (cfg.clock_weight * vclock if available_clock else 0))
+            vr = vclock = score = None
+            if checkpoint_selection == 'validation':
+                with torch.no_grad():
+                    vo = model(vx, vm, vc,None if ctx is None else ctx[valid])
+                    vr = masked_weighted_mse(vo["programme"], x[valid], hidden, vt)
+                    vclock = masked_weighted_mse(vo["clock"], targets[valid], clock_mask[valid], vt)
+                    score = float(vr + (cfg.clock_weight * vclock if available_clock else 0))
             row = {"step": step + 1, "train_reconstruction": float(recon.detach()),
                    "train_clock": float(closs.detach()) if available_clock else None,
-                   "validation_hidden_mse_scaled": float(vr),
-                   "validation_clock_mse": float(vclock) if available_clock and clock_mask[valid].any() else None,
+                   "validation_hidden_mse_scaled": float(vr) if vr is not None else None,
+                   "validation_clock_mse": float(vclock) if vclock is not None and available_clock and clock_mask[valid].any() else None,
                    "selection_score": score}
             with log_path.open("a", encoding="utf-8") as f:
                 f.write(json.dumps(row, allow_nan=False) + "\n")
-            improved = score < best
-            if improved:
+            improved = step + 1 == steps if checkpoint_selection == 'fixed_final' else score < best
+            if improved and score is not None:
                 best = score
             ck = {"model": model.state_dict(), "optimiser": optimiser.state_dict(),
                   "step": step + 1, "best_score": best, "mean": tensor(mu), "scale": tensor(scale)}
@@ -320,7 +328,7 @@ def fit_state(bundle: ObservationBundle, run_dir: str | Path, steps: int = 100,
                                                           hidden.cpu().numpy(), [b.rows[i] for i in valid]),
         "clock": grouped_metrics(raw["clock"].cpu().numpy(), b.clock[valid], b.clock_mask[valid],
                                   [b.rows[i] for i in valid]) if available_clock else {"status": "unavailable"},
-        "steps_completed": steps, "checkpoint_selection": "validation_hidden_mse_scaled + weighted_clock_mse",
+        "steps_completed": steps, "checkpoint_selection": "fixed_final_no_outer_selection" if checkpoint_selection == 'fixed_final' else "validation_hidden_mse_scaled + weighted_clock_mse",
         "limitations": ["Validation reconstruction concerns artificial extra corruption, not latent biological truth",
                         "Task-level study metrics are reported; no population generalisation claim is made",
                         "No calibrated uncertainty or functional depth is fitted"]}
