@@ -14,7 +14,7 @@ def compare_representations(run, states):
     result={}
     for view in ('bulk','core','coarse'):
         names=[f'numeric_{view}_{rep}' for rep in ('C0','C1','C2')]
-        if not all(states[n]['status']=='completed' for n in names):continue
+        if not all(states.get(n,{}).get('status')=='completed' for n in names):continue
         arrays=[];statuses=[];contracts=[]
         for n in names:
             path=run/'tasks'/n
@@ -100,6 +100,23 @@ def revision_plan(units):
     return jobs
 
 
+def stage_plan(units,alpha=100.):
+    # Exploratory fits, semantic grids, family panels and stress sweeps remain in the parent archive.
+    jobs=[]
+    for j in revision_plan(units):
+        keep=(j['kind'] in {'prepare','identity','qwen','chain','residual','support','gene_waves'}
+              or (j['kind']=='numeric' and j['id'] in {'numeric_'+v+'_C2' for v in ('bulk','core','coarse')}))
+        if not keep:continue
+        j=dict(j)
+        if j['kind'] in {'residual','support'}:j['reuse_parent']=True;j['deps']=['numeric_'+j['view']+'_C2']
+        jobs.append(j)
+    for view in ('bulk','core','coarse'):
+        jobs.append({'id':'shrink_'+view,'kind':'residual','view':view,'alpha':alpha,'resource':'cpu','deps':['numeric_'+view+'_C2']})
+        jobs.append({'id':'stage_'+view,'kind':'stage_view','view':view,'resource':'cpu',
+                     'deps':['numeric_'+view+'_C2','residual_'+view,'support_'+view,'gene_waves_'+view]})
+    return jobs
+
+
 def reuse_parent(parent, run, job, private):
     """Verify every reused byte before copying; no old answers become new inference."""
     old=read_json(parent/'queue_status.json')['tasks'][job['id']]
@@ -146,7 +163,8 @@ def report(run,plan,states):
                                    for k in ('added','rerun','reused_verified')}
     result['execution_categories']['unfinished']=[name for name,s in states.items() if s.get('status')!='completed']
     write_json(run/'queue_status.json',result)
-    lines=['# CW1 Clock–Identity–Wave 开发轮','','状态：'+overall,
+    is_stage=any(j['kind']=='stage_view' for j in plan)
+    lines=['# '+('CW-stage-1 阶段收拢' if is_stage else 'CW1 Clock–Identity–Wave 开发轮'),'','状态：'+overall,
            '本轮为数值拟合、现有 Qwen 推理和分组评价；未安排新 LoRA。没有查询预留样本。',
            'clock 是 Early/Developing 参考坐标，不是时间、恢复百分比或 depth。身份标签为源注释的粗分组参考。',
            '独立单元按 pool/生物学单位计；不把类型 profile 数算作独立重复。','',
@@ -161,7 +179,11 @@ def report(run,plan,states):
             if m:
                 a=m['model_in_reference'];b=m['ridge_same_support']
                 lines.append(f"|{j['id']}|{a['macro_unit_mse']}|{b['macro_unit_mse']}|{a['coverage']}|")
-    lines+=['','## 范围与解释','','语义零条件复用 numeric_bulk_C2；correct/shuffle 是固定图正则对照，不是新增跨物种同源关系。',
+    if is_stage:
+        lines+=['','## 阶段入口','本轮默认路线、范围内外成绩与局限见 MODEL_CARD_CN.md 和 STAGE_SUMMARY.json。',
+                '已完成数值与支持诊断按文件指纹复用；只新增固定收缩诊断、默认调用和版本化身份评价。',
+                '旧语义、逐 pool、家族与压力测试留在父 run，不在本轮重做。无新数据、LoRA、PK2 扩训或预留查询。']
+    else:lines+=['','## 范围与解释','','语义零条件复用 numeric_bulk_C2；correct/shuffle 是固定图正则对照，不是新增跨物种同源关系。',
             'I0 为源标签映射一致性，不计作独立身份分类准确率。I2/I3 为数值支持后的 Qwen 证据确认或拒答。',
             '原 split 三视图九次拟合、整 pool 逐单元 C0/C2；三项预定义 GO 家族读出额外重拟合。',
             '身份原 split 一次及逐 pool 折：两种 Qwen 各一次加载，逐卡单进程，不是再次领域训练。',
@@ -171,7 +193,7 @@ def report(run,plan,states):
     if any(j['kind']=='residual' for j in plan):
         lines+=['','## CW1 定向修订',f"已校验复用旧任务：{result['reused_verified']}；其余状态见完整队列。",
                 '执行分类：'+str({k:len(v) for k,v in result['execution_categories'].items()})+'（新增/重跑/复用仅计完成项，未完成单列）。',
-                '旧数值模型冻结。Qwen 使用 short_slots_v2 重新生成原卡、无数值提示和证据挑战；不进行新 LoRA。',
+                '旧数值模型冻结。Qwen 使用本 run 配置中的版本化合同重新生成原卡、无数值提示和证据挑战；不进行新 LoRA。',
                 '原卡链保留数值支持门槛；无提示/挑战独立评分，不送入正式 chain。技术失败与 biological unknown 分开。',
                 'residual_* 保存四模型共同支持、外推和匹配训练行 Ridge 对照；support_* 保存条件/身份支持与训练锚点敏感性。']
         for j in plan:
@@ -188,14 +210,17 @@ def orchestrate(a):
     run=a.run.resolve();run.mkdir(parents=True,exist_ok=True)
     private=a.private_root.resolve();source=a.source.resolve()
     protocol=read_json(ROOT/'configs/clock_wave.json');crosswalk=read_json(ROOT/'configs/identity_crosswalk.json')
-    parent=a.revision_source.resolve() if a.revision_source else None
+    stage_source=getattr(a,'stage_source',None)
+    if stage_source and a.revision_source:raise ValueError('Choose stage source or original revision source, not both')
+    parent=stage_source.resolve() if stage_source else a.revision_source.resolve() if a.revision_source else None
     if parent:
         if parent==run or run.is_relative_to(parent):raise ValueError('Revision must be outside original run')
         original_config=read_json(parent/'config.json')
         if Path(original_config['source']).resolve()!=source:raise ValueError('Use original CW1 PK2 source')
-        if original_config['protocol']!=protocol or original_config['crosswalk']!=crosswalk:
+        expected={**protocol,**read_json(ROOT/'configs/clock_wave_revision.json')} if stage_source else protocol
+        if original_config['protocol']!=expected or original_config['crosswalk']!=crosswalk:
             raise ValueError('Frozen CW1 protocol differs; do not silently revise old models')
-        protocol={**protocol,**read_json(ROOT/'configs/clock_wave_revision.json')}
+        protocol={**protocol,**read_json(ROOT/'configs'/('stage.json' if stage_source else 'clock_wave_revision.json'))}
     # Read metadata only to enumerate the actual authorized units; do not inspect held expression.
     original=read_json(private/'prepared/core/manifest.json')
     units=len({r['biological_unit'] for r in original['rows']})
@@ -204,7 +229,7 @@ def orchestrate(a):
        'role_manifest_sha256':sha256(private/'sample_roles.json'),'source_config_sha256':sha256(source/'config.json'),
        'qwen_enabled':not a.no_qwen}
     if parent:c['revision_parent']={'path':str(parent),'config_sha256':sha256(parent/'config.json'),'queue_sha256':sha256(parent/'queue_status.json')}
-    plan=revision_plan(units) if parent else build_plan(units)
+    plan=stage_plan(units,protocol['residual_sensitivity_alpha']) if stage_source else revision_plan(units) if parent else build_plan(units)
     with exclusive_run(run):
         if (run/'config.json').exists():
             if read_json(run/'config.json')!=c or read_json(run/'plan.json')!=plan:raise ValueError('Resume configuration/code/source changed; use a new run')
@@ -253,19 +278,27 @@ def orchestrate(a):
                 concurrent.futures.wait(list(active),timeout=3,return_when=concurrent.futures.FIRST_COMPLETED)
         compare_representations(run,states)
         compare_identity_chains(run,states)
+        if stage_source:
+            from vdc.stage import finalize
+            stage=finalize(run,c,states)
+            result['default_tasks']=stage['default_tasks'];result['stage_status']=stage['status']
+            write_json(run/'queue_status.json',result)
         snapshot={'protocol':c['protocol']['protocol'],'config_hash':object_hash(c),'files':
                   {p.relative_to(run).as_posix():sha256(p) for p in (run/'tasks').rglob('*')
                    if p.is_file() and (p.name in {'result.json','metrics.json','rows.json','query_status.json','predictions.npz','stage_status.json','preflight.json'} or (p.suffix=='.json' and p.name.startswith('identity_')))
                    and states[p.relative_to(run).parts[1]]['status']=='completed'}}
         for name in ('common_support_comparisons.json','identity_chain_comparisons.json'):
             snapshot['files'][name]=sha256(run/name)
+        if stage_source:
+            for name in ('STAGE_SUMMARY.json','stage_snapshot.json','MODEL_CARD_CN.md'):
+                snapshot['files'][name]=sha256(run/name)
         snapshot['snapshot_id']=object_hash(snapshot);write_json(run/'results_snapshot.json',snapshot)
         print({'status':result['status'],'report':str(run/'REPORT_CN.md')},flush=True)
         return 0 if result['status']=='completed_current_scope' else 2
 
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--run',type=Path,required=True);p.add_argument('--private-root',type=Path);p.add_argument('--source',type=Path);p.add_argument('--worker');p.add_argument('--no-qwen',action='store_true');p.add_argument('--revision-source',type=Path);a=p.parse_args()
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--run',type=Path,required=True);p.add_argument('--private-root',type=Path);p.add_argument('--source',type=Path);p.add_argument('--worker');p.add_argument('--no-qwen',action='store_true');p.add_argument('--revision-source',type=Path);p.add_argument('--stage-source',type=Path);a=p.parse_args()
     if a.worker:
         try:
             import torch

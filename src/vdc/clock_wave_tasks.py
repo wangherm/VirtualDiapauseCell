@@ -123,7 +123,7 @@ def qwen_task(run, mode, out, config):
                 'prompt_target_leakage':'only frozen evidence cards; evaluation labels read after generation'}
     write_json(out/'provenance.json',provenance);reports=[]
     jobs=[j for j in read_json(run/'plan.json') if j['kind']=='identity']
-    if config.get('identity_protocol') == 'short_slots_v2':
+    if config.get('identity_protocol') in {'short_slots_v2','fixed_evidence_v3'}:
         from .clock_wave_revision import qwen_inference
         return qwen_inference(run, mode, out, config, model, tok, jobs)
     for spec in jobs:
@@ -249,5 +249,9 @@ def worker(run,spec,root):
         task(run,out,config,c['private_root'])
     elif kind in {'residual','support'}:
         from .clock_wave_revision import residual_task, support_task
-        (residual_task if kind=='residual' else support_task)(run,spec['view'],out,config)
+        cfg={**config,'readout_alpha':spec['alpha']} if 'alpha' in spec else config
+        (residual_task if kind=='residual' else support_task)(run,spec['view'],out,cfg)
+    elif kind=='stage_view':
+        from .stage import build_view
+        build_view(run,spec['view'],out,config)
     else:raise ValueError('Unknown task kind')

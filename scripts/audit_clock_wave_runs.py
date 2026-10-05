@@ -14,8 +14,10 @@ def optional(path, default):
 def inspect_run(run):
     run=Path(run).resolve();c=optional(run/'config.json',{});plan=optional(run/'plan.json',[])
     queue=optional(run/'queue_status.json',{});states=queue.get('tasks',{})
-    protocol=c.get('protocol',{});revision=protocol.get('protocol')==PROTOCOL and protocol.get('identity_protocol')=='short_slots_v2'
+    protocol=c.get('protocol',{});stage=protocol.get('protocol')=='VDC_CW_stage_1_experimental' and protocol.get('identity_protocol')=='fixed_evidence_v3'
+    revision=(protocol.get('protocol')==PROTOCOL and protocol.get('identity_protocol')=='short_slots_v2') or stage
     expected={kind+'_'+view for kind in ('residual','support') for view in ('bulk','core','coarse')}|{'qwen_base','qwen_domain','chain_base','chain_domain'}
+    if stage:expected={kind+'_'+view for kind in ('shrink','stage') for view in ('bulk','core','coarse')}|{'qwen_base','qwen_domain','chain_base','chain_domain'}
     jobs={j['id']:j for j in plan};valid_revision=revision and expected.issubset(jobs)
     categories={'added':[],'rerun':[],'reused_verified':[],'historical_completed':[],'unfinished':[]}
     errors=[];fresh_evidence={}
@@ -30,22 +32,25 @@ def inspect_run(run):
         if state.get('execution_kind')=='reused_verified':categories['reused_verified'].append(name);continue
         if not valid_revision:categories['historical_completed'].append(name);continue
         job=jobs.get(name,{})
-        kind='added' if job.get('kind') in {'residual','support'} else 'rerun' if name in expected else None
+        kind='added' if job.get('kind') in {'residual','support','stage_view'} else 'rerun' if name in expected else None
         if kind is None:
             categories['unfinished'].append({'task':name,'status':'unclassified_completion'});continue
         try:
             result=read_json(run/'tasks'/name/'result.json')
             if name.startswith('qwen_'):
-                if result.get('contract')!='short_slots_v2':raise ValueError('No short-contract generation result')
-                count=0
+                if result.get('contract')!=protocol['identity_protocol']:raise ValueError('No matching identity-contract generation result')
+                count=0;all_count=0
                 for j in plan:
                     if j['kind']!='identity':continue
-                    path=run/'tasks'/name/(j['id']+'.json');a=read_json(path)
                     cards=sum(bool(s.strip()) for s in (run/'tasks'/j['id']/'cards.jsonl').read_text(encoding='utf-8').splitlines())
-                    if not a.get('complete') or len(a['responses'])!=cards:raise ValueError('Original-card responses incomplete')
                     fields={'mapping','prompt_tokens','response_tokens','raw_answer','stop_observation','identity_status','json_valid','schema_valid','evidence_valid'}
-                    if any(not fields.issubset(r) for r in a['responses']):raise ValueError('Missing fresh generation diagnostics')
-                    count+=len(a['responses'])
+                    for condition in (('original','no_numeric','challenge') if stage else ('original',)):
+                        path=run/'tasks'/name/(j['id']+('' if condition=='original' else '_'+condition)+'.json');a=read_json(path)
+                        if not a.get('complete') or len(a['responses'])!=cards:raise ValueError(condition+' responses incomplete')
+                        if any(not fields.issubset(r) for r in a['responses']):raise ValueError('Missing fresh generation diagnostics')
+                        all_count+=len(a['responses'])
+                        if condition=='original':count+=len(a['responses'])
+                if stage and all_count!=result.get('generation_count'):raise ValueError('Three-condition generation count mismatch')
                 fresh_evidence[name]={'original_responses':count,'all_conditions_generations':result.get('generation_count'),
                                       'status_counts':result.get('status_counts')}
             elif job.get('kind')=='residual':
@@ -56,6 +61,8 @@ def inspect_run(run):
                     raise ValueError('Missing unchanged-range support diagnosis')
             elif name.startswith('chain_'):
                 if not (run/'tasks'/name/'stage_status.json').is_file():raise ValueError('No stage failure provenance')
+            elif job.get('kind')=='stage_view':
+                if result.get('actual_default_invocation')!='passed' or result.get('reload')!='passed':raise ValueError('No actual default route/reload evidence')
             categories[kind].append(name)
         except (OSError,ValueError,KeyError,TypeError) as exc:
             errors.append({'task':name,'error':str(exc)});categories['unfinished'].append({'task':name,'status':'output_contract_unverified'})
@@ -86,17 +93,17 @@ def inspect_run(run):
 
 def scan(private, extra_roots=()):
     private=Path(private).resolve();pointers={}
-    for name in ('LATEST_CLOCK_WAVE.txt','LATEST_CLOCK_WAVE_RELEASE.txt','LATEST_CLOCK_WAVE_REVISION.txt'):
+    for name in ('LATEST_CLOCK_WAVE.txt','LATEST_CLOCK_WAVE_RELEASE.txt','LATEST_CLOCK_WAVE_REVISION.txt','LATEST_STAGE.txt','LATEST_STAGE_RELEASE.txt'):
         p=private/name;pointers[name]=p.read_text().strip() if p.exists() else None
     roots=[private/'runs',*map(Path,extra_roots)];paths=set()
     for root in roots:
         if root.exists():
             for c in root.glob('*/config.json'):
                 try:
-                    if str(read_json(c).get('protocol',{}).get('protocol','')).startswith('VDC_CW1'):paths.add(c.parent.resolve())
+                    if str(read_json(c).get('protocol',{}).get('protocol','')).startswith(('VDC_CW1','VDC_CW_stage')):paths.add(c.parent.resolve())
                 except (OSError,ValueError,AttributeError):continue
             paths.update(p.resolve() for p in root.glob('clock_wave*') if p.is_dir())
-    for name in ('LATEST_CLOCK_WAVE.txt','LATEST_CLOCK_WAVE_REVISION.txt'):
+    for name in ('LATEST_CLOCK_WAVE.txt','LATEST_CLOCK_WAVE_REVISION.txt','LATEST_STAGE.txt'):
         if pointers[name] and Path(pointers[name]).is_dir():paths.add(Path(pointers[name]).resolve())
     runs=[]
     for p in sorted(paths):

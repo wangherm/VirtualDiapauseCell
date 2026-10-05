@@ -1,0 +1,11 @@
+{
+  "protocol": "VDC_CW_stage_1_experimental",
+  "identity_protocol": "fixed_evidence_v3",
+  "qwen_max_new_tokens": 256,
+  "anchor_bootstrap_draws": 100,
+  "stage_routes": {"bulk": "clock_identity_residual", "core": "clock_identity", "coarse": "clock_identity"},
+  "residual_sensitivity_alpha": 100.0,
+  "residual_sensitivity_selection": "fixed diagnostic only; no automatic replacement of stage routes",
+  "identity_default": "inherited_declared_identity; Qwen is an auxiliary evidence assay",
+  "serving_mode": "saved_development_results_only"
+}

@@ -1,10 +1,10 @@
 name: Validate definitions and modular framework
-on: [push, pull_request]
+on: [push, pull_request, workflow_dispatch]
 permissions:
   contents: read
 jobs:
   catalogue:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -20,8 +20,9 @@ jobs:
       - run: bash -n scripts/install_clock_wave_release.sh && bash -n scripts/launch_clock_wave.sh && bash -n scripts/resume_clock_wave.sh
       - run: bash -n scripts/install_clock_wave_revision.sh
       - run: bash -n scripts/reconcile_clock_wave.sh
+      - run: bash -n scripts/vdc_stage.sh
   software:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

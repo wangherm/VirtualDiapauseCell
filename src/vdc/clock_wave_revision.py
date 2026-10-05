@@ -14,12 +14,13 @@ from . import identity, identity_protocol as protocol
 def qwen_inference(run, mode, out, config, model, tok, jobs):
     import torch
     provenance=read_json(out/'provenance.json')
-    provenance.update(contract='short_slots_v2',decision_rule='original: corroborate numeric gate; no_numeric/challenge: independent evidence assay, never used by the chain',
+    contract=config.get('identity_protocol','short_slots_v2');fixed=contract=='fixed_evidence_v3'
+    provenance.update(contract=contract,decision_rule='original: corroborate numeric gate; no_numeric/challenge: independent evidence assay, never used by the chain',
                       evidence_validation_scope='unique positive-expression slots from this query; not independent validation of marker biology')
     write_json(out/'provenance.json',provenance)
     budget=config['qwen_max_new_tokens']; cache={}
     def generate(card, condition):
-        public,mapping=protocol.short_card(card,condition); text=protocol.prompt(public)
+        public,mapping=protocol.short_card(card,condition); text=(protocol.fixed_prompt if fixed else protocol.prompt)(public)
         tokens=tok.apply_chat_template([{'role':'user','content':text}],tokenize=True,add_generation_prompt=True,return_tensors='pt')
         record={'query_id':card['query_id'],'condition':condition,'prompt':text,'mapping':mapping,
                 'prompt_tokens':int(tokens.shape[1]),'max_new_tokens':budget}
@@ -32,7 +33,7 @@ def qwen_inference(run, mode, out, config, model, tok, jobs):
             answer=model.generate(tokens,attention_mask=torch.ones_like(tokens),max_new_tokens=budget,
                                   do_sample=False,pad_token_id=tok.eos_token_id,use_cache=True)
         ids=answer[0,tokens.shape[1]:].tolist(); raw=tok.decode(ids,skip_special_tokens=True)
-        return {**record,**protocol.parse(raw,mapping),'raw_answer':raw,
+        return {**record,**(protocol.parse_fixed if fixed else protocol.parse)(raw,mapping),'raw_answer':raw,
                 **protocol.stop_record(ids,model.generation_config.eos_token_id,budget)}
     # Deterministic engineering gate. No labels, clock results or answer repairs used.
     first=next(j for j in jobs if j['id']=='identity_original')
@@ -40,8 +41,13 @@ def qwen_inference(run, mode, out, config, model, tok, jobs):
     for card in read_jsonl(run/'tasks'/first['id']/'cards.jsonl')[:3]:
         response=generate(card,'original');preflight.append(response);cache[card['query_id']]=response
         write_json(out/'preflight.json',{'responses':preflight,'policy':'all three must have valid JSON/schema/current-card evidence; acceptance not required'})
-    if len(preflight)!=3 or not all(r['format_valid'] for r in preflight):
+    valid_preflight=len(preflight)==3 and all(r['format_valid'] for r in preflight)
+    if not valid_preflight and not fixed:
         raise RuntimeError('Short-contract engineering preflight failed; preserved raw responses; independent CPU tasks continue')
+    if fixed:
+        write_json(out/'preflight.json',{'responses':preflight,'contract':contract,
+                   'format_check':'passed' if valid_preflight else 'failed_collect_full_fixed_budget_evaluation',
+                   'policy':'schema/evidence failures remain failures; complete prespecified evaluation, no repairs or biological gate changes'})
     reports=[]; counts=Counter()
     for spec in jobs:
         folder=run/'tasks'/spec['id'];cards=read_jsonl(folder/'cards.jsonl')
@@ -63,7 +69,7 @@ def qwen_inference(run, mode, out, config, model, tok, jobs):
             print('SHORT_IDENTITY',mode,spec['id'],condition,len(responses),flush=True)
     write_json(out/'result.json',{'status':'evaluated','mode':mode,'folds':reports,'status_counts':dict(counts),
                'new_training':False,'generation_count':sum(counts.values()),'historical_answers_reparsed':False,
-               'preflight_reused_without_duplicate_generation':3,'contract':'short_slots_v2'})
+               'preflight_reused_without_duplicate_generation':3,'contract':contract,'preflight_valid':valid_preflight})
 
 
 def residual_features(model, counts, types):
@@ -114,6 +120,7 @@ def residual_task(run, view, out, config):
     write_json(out/'validation/rows.json',rr);write_json(out/'validation/query_status.json',{'status':old['status'],'identity':np.array(types)[va].tolist()})
     write_json(out/'validation/metrics.json',result)
     write_json(out/'result.json',{'status':'evaluated','metrics':result,'new_readout_fit':True,'clock_refitted':False,
+               'readout_alpha':config['readout_alpha'],
                'target_genes':model.meta['target_genes'],'fit_ids':[rows[i]['observation_id'] for i in tr],
                'frozen_model_sha256':sha256(run/'tasks'/('numeric_'+view+'_C2')/'model/model.json'),
                'residual_training':'in-sample training-only frozen reference; not cross-fitted; alpha fixed before evaluation',

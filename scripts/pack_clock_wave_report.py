@@ -36,10 +36,11 @@ def pack(run,out=None,require_revision=False):
             new_queue=read_json(run/'queue_status.json');before=old_queue.get('tasks',{});after=new_queue.get('tasks',{})
             delta={'status':'compared_task_inventories' if before else 'parent_inventory_unavailable',
                    'added_task_ids':sorted(after.keys()-before.keys()),
+                   'historical_tasks_not_in_default_queue':sorted(before.keys()-after.keys()),
                    'changed_task_inventories':sorted(n for n in after.keys()&before.keys() if after[n].get('files')!=before[n].get('files')),
                    'identical_task_inventories':sorted(n for n in after.keys()&before.keys() if after[n].get('files')==before[n].get('files'))}
         pointers={}
-        for name in ('LATEST_CLOCK_WAVE.txt','LATEST_CLOCK_WAVE_RELEASE.txt','LATEST_CLOCK_WAVE_REVISION.txt'):
+        for name in ('LATEST_CLOCK_WAVE.txt','LATEST_CLOCK_WAVE_RELEASE.txt','LATEST_CLOCK_WAVE_REVISION.txt','LATEST_STAGE.txt','LATEST_STAGE_RELEASE.txt'):
             path=run.parent.parent/name;pointers[name]=path.read_text().strip() if path.exists() else None
         provenance={'packaged_at_utc':stamp,'explicit_run':str(run),'packager_sha256':sha256(Path(__file__)),
                     'payload_fingerprint':payload_hash,'identical_previous_packages':matches,
