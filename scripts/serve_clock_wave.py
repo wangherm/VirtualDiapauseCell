@@ -17,6 +17,14 @@ def create_app(run):
     def health():return {'status':'ready','snapshot_id':snapshot['snapshot_id'],'mode':'experimental_saved_development_results','live_inference':False}
     @app.get('/tasks')
     def tasks():return read_json(run/'queue_status.json')
+    @app.get('/comparisons')
+    def comparisons():
+        result={}
+        for name in ('common_support_comparisons.json','identity_chain_comparisons.json'):
+            if name not in snapshot['files']:continue
+            if sha256(run/name)!=snapshot['files'][name]:raise HTTPException(409,'Comparison changed')
+            result[name]=read_json(run/name)
+        return result
     @app.get('/task/{name}')
     def task(name:str):
         if name not in read_json(run/'queue_status.json')['tasks']:raise HTTPException(404)
@@ -32,9 +40,10 @@ def create_app(run):
     def home():return '''<!doctype html><meta charset="utf-8"><title>CW1 开发结果</title>
 <style>body{font:16px system-ui;max-width:1100px;margin:40px auto;color:#172333}select,button{padding:8px}pre{white-space:pre-wrap;background:#f5f7fa;padding:20px}canvas{border:1px solid #bbb}</style>
 <h1>Clock–Identity–Wave · experimental</h1><p>开发集结果；clock 是参考位置，不是恢复百分比或 depth。显示保存的预测，不执行新查询。</p>
-<select id="jobs"></select> <button id="load">查看</button><p id="caption"></p><canvas id="plot" width="1000" height="260"></canvas><pre id="result"></pre>
+<select id="jobs"></select> <button id="load">查看</button> <button id="compare">共同支持比较</button><p id="caption"></p><canvas id="plot" width="1000" height="260"></canvas><pre id="result"></pre>
 <script>
 let state; const jobs=document.getElementById('jobs'),res=document.getElementById('result');
+document.getElementById('compare').onclick=async()=>{res.textContent=JSON.stringify(await(await fetch('/comparisons')).json(),null,2)};
 fetch('/tasks').then(r=>r.json()).then(s=>{state=s; for(const [k,v] of Object.entries(s.tasks)){let o=document.createElement('option');o.value=k;o.textContent=k+' — '+v.status;jobs.append(o)}res.textContent=JSON.stringify({status:s.status,counts:s.counts},null,2)});
 document.getElementById('load').onclick=async()=>{
   let data=await(await fetch('/task/'+encodeURIComponent(jobs.value))).json();res.textContent=JSON.stringify(data,null,2);

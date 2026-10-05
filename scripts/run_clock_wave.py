@@ -62,6 +62,33 @@ def build_plan(units):
     return jobs
 
 
+def compare_identity_chains(run, states):
+    import numpy as np
+    from vdc.pk2_numeric import metrics
+    names=['numeric_coarse_C2','chain_numeric','chain_base','chain_domain']
+    missing=[n for n in names if states.get(n,{}).get('status')!='completed']
+    if missing:
+        result={'status':'unavailable','missing':missing,'reason':'Common support needs all named chains; no silent subset comparison'}
+    else:
+        arrays=[];inside=[];rows=None;target=None
+        for name in names:
+            folder=run/'tasks'/name/'validation';rr=read_json(folder/'rows.json')
+            with np.load(folder/'predictions.npz',allow_pickle=False) as a:
+                truth=a['hidden_target'].copy();pred=a['hidden_prediction'].copy()
+            if rows is not None and (rr!=rows or not np.array_equal(truth,target)):
+                raise ValueError('Chain comparison rows or targets differ')
+            rows,target=rr,truth;arrays.append(pred)
+            inside.append(np.isfinite(pred)&np.array([s=='located' for s in read_json(folder/'query_status.json')['status']])[:,None])
+        common=np.logical_and.reduce(inside)
+        result={'status':'evaluated','query_profiles':len(rows),
+                'common_in_reference_coverage':float(common.mean()),
+                'models':{n:{'own_support':metrics(a,target,m,rows),'common_support':metrics(a,target,common,rows)}
+                          for n,a,m in zip(names,arrays,inside)},
+                'interpretation':'Compare MSE only on common support and also report all-query coverage; lower acceptance is not improvement'}
+    write_json(run/'identity_chain_comparisons.json',result)
+    return result
+
+
 def revision_plan(units):
     jobs=build_plan(units)
     for j in jobs:
@@ -201,10 +228,13 @@ def orchestrate(a):
                 if not active:break
                 concurrent.futures.wait(list(active),timeout=3,return_when=concurrent.futures.FIRST_COMPLETED)
         compare_representations(run,states)
+        compare_identity_chains(run,states)
         snapshot={'protocol':c['protocol']['protocol'],'config_hash':object_hash(c),'files':
                   {p.relative_to(run).as_posix():sha256(p) for p in (run/'tasks').rglob('*')
                    if p.is_file() and (p.name in {'result.json','metrics.json','rows.json','query_status.json','predictions.npz','stage_status.json','preflight.json'} or (p.suffix=='.json' and p.name.startswith('identity_')))
                    and states[p.relative_to(run).parts[1]]['status']=='completed'}}
+        for name in ('common_support_comparisons.json','identity_chain_comparisons.json'):
+            snapshot['files'][name]=sha256(run/name)
         snapshot['snapshot_id']=object_hash(snapshot);write_json(run/'results_snapshot.json',snapshot)
         print({'status':result['status'],'report':str(run/'REPORT_CN.md')},flush=True)
         return 0 if result['status']=='completed_current_scope' else 2

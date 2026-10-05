@@ -109,3 +109,21 @@ def test_parent_reuse_checks_data_and_roles_without_mutating_parent(tmp_path):
     assert state['execution_kind']=='reused_verified' and sha256(parent/'queue_status.json')==before
     write_json(parent/'data/data.json',{'test':'modified'})
     with pytest.raises(ValueError):reuse_parent(parent,run,{'id':'prepare','kind':'prepare'},private)
+
+
+def test_identity_chain_common_support_keeps_rejections_in_coverage(tmp_path):
+    from run_clock_wave import compare_identity_chains
+    names=['numeric_coarse_C2','chain_numeric','chain_base','chain_domain'];states={}
+    rows=[{'study_family':'fixture','biological_unit':'u'+str(i)} for i in range(2)]
+    for name in names:
+        folder=tmp_path/'tasks'/name/'validation';pred=np.ones((2,2))
+        status=['located','located']
+        if name=='chain_domain':pred[1]=np.nan;status[1]='unsupported_identity'
+        save_npz(folder/'predictions.npz',hidden_prediction=pred,hidden_target=np.ones((2,2)))
+        write_json(folder/'rows.json',rows);write_json(folder/'query_status.json',{'status':status});states[name]={'status':'completed'}
+    r=compare_identity_chains(tmp_path,states)
+    assert r['common_in_reference_coverage']==.5
+    assert r['models']['chain_numeric']['own_support']['coverage']==1
+    assert r['models']['chain_numeric']['common_support']['coverage']==.5
+    states['chain_base']['status']='failed'
+    assert compare_identity_chains(tmp_path,states)['status']=='unavailable'
