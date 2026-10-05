@@ -1,6 +1,6 @@
 """CW1 development queue. Real fits and evaluations; existing Qwen inference only."""
 from pathlib import Path
-import argparse, concurrent.futures, os, subprocess, sys, time, traceback
+import argparse, concurrent.futures, os, subprocess, sys, time, traceback, shutil
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'scripts'))
 from run_all_modules import utc, exclusive_run, source_fingerprint
@@ -62,12 +62,41 @@ def build_plan(units):
     return jobs
 
 
+def revision_plan(units):
+    jobs=build_plan(units)
+    for j in jobs:
+        j['reuse_parent']=j['kind']!='qwen' and not (j['kind']=='chain' and j['mode']!='numeric')
+    for view in ('bulk','core','coarse'):
+        for kind in ('residual','support'):
+            jobs.append({'id':kind+'_'+view,'kind':kind,'view':view,'resource':'cpu',
+                         'deps':['numeric_'+view+'_'+rep for rep in ('C0','C1','C2')]})
+    return jobs
+
+
+def reuse_parent(parent, run, job, private):
+    """Verify every reused byte before copying; no old answers become new inference."""
+    old=read_json(parent/'queue_status.json')['tasks'][job['id']]
+    if old['status']!='completed':raise ValueError('Parent task incomplete: '+job['id'])
+    verify_files(parent,old['files'])
+    if read_json(parent/'config.json')['role_manifest_sha256']!=sha256(private/'sample_roles.json'):
+        raise ValueError('Approved roles changed since original CW1')
+    for relative in old['files']:
+        if not relative.startswith('tasks/'+job['id']+'/') and not (job['kind']=='prepare' and relative.startswith('data/')):
+            raise ValueError('Unexpected file outside reused task scope: '+relative)
+        destination=run/relative;destination.parent.mkdir(parents=True,exist_ok=True)
+        shutil.copy2(parent/relative,destination)
+    verify_files(run,old['files'])
+    return {**old,'execution_kind':'reused_verified','parent_task':job['id'],
+            'parent_queue_sha256':sha256(parent/'queue_status.json')}
+
+
 def report(run,plan,states):
     counts={s:sum(v['status']==s for v in states.values()) for s in sorted({v['status'] for v in states.values()})}
     terminal={'completed','not_applicable','blocked','failed'}
     finished=all(v['status'] in terminal for v in states.values())
     overall='completed_current_scope' if all(v['status']=='completed' for v in states.values()) else 'partial' if finished else 'running'
     result={'status':overall,'counts':counts,'total':len(plan),'tasks':states,'updated':utc(),
+            'reused_verified':sum(v.get('execution_kind')=='reused_verified' for v in states.values()),
             'reserved_queries_executed':False,'new_qwen_training':False,'future_prediction':None,'depth':None,
             'optional_student':'disabled','composition_stress':states.get('cell_composition',{}).get('status','not_run'),
             'interpretation':'development only; weak models remain reported; no winner selected from prior reserved results'}
@@ -94,6 +123,17 @@ def report(run,plan,states):
             '计数压力目标为原始带噪观测，不是 clean truth；组成任务实际从开发 pool 抽取细胞，固定/偏移组成使用相同总细胞数。',
             '已查看预留材料保持原角色，后续如再查询应声明回顾性；本轮 runner 不提供预留查询开关。',
             '热应激 counts 仍待补；不造 depth、未来预测或缺失头输出。结果浏览器只展示本轮已保存开发预测。']
+    if any(j['kind']=='residual' for j in plan):
+        lines+=['','## CW1 定向修订',f"已校验复用旧任务：{result['reused_verified']}；其余状态见完整队列。",
+                '旧数值模型冻结。Qwen 使用 short_slots_v2 重新生成原卡、无数值提示和证据挑战；不进行新 LoRA。',
+                '原卡链保留数值支持门槛；无提示/挑战独立评分，不送入正式 chain。技术失败与 biological unknown 分开。',
+                'residual_* 保存四模型共同支持、外推和匹配训练行 Ridge 对照；support_* 保存条件/身份支持与训练锚点敏感性。']
+        for j in plan:
+            if j['kind'] not in {'residual','qwen'} or states[j['id']]['status']!='completed':continue
+            data=read_json(run/'tasks'/j['id']/'result.json')
+            if j['kind']=='qwen':lines.append(f"{j['id']}: {data.get('status_counts',{})}")
+            else:
+                lines.append(j['id']+': '+str({k:v['metric']['macro_unit_mse'] for k,v in data['metrics']['in_reference'].items()}))
     (run/'REPORT_CN.md').write_text('\n'.join(lines),encoding='utf-8')
     return result
 
@@ -102,6 +142,14 @@ def orchestrate(a):
     run=a.run.resolve();run.mkdir(parents=True,exist_ok=True)
     private=a.private_root.resolve();source=a.source.resolve()
     protocol=read_json(ROOT/'configs/clock_wave.json');crosswalk=read_json(ROOT/'configs/identity_crosswalk.json')
+    parent=a.revision_source.resolve() if a.revision_source else None
+    if parent:
+        if parent==run or run.is_relative_to(parent):raise ValueError('Revision must be outside original run')
+        original_config=read_json(parent/'config.json')
+        if Path(original_config['source']).resolve()!=source:raise ValueError('Use original CW1 PK2 source')
+        if original_config['protocol']!=protocol or original_config['crosswalk']!=crosswalk:
+            raise ValueError('Frozen CW1 protocol differs; do not silently revise old models')
+        protocol={**protocol,**read_json(ROOT/'configs/clock_wave_revision.json')}
     # Read metadata only to enumerate the actual authorized units; do not inspect held expression.
     original=read_json(private/'prepared/core/manifest.json')
     units=len({r['biological_unit'] for r in original['rows']})
@@ -109,7 +157,8 @@ def orchestrate(a):
        'code':source_fingerprint(),'annotation_sha256':sha256(ROOT/'knowledge/snapshots/ensembl_2026-10-03/nfurzeri_go.tsv'),
        'role_manifest_sha256':sha256(private/'sample_roles.json'),'source_config_sha256':sha256(source/'config.json'),
        'qwen_enabled':not a.no_qwen}
-    plan=build_plan(units)
+    if parent:c['revision_parent']={'path':str(parent),'config_sha256':sha256(parent/'config.json'),'queue_sha256':sha256(parent/'queue_status.json')}
+    plan=revision_plan(units) if parent else build_plan(units)
     with exclusive_run(run):
         if (run/'config.json').exists():
             if read_json(run/'config.json')!=c or read_json(run/'plan.json')!=plan:raise ValueError('Resume configuration/code/source changed; use a new run')
@@ -120,6 +169,8 @@ def orchestrate(a):
         for j in plan:
             name=j['id'];prior=states.get(name,{})
             if prior.get('status')=='completed':verify_files(run,prior['files'])
+            elif j.get('reuse_parent'):
+                states[name]=reuse_parent(parent,run,j,private);print('REUSED_VERIFIED',name,flush=True)
             else:states[name]={'status':'pending'}
             if a.no_qwen and j['kind']=='qwen':states[name]={'status':'blocked','reason':'explicit_no_qwen_local_CPU_verification; not server execution'}
         def execute(job):
@@ -152,7 +203,7 @@ def orchestrate(a):
         compare_representations(run,states)
         snapshot={'protocol':c['protocol']['protocol'],'config_hash':object_hash(c),'files':
                   {p.relative_to(run).as_posix():sha256(p) for p in (run/'tasks').rglob('*')
-                   if p.is_file() and p.name in {'result.json','metrics.json','rows.json','query_status.json','predictions.npz'}
+                   if p.is_file() and (p.name in {'result.json','metrics.json','rows.json','query_status.json','predictions.npz','stage_status.json','preflight.json'} or (p.suffix=='.json' and p.name.startswith('identity_')))
                    and states[p.relative_to(run).parts[1]]['status']=='completed'}}
         snapshot['snapshot_id']=object_hash(snapshot);write_json(run/'results_snapshot.json',snapshot)
         print({'status':result['status'],'report':str(run/'REPORT_CN.md')},flush=True)
@@ -160,7 +211,7 @@ def orchestrate(a):
 
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--run',type=Path,required=True);p.add_argument('--private-root',type=Path);p.add_argument('--source',type=Path);p.add_argument('--worker');p.add_argument('--no-qwen',action='store_true');a=p.parse_args()
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--run',type=Path,required=True);p.add_argument('--private-root',type=Path);p.add_argument('--source',type=Path);p.add_argument('--worker');p.add_argument('--no-qwen',action='store_true');p.add_argument('--revision-source',type=Path);a=p.parse_args()
     if a.worker:
         try:
             import torch

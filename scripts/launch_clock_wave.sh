@@ -23,7 +23,11 @@ exec >> "$RUN/console.log" 2>&1
 trap 'code=$?; printf "TASK_EXIT_CODE=%s\n" "$code"; printf "%s\n" "$code" > "$RUN/exit_code.txt"' EXIT
 export PYTHONUNBUFFERED=1 OMP_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2 MKL_NUM_THREADS=2
 code=0
-"$VDC_PYTHON" -u scripts/run_clock_wave.py --run "$RUN" --private-root "$VDC_PRIVATE_ROOT" --source "$VDC_CW_SOURCE" || code=$?
+extra=()
+if [[ -n "${VDC_CW_REVISION_SOURCE:-}" ]]; then
+  extra=(--revision-source "$VDC_CW_REVISION_SOURCE")
+fi
+"$VDC_PYTHON" -u scripts/run_clock_wave.py --run "$RUN" --private-root "$VDC_PRIVATE_ROOT" --source "$VDC_CW_SOURCE" "${extra[@]}" || code=$?
 if [[ -f "$RUN/results_snapshot.json" ]]; then
   "$VDC_PYTHON" scripts/serve_clock_wave.py --run "$RUN" --verify
 fi

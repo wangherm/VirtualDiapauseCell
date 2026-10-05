@@ -27,7 +27,7 @@ def create_app(run):
             if p.suffix=='.json':files[n]=read_json(p)
             elif p.name=='predictions.npz' and p.parent.name=='validation':
                 with np.load(p,allow_pickle=False) as a:files[n]={k:jsonable(a[k]) for k in a.files}
-        return {'snapshot_id':snapshot['snapshot_id'],'files':files}
+        return {'snapshot_id':snapshot['snapshot_id'],'task_state':read_json(run/'queue_status.json')['tasks'][name],'files':files}
     @app.get('/',response_class=HTMLResponse)
     def home():return '''<!doctype html><meta charset="utf-8"><title>CW1 开发结果</title>
 <style>body{font:16px system-ui;max-width:1100px;margin:40px auto;color:#172333}select,button{padding:8px}pre{white-space:pre-wrap;background:#f5f7fa;padding:20px}canvas{border:1px solid #bbb}</style>
@@ -36,7 +36,18 @@ def create_app(run):
 <script>
 let state; const jobs=document.getElementById('jobs'),res=document.getElementById('result');
 fetch('/tasks').then(r=>r.json()).then(s=>{state=s; for(const [k,v] of Object.entries(s.tasks)){let o=document.createElement('option');o.value=k;o.textContent=k+' — '+v.status;jobs.append(o)}res.textContent=JSON.stringify({status:s.status,counts:s.counts},null,2)});
-document.getElementById('load').onclick=async()=>{let data=await(await fetch('/task/'+encodeURIComponent(jobs.value))).json();res.textContent=JSON.stringify(data,null,2);let a=Object.entries(data.files||{}).find(([k,v])=>k.endsWith('validation/predictions.npz'));let c=document.getElementById('plot').getContext('2d');c.clearRect(0,0,1000,260);document.getElementById('caption').textContent='';if(!a)return;let t=a[1].clock||[],v=t.filter(Number.isFinite);if(!v.length)return;let lo=Math.min(0,...v),hi=Math.max(1,...v);c.strokeStyle='#aaa';c.beginPath();c.moveTo(30,225);c.lineTo(980,225);c.stroke();t.forEach((z,i)=>{if(Number.isFinite(z)){c.fillStyle=z<0||z>1?'#b54f24':'#176d9a';c.beginPath();c.arc(40+i*920/Math.max(t.length-1,1),220-(z-lo)/(hi-lo)*190,4,0,7);c.fill()}});document.getElementById('caption').textContent='逐 profile 参考位置（不裁剪）：范围 '+lo.toFixed(3)+' 至 '+hi.toFixed(3)+'。适用范围以 query_status 为准。'};
+document.getElementById('load').onclick=async()=>{
+  let data=await(await fetch('/task/'+encodeURIComponent(jobs.value))).json();res.textContent=JSON.stringify(data,null,2);
+  let entries=Object.entries(data.files||{}),a=entries.find(([k,v])=>k.endsWith('validation/predictions.npz'));
+  let status=entries.find(([k,v])=>k.endsWith('validation/query_status.json'));
+  let stages=entries.find(([k,v])=>k.endsWith('stage_status.json'));
+  let caption=document.getElementById('caption'),c=document.getElementById('plot').getContext('2d');c.clearRect(0,0,1000,260);
+  caption.textContent=stages?'身份确认、clock定位、表达预测的逐阶段状态见 stage_status；数值建议不算作 LLM 成功。':'';
+  if(!a)return;let t=a[1].clock||[],v=t.filter(Number.isFinite);if(!v.length)return;
+  let lo=Math.min(0,...v),hi=Math.max(1,...v);c.strokeStyle='#aaa';c.beginPath();c.moveTo(30,225);c.lineTo(980,225);c.stroke();
+  t.forEach((z,i)=>{if(Number.isFinite(z)){c.fillStyle=status&&status[1].status[i]==='located'?'#176d9a':'#b54f24';c.beginPath();c.arc(40+i*920/Math.max(t.length-1,1),220-(z-lo)/(hi-lo)*190,4,0,7);c.fill()}});
+  caption.textContent+=' 逐 profile 参考位置（不裁剪）：'+lo.toFixed(3)+' 至 '+hi.toFixed(3)+'。蓝色为训练参考范围内，橙色为范围外；各身份范围分别定义，不能用统一 0–1 判断。';
+};
 </script>'''
     return app
 

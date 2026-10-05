@@ -123,6 +123,9 @@ def qwen_task(run, mode, out, config):
                 'prompt_target_leakage':'only frozen evidence cards; evaluation labels read after generation'}
     write_json(out/'provenance.json',provenance);reports=[]
     jobs=[j for j in read_json(run/'plan.json') if j['kind']=='identity']
+    if config.get('identity_protocol') == 'short_slots_v2':
+        from .clock_wave_revision import qwen_inference
+        return qwen_inference(run, mode, out, config, model, tok, jobs)
     for spec in jobs:
         folder=run/'tasks'/spec['id'];cards=read_jsonl(folder/'cards.jsonl');responses=[]
         for card in cards:
@@ -149,7 +152,15 @@ def chain_task(run, mode, out):
     else:prediction=read_json(run/'tasks'/('qwen_'+mode)/'identity_original.json')['responses']
     types=[p['prediction'] for p in prediction];model=ClockWave.load(run/'tasks/numeric_coarse_C2/model')
     result=evaluate(model,x[va],rr,out/'validation',types=types)
+    clock_status=read_json(out/'validation/query_status.json')
+    stages=[{'observation_id':r['observation_id'],
+             'identity_status':p.get('identity_status',p.get('reason','source_annotation')),
+             'numeric_suggestion':n['prediction'], 'identity_used':p['prediction'],
+             'clock_status':s, 'expression_status':'in_reference' if s=='located' else 'extrapolation_only' if s=='outside_reference_range' else 'unavailable'}
+            for r,p,n,s in zip(rr,prediction,read_json(run/'tasks/identity_original/evaluation.json')['numeric'],clock_status['status'])]
+    write_json(out/'stage_status.json',stages)
     write_json(out/'result.json',{'status':'evaluated','identity_condition':mode,'validation':result,
+               'frozen_model_sha256':sha256(run/'tasks/numeric_coarse_C2/model/model.json'),
                'comparison':'same frozen model; compare numeric_coarse_C2 source-annotation identity vs inferred identity',
                'rejection_propagated_to_clock':True})
 
@@ -236,4 +247,7 @@ def worker(run,spec,root):
     elif kind=='cells':
         from .clock_wave_cells import task
         task(run,out,config,c['private_root'])
+    elif kind in {'residual','support'}:
+        from .clock_wave_revision import residual_task, support_task
+        (residual_task if kind=='residual' else support_task)(run,spec['view'],out,config)
     else:raise ValueError('Unknown task kind')

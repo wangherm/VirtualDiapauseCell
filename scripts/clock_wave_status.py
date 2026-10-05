@@ -8,6 +8,7 @@ if __name__=='__main__':
     f=run/'queue_status.json'
     if not f.exists():print('Not initialized yet; check',run/'console.log');raise SystemExit(1)
     q=read_json(f);print('RUN',run);print(q['status'],q['counts'],'total',q['total'])
+    if 'reused_verified' in q:print('Verified reuse:',q['reused_verified'],'; newly completed:',q['counts'].get('completed',0)-q['reused_verified'])
     for name,state in q['tasks'].items():
         if state['status']!='completed':print(name,state['status'],state.get('reason',''))
     print('Report:',run/'REPORT_CN.md')

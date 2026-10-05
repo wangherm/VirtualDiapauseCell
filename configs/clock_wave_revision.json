@@ -1,0 +1,6 @@
+{
+  "protocol": "VDC_CW1_targeted_revision_v2",
+  "identity_protocol": "short_slots_v2",
+  "qwen_max_new_tokens": 256,
+  "anchor_bootstrap_draws": 100
+}
