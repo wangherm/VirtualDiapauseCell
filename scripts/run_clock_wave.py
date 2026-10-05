@@ -58,6 +58,7 @@ def build_plan(units):
     for view in ('bulk','core','coarse'):
         jobs.append({'id':'stress_'+view,'kind':'stress','view':view,'deps':['numeric_'+view+'_C2','identity_original'],'resource':'cpu'})
         jobs.append({'id':'gene_waves_'+view,'kind':'gene_waves','view':view,'deps':['numeric_'+view+'_C2'],'resource':'cpu'})
+    jobs.append({'id':'cell_composition','kind':'cells','resource':'cpu','deps':['numeric_core_C2']})
     return jobs
 
 
@@ -68,7 +69,7 @@ def report(run,plan,states):
     overall='completed_current_scope' if all(v['status']=='completed' for v in states.values()) else 'partial' if finished else 'running'
     result={'status':overall,'counts':counts,'total':len(plan),'tasks':states,'updated':utc(),
             'reserved_queries_executed':False,'new_qwen_training':False,'future_prediction':None,'depth':None,
-            'optional_student':'disabled','composition_stress':'not_run_requires_cell_level_resampling_cache',
+            'optional_student':'disabled','composition_stress':states.get('cell_composition',{}).get('status','not_run'),
             'interpretation':'development only; weak models remain reported; no winner selected from prior reserved results'}
     write_json(run/'queue_status.json',result)
     lines=['# CW1 Clock–Identity–Wave 开发轮','','状态：'+overall,
@@ -90,7 +91,7 @@ def report(run,plan,states):
             'I0 为源标签映射一致性，不计作独立身份分类准确率。I2/I3 为数值支持后的 Qwen 证据确认或拒答。',
             '原 split 三视图九次拟合、整 pool 逐单元 C0/C2；三项预定义 GO 家族读出额外重拟合。',
             '身份原 split 一次及逐 pool 折：两种 Qwen 各一次加载，逐卡单进程，不是再次领域训练。',
-            '计数压力目标为原始带噪观测，不是 clean truth。组成变化需要额外细胞级抽样缓存，本轮明确 not_run。',
+            '计数压力目标为原始带噪观测，不是 clean truth；组成任务实际从开发 pool 抽取细胞，固定/偏移组成使用相同总细胞数。',
             '已查看预留材料保持原角色，后续如再查询应声明回顾性；本轮 runner 不提供预留查询开关。',
             '热应激 counts 仍待补；不造 depth、未来预测或缺失头输出。结果浏览器只展示本轮已保存开发预测。']
     (run/'REPORT_CN.md').write_text('\n'.join(lines),encoding='utf-8')

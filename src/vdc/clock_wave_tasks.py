@@ -174,7 +174,7 @@ def stress_task(run, view, out, config):
                     results.append({'kind':kind,'level':level,'seed':seed,'identity':'inferred_numeric','metrics':r})
     write_json(out/'result.json',{'status':'evaluated','fixed_model':True,'new_fits':False,'experiments':results,
                'truth':'original noisy counts, not clean biological gold','independent_experiments':False,
-               'composition_stress':'not_run_requires_cell_level_resampling_cache; pseudobulk counts cannot reconstruct composition'})
+               'composition_stress':'separate cell_composition task uses actual cells and whole-pool model; not inferred from pseudobulk thinning'})
 
 
 def gene_waves_task(run, view, out, config, root):
@@ -233,4 +233,7 @@ def worker(run,spec,root):
     elif kind=='chain':chain_task(run,spec['mode'],out)
     elif kind=='stress':stress_task(run,spec['view'],out,config)
     elif kind=='gene_waves':gene_waves_task(run,spec['view'],out,config,root)
+    elif kind=='cells':
+        from .clock_wave_cells import task
+        task(run,out,config,c['private_root'])
     else:raise ValueError('Unknown task kind')

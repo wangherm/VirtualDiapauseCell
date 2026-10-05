@@ -148,3 +148,22 @@ def test_pack_omits_counts_and_service_checks_identity(tmp_path):
     with zipfile.ZipFile(package) as z:assert 'data/counts.npz' not in z.namelist()
     write_json(run/'tasks/numeric_a/result.json',{'changed':True})
     with pytest.raises(ValueError):create_app(run)
+
+
+def test_real_cell_sampling_matches_manual_sum_and_cell_budget(tmp_path):
+    h5py=pytest.importorskip('h5py')
+    from scipy.sparse import csr_matrix
+    from vdc.clock_wave_cells import sample_cells
+    x=np.arange(1,61).reshape(20,3);path=tmp_path/'cells.h5ad';s=csr_matrix(x)
+    with h5py.File(path,'w') as f:
+        f.create_dataset('obs/sample',data=np.array(['sample']*20,dtype=h5py.string_dtype()))
+        f.create_dataset('obs/cell_type',data=np.array(['a']*10+['b']*10,dtype=h5py.string_dtype()))
+        f.create_dataset('var/_index',data=np.array(['g0','g1','g2'],dtype=h5py.string_dtype()))
+        m=f.create_group('layers/counts');m.attrs['encoding-type']='csr_matrix'
+        for key,value in [('data',s.data),('indices',s.indices),('indptr',s.indptr)]:m.create_dataset(key,data=value)
+    counts,trials=sample_cells(path,['sample'],['g0','g1','g2'],repeats=2,fractions=(1.,.5))
+    for value,trial in zip(counts,trials):
+        assert trial['cells_by_sample']['sample']==int(20*trial['fraction'])
+        if trial['fraction']==1:np.testing.assert_array_equal(value[0],x.sum(0))
+        if trial['mode']=='fixed_composition':assert set(trial['composition']['sample'].values())=={int(10*trial['fraction'])}
+    assert np.equal(counts,np.rint(counts)).all()
