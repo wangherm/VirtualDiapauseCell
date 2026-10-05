@@ -1,6 +1,8 @@
 # Virtual Diapause Cell
 
-**最新入口：[冻结候选后的真实样本应用、知识重评与 AutoDL 启动](docs/PK3_APPLICATION_CN.md)。** 复用修复后的 PK2 权重；本轮不重新运行 171 条训练。预留查询先冻结，热应激原始 counts 待补，现有标准化表达仅作独立描述性替代。服务器执行由用户启动，结果以该次 run 的工件为准。下面保留此前轮次入口。
+**最新开发轮：[CW1 身份、相对表达与显式 clock–wave：AutoDL 启动、进度和打包](docs/CLOCK_IDENTITY_WAVE_CN.md)。** 沿用已授权开发样本；数值拟合、现有 Qwen 身份证据推理、逐 pool 评价与隐藏读出。本轮不重新运行 171 项，不查询预留，不新增领域 LoRA。服务器执行状态以实际 run 为准。下方保留此前轮次入口。
+
+**上一轮入口：[冻结候选后的真实样本应用、知识重评与 AutoDL 启动](docs/PK3_APPLICATION_CN.md)。** 复用修复后的 PK2 权重；本轮不重新运行 171 条训练。预留查询先冻结，热应激原始 counts 待补，现有标准化表达仅作独立描述性替代。服务器执行由用户启动，结果以该次 run 的工件为准。下面保留此前轮次入口。
 
 A biotime-centred model of diapause state, gene/TF waves and programme dynamics, grounded in context-specific biological evidence.
 

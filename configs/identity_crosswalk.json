@@ -1,0 +1,17 @@
+{
+  "version": "coarse_functional_identity_v1",
+  "basis": "Explicit pragmatic grouping of development source annotations; not lineage or independently adjudicated gold; no inferred Cell Ontology IDs",
+  "aliases": {},
+  "groups": {
+    "neural": ["anterior neural tube", "anterior neuronal", "floorplate", "neuronal progenitors", "neurons"],
+    "placodal": ["cranial placode", "sensory placode"],
+    "surface_epithelial": ["epithelia (epidermis/periderm)", "periderm", "pharyngeal ectoderm"],
+    "muscle_mesoderm": ["cardiac muscle", "paraxial mesoderm/muscle", "skeletal muscle"],
+    "mesenchymal_mesoderm": ["mesenchymal progenitors", "mesodermal progenitors", "lateral plate mesoderm"],
+    "neural_crest": ["neural crest"],
+    "notochord": ["notochord"],
+    "blood": ["hematopoietic"],
+    "vascular": ["vascular endothelium"],
+    "renal_epithelial": ["pronephric duct"]
+  }
+}
