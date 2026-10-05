@@ -11,10 +11,14 @@ if [[ "${1:-}" != --worker ]]; then
   "$VDC_PYTHON" -c 'import vdc,torch,h5py,transformers,peft; print(torch.__version__, torch.cuda.is_available())'
   RUN="${VDC_CW_RUN:-$VDC_PRIVATE_ROOT/runs/clock_wave_$(date -u +%Y%m%dT%H%M%SZ)_$$}"
   mkdir -p "$RUN"
+  SESSION="vdc_clock_wave_$(date -u +%H%M%S)_$$"
+  "$VDC_PYTHON" -c 'import sys,os; from vdc.io import write_json; write_json(sys.argv[1],{"run":sys.argv[2],"release":sys.argv[3],"session":sys.argv[4],"revision_parent_requested":os.environ.get("VDC_CW_REVISION_SOURCE"),"python":sys.executable,"training_execution_confirmed":False})' "$RUN/launch_receipt.json" "$RUN" "$RELEASE" "$SESSION"
+  screen -dmS "$SESSION" bash "$RELEASE/scripts/launch_clock_wave.sh" --worker "$RUN"
   printf '%s\n' "$RUN" > "$VDC_PRIVATE_ROOT/LATEST_CLOCK_WAVE.txt"
   printf '%s\n' "$RELEASE" > "$VDC_PRIVATE_ROOT/LATEST_CLOCK_WAVE_RELEASE.txt"
-  SESSION="vdc_clock_wave_$(date -u +%H%M%S)_$$"
-  screen -dmS "$SESSION" bash "$RELEASE/scripts/launch_clock_wave.sh" --worker "$RUN"
+  if [[ -n "${VDC_CW_REVISION_SOURCE:-}" ]]; then
+    printf '%s\n' "$RUN" > "$VDC_PRIVATE_ROOT/LATEST_CLOCK_WAVE_REVISION.txt"
+  fi
   printf 'SCREEN=%s\nRUN=%s\nRELEASE=%s\n' "$SESSION" "$RUN" "$RELEASE"
   exit 0
 fi

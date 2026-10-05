@@ -117,6 +117,21 @@ def reuse_parent(parent, run, job, private):
             'parent_queue_sha256':sha256(parent/'queue_status.json')}
 
 
+def task_signature(config, job):
+    return object_hash({'config':config,'job':job})
+
+
+def runtime_identity():
+    files={p.relative_to(ROOT).as_posix():sha256(p) for folder in ('src','scripts','configs','knowledge','data/curated')
+           for p in sorted((ROOT/folder).rglob('*')) if p.is_file() and p.suffix in {'.py','.json','.jsonl','.yaml','.sh'}}
+    commit=(ROOT/'RELEASE_COMMIT.txt').read_text().strip() if (ROOT/'RELEASE_COMMIT.txt').exists() else None
+    if commit is None:
+        try:commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True,stderr=subprocess.DEVNULL).strip()
+        except (OSError,subprocess.CalledProcessError):pass
+    return {'release':str(ROOT),'git_commit':commit,'python':sys.executable,'recorded_at':utc(),
+            'source_files':files,'source_hash':object_hash(files),'purpose':'runtime source snapshot, not proof of scientific success'}
+
+
 def report(run,plan,states):
     counts={s:sum(v['status']==s for v in states.values()) for s in sorted({v['status'] for v in states.values()})}
     terminal={'completed','not_applicable','blocked','failed'}
@@ -127,6 +142,9 @@ def report(run,plan,states):
             'reserved_queries_executed':False,'new_qwen_training':False,'future_prediction':None,'depth':None,
             'optional_student':'disabled','composition_stress':states.get('cell_composition',{}).get('status','not_run'),
             'interpretation':'development only; weak models remain reported; no winner selected from prior reserved results'}
+    result['execution_categories']={k:[name for name,s in states.items() if s.get('status')=='completed' and s.get('execution_kind')==k]
+                                   for k in ('added','rerun','reused_verified')}
+    result['execution_categories']['unfinished']=[name for name,s in states.items() if s.get('status')!='completed']
     write_json(run/'queue_status.json',result)
     lines=['# CW1 Clock–Identity–Wave 开发轮','','状态：'+overall,
            '本轮为数值拟合、现有 Qwen 推理和分组评价；未安排新 LoRA。没有查询预留样本。',
@@ -152,6 +170,7 @@ def report(run,plan,states):
             '热应激 counts 仍待补；不造 depth、未来预测或缺失头输出。结果浏览器只展示本轮已保存开发预测。']
     if any(j['kind']=='residual' for j in plan):
         lines+=['','## CW1 定向修订',f"已校验复用旧任务：{result['reused_verified']}；其余状态见完整队列。",
+                '执行分类：'+str({k:len(v) for k,v in result['execution_categories'].items()})+'（新增/重跑/复用仅计完成项，未完成单列）。',
                 '旧数值模型冻结。Qwen 使用 short_slots_v2 重新生成原卡、无数值提示和证据挑战；不进行新 LoRA。',
                 '原卡链保留数值支持门槛；无提示/挑战独立评分，不送入正式 chain。技术失败与 biological unknown 分开。',
                 'residual_* 保存四模型共同支持、外推和匹配训练行 Ridge 对照；support_* 保存条件/身份支持与训练锚点敏感性。']
@@ -192,10 +211,14 @@ def orchestrate(a):
         else:
             from vdc.pk2_runtime import hardware
             write_json(run/'config.json',c);write_json(run/'plan.json',plan);write_json(run/'hardware.json',hardware())
+            write_json(run/'runtime_identity.json',runtime_identity())
         states=read_json(run/'queue_status.json')['tasks'] if (run/'queue_status.json').exists() else {}
         for j in plan:
             name=j['id'];prior=states.get(name,{})
-            if prior.get('status')=='completed':verify_files(run,prior['files'])
+            if prior.get('status')=='completed':
+                verify_files(run,prior['files'])
+                if not j.get('reuse_parent') and prior.get('task_signature')!=task_signature(c,j):
+                    raise ValueError('Completed task has no matching code/protocol/input signature: '+name+'; preserve this run and use its original release or a new revision')
             elif j.get('reuse_parent'):
                 states[name]=reuse_parent(parent,run,j,private);print('REUSED_VERIFIED',name,flush=True)
             else:states[name]={'status':'pending'}
@@ -209,7 +232,8 @@ def orchestrate(a):
                 return {'status':'not_applicable' if proc.returncode==3 else 'failed','reason':reason,'exit_code':proc.returncode,'finished':utc()}
             files={p.relative_to(run).as_posix():sha256(p) for p in (run/'tasks'/name).rglob('*') if p.is_file() and p.name!='failure.json'}
             if job['kind']=='prepare':files.update({p.relative_to(run).as_posix():sha256(p) for p in (run/'data').rglob('*') if p.is_file()})
-            return {'status':'completed','files':files,'finished':utc()}
+            return {'status':'completed','files':files,'finished':utc(),'task_signature':task_signature(c,job),
+                    'execution_kind':'rerun' if parent and job['kind'] in {'qwen','chain'} else 'added'}
         active={};resources=set()
         with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
             while True:

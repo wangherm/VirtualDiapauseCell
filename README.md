@@ -1,5 +1,7 @@
 # Virtual Diapause Cell
 
+**打包来源不确定时先用：[CW1 真实 run 审计、正确导出与条件补跑](docs/CW1_RUN_AUDIT_CN.md)。** 不依赖 ZIP 时间或旧 shell 变量；找到实际修订结果就直接导出，只在审计范围内未发现修订 run 时允许针对性补跑，不重跑 PK2。
+
 **当前续跑：[CW1 定向修订：AutoDL 更新、进度与打包](docs/CW1_TARGETED_REVISION_CN.md)。** 冻结上一轮模型，校验复用 51 项；新增短格式身份证据推理、两条链重评、三视图残差读出及支持范围诊断。真实 CPU 检查已执行，新 GPU 推理由服务器启动后记录；不新增 LoRA、不查询预留。
 
 **最新开发轮：[CW1 身份、相对表达与显式 clock–wave：AutoDL 启动、进度和打包](docs/CLOCK_IDENTITY_WAVE_CN.md)。** 沿用已授权开发样本；数值拟合、现有 Qwen 身份证据推理、逐 pool 评价与隐藏读出。本轮不重新运行 171 项，不查询预留，不新增领域 LoRA。服务器执行状态以实际 run 为准。下方保留此前轮次入口。
