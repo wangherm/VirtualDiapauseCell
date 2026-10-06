@@ -68,6 +68,7 @@ def export_model(stage,output,integration=None):
             for p in (source/prefix).rglob('*'):
                 if p.is_file():copy(p,p.relative_to(source).as_posix())
         copy(source/'comparisons.json','fit_comparisons.json')
+        copy(source/'common_support.json','fit_comparisons_common.json')
         meta.update(knowledge=fitted['knowledge'],public_models=fitted['public_models'],regulons=fitted['regulons'],
                     full_ready=True,fit_manifest_hash=sha256(source/'fit_manifest.json'))
     return seal(out,meta)

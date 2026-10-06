@@ -32,6 +32,11 @@ def main(a):
             '','|视图|固定语义条件|参考范围内单位平均MSE|匹配Ridge MSE|执行|','|---|---|---:|---:|---|']
         for row in read_json(run/'assembly/comparisons.json'):
             lines.append(f"|{row['view']}|{row['condition']}|{row['primary']['macro_unit_mse']}|{row['matched_ridge']['macro_unit_mse']}|{'校验复用' if row['condition']=='zero' else '本轮拟合'}|")
+        lines+=['','上表各候选自身支持范围可能不同，不能直接据此宣称语义增益。以下使用四条件共同支持范围。',
+                '','|视图|条件|共同范围单位平均MSE|同范围Ridge|覆盖profile/验证profile|独立单位|','|---|---|---:|---:|---|---|']
+        for view,c in read_json(run/'assembly/common_support.json').items():
+            for mode,r in c['conditions'].items():
+                lines.append(f"|{view}|{mode}|{r['common_support']['macro_unit_mse']}|{r['matched_ridge_common_support']['macro_unit_mse']}|{c['common_in_reference_profiles']}/{c['validation_profiles']}|{c['common_units']}|")
         lines+=['','领域候选预先固定，不按这些结果重新选模型。Qwen/语义参与不等于有科学增益。',
                 '','|新请求|执行状态|','|---|---|']
         lines += [f"|{c['case']}|{c['status']}|" for c in result['cases']]

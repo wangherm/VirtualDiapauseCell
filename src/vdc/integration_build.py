@@ -130,6 +130,7 @@ def assemble(stage,output):
                 'files':{p.relative_to(folder).as_posix():sha256(p) for p in folder.rglob('*') if p.is_file() and 'work' not in p.relative_to(folder).parts}}
             write_json(out/'progress.json',states);print('COMPLETED',job,flush=True)
     write_json(out/'comparisons.json',comparisons)
+    compare_fixed(stage/'data',out)
     pk1=Path(prior['pk1_run']);public=export_public(pk1,out,root);regulons={}
     for name,label in [('public_regulon','public'),('local_regulon','local')]:
         p=source_task(name);dest=out/'regulons'/label;dest.mkdir(parents=True,exist_ok=True)
@@ -139,6 +140,42 @@ def assemble(stage,output):
           'base_model':'Qwen/Qwen3-4B-Instruct-2507','records_hash':sha256(out/'knowledge/records.jsonl')},'public_models':public,'regulons':regulons}
     meta['files']={p.relative_to(out).as_posix():sha256(p) for p in out.rglob('*') if p.is_file() and 'work' not in p.relative_to(out).parts and p.name not in {'fit_manifest.json','progress.json'}}
     write_json(out/'fit_manifest.json',meta);return meta
+
+
+def compare_fixed(data,out):
+    """Recompute every fixed candidate on identical rows; report coverage and shared support."""
+    from .application import predict_ridge
+    from .clock_wave_revision import residual_features
+    from .observation import normalise_expression
+    from .pk2_numeric import metrics,dynamic_ratio
+    data,out=Path(data),Path(out);report={}
+    for view,route in ROUTES.items():
+        x,g,defs,rows=load_data(data/view);va=[i for i,r in enumerate(rows) if r['split']=='validation'];rr=[rows[i] for i in va]
+        x=x[va];types=identities(rr);predictions={};baselines={};support={};target=None
+        for mode in ('zero','base','domain','shuffle'):
+            folder=out/'fits'/view/mode;m=ClockWave.load(folder/'model');q=m.hidden_predictions(x,types)
+            expected=normalise_expression(x,np.ones_like(x,bool),'counts')[:,m.meta['target_indices']]
+            if target is None:target=expected
+            else:np.testing.assert_array_equal(target,expected)
+            pred=q['hidden_prediction']
+            if route=='clock_identity_residual':
+                design,_=residual_features(m,x,types);finite=np.isfinite(q['clock']);pred=np.full_like(target,np.nan)
+                pred[finite]=predict_ridge(folder/'readout.npz',design[finite])
+            _,f,mask,_=m._features(x);baselines[mode]=predict_ridge(folder/'matched_direct.npz',m.direct_features(f,mask,types))
+            predictions[mode]=pred;support[mode]=np.array([s=='located' for s in q['status']])[:,None]&np.isfinite(pred)&np.isfinite(baselines[mode])
+        common=np.logical_and.reduce(list(support.values()));finite=np.logical_and.reduce([np.isfinite(p) for p in predictions.values()])
+        record={'validation_profiles':len(rr),'independent_validation_units':len({r['biological_unit'] for r in rr}),
+                'common_in_reference_profiles':int(common.any(1).sum()),'common_units':len({r['biological_unit'] for r,k in zip(rr,common.any(1)) if k}),
+                'comparison':'same rows and targets, intersection of the four fitted support masks; development only','conditions':{}}
+        for mode,pred in predictions.items():
+            record['conditions'][mode]={'own_in_reference_profiles':int(support[mode].any(1).sum()),
+                'common_support':metrics(pred,target,common,rr),'matched_ridge_common_support':metrics(baselines[mode],target,common,rr),
+                'all_common_finite_including_extrapolation':metrics(pred,target,finite,rr),'dynamic_on_common_support':dynamic_ratio(pred,target,common)}
+        dest=out/'common_evaluation'/view
+        save_npz(dest/'predictions.npz',target=target,common_in_reference=common,common_finite=finite,
+                 **predictions,**{k+'_matched_ridge':v for k,v in baselines.items()})
+        write_json(dest/'rows.json',rr);write_json(dest/'result.json',record);report[view]=record
+    write_json(out/'common_support.json',report);return report
 
 
 def export_public(pk1,out,root):
