@@ -83,7 +83,11 @@ def assemble(stage,output):
     os.environ['VDC_ROLE_MANIFEST']=str(Path(c['private_root'])/'sample_roles.json')
     if sha256(os.environ['VDC_ROLE_MANIFEST'])!=c['role_manifest_sha256']:raise ValueError('Frozen sample roles changed')
     source=Path(c['source']);prior=read_json(source/'config.json');queue=read_json(source/'queue_status.json')['tasks']
-    signature=object_hash({'stage':snap['snapshot_id'],'code':implementation(),'build':sha256(__file__),'source':sha256(source/'config.json')})
+    source_inputs={name:queue[name]['files'] for name in ('embeddings_base','embeddings_domain','select_adapter','corpus','public_regulon','local_regulon')}
+    selected_name=read_json(source/'tasks/select_adapter/selection.json')['selected']['job']
+    source_inputs[selected_name]=queue[selected_name]['files']
+    signature=object_hash({'stage':snap['snapshot_id'],'stage_config':sha256(stage/'config.json'),
+                          'code':implementation(),'build':sha256(__file__),'source':sha256(source/'config.json'),'source_inputs':source_inputs})
     if out.exists() and (out/'assembly.json').exists() and read_json(out/'assembly.json')['signature']!=signature:raise ValueError('Assembly source/config/code changed; use new output')
     out.mkdir(parents=True,exist_ok=True);write_json(out/'assembly.json',{'signature':signature,'source_stage_snapshot':snap['snapshot_id'],'stage_path':str(stage)})
     def source_task(name):
