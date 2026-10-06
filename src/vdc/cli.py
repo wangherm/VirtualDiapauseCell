@@ -41,8 +41,24 @@ def main(argv: list[str] | None = None) -> None:
     p = sub.add_parser("release"); p.add_argument("run"); p.add_argument("review"); p.add_argument("output")
     p = sub.add_parser("serve"); p.add_argument("release"); p.add_argument("--port", type=int, default=8000)
     p = sub.add_parser("serve-experimental"); p.add_argument("run"); p.add_argument("--port", type=int, default=8000)
+    p = sub.add_parser('export-model'); p.add_argument('--stage',required=True); p.add_argument('--integration'); p.add_argument('--output',required=True)
+    p = sub.add_parser('analyse'); p.add_argument('--model',required=True); p.add_argument('--request',required=True); p.add_argument('--output',required=True)
+    p.add_argument('--mode',choices=['full','numeric_only'],default='full'); p.add_argument('--variant',choices=['domain_clock_wave','cw_stage_baseline'],default='domain_clock_wave'); p.add_argument('--base-path')
+    p = sub.add_parser('serve-app'); p.add_argument('--model',required=True); p.add_argument('--output',required=True); p.add_argument('--base-path'); p.add_argument('--port',type=int,default=8769)
     args = parser.parse_args(argv)
-    if args.command == "audit":
+    if args.command=='export-model':
+        from .integration_bundle import export_model
+        m=export_model(args.stage,args.output,args.integration);print(json.dumps({'bundle_id':m['bundle_id'],'full_artifacts_packaged':m['full_ready']}))
+    elif args.command=='analyse':
+        from .integration import VirtualDiapauseCell,read_request
+        r=VirtualDiapauseCell(args.model,args.base_path).analyse(read_request(args.request),args.mode,args.variant,args.output)
+        print(json.dumps({'status':r['status'],'report':str(Path(args.output)/'report.html')}))
+        if r['status']!='completed':raise SystemExit(2)
+    elif args.command=='serve-app':
+        import uvicorn
+        from .integration_service import create_app
+        uvicorn.run(create_app(args.model,args.output,args.base_path),host='127.0.0.1',port=args.port)
+    elif args.command == "audit":
         from .contracts import ObservationBundle, audit_rows
         b = ObservationBundle.load(args.bundle)
         report = {"rows": len(b.rows), "programmes": len(b.feature_ids),
