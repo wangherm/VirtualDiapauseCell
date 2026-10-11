@@ -4,6 +4,20 @@ Virtual Diapause Cell models how embryos maintain diapause and resume developmen
 
 The main application is embryonic diapause in the African turquoise killifish, *Nothobranchius furzeri*. Public dormancy and quiescence datasets support pretraining and separate perturbation experiments.
 
+## Hypothesis-driven research
+
+The first AI4AI research runner proposes hypotheses from reviewed evidence, designs
+numerical experiments, evaluates real development predictions, and revises its
+reasoning from the results. It preserves the existing application as a baseline.
+An OpenAI-compatible research API is configured on the execution host; no API key
+is stored in the repository. The default graph backend runs on CPU. Unrestricted
+generated Python requires the optional isolated Docker backend.
+
+See [the AutoDL setup, budgets, progress and resume guide](docs/AI4AI_R1_CN.md).
+This is a VDC-specific controller inspired by the research-memory and hypothesis
+revision literature, not an upstream EvoScientist/PiEvo/OpenEvolve reproduction.
+Real provider-driven research runs are not claimed by software tests.
+
 ## Model
 
 The project combines a clock–wave numerical model with a domain-adapted Qwen model. The numerical model represents measured expression, reference position and sample-specific deviations. Qwen provides functional representations and helps interpret evidence from the measurements and literature.

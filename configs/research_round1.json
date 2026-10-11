@@ -1,0 +1,17 @@
+{
+  "research_goal": "Investigate how to construct a predictive virtual diapause cell from current evidence: what should a recovery coordinate represent, when is one clock insufficient, and how should identity condition the mapping? Propose competing hypotheses and experiments, then revise them from measured results. The first executable assay is hidden-expression prediction; preserve proposals requiring additional data as untested.",
+  "views": ["bulk", "core", "coarse"],
+  "rounds": 12,
+  "target_genes": 256,
+  "visible_genes": 512,
+  "evidence_per_call": 24,
+  "max_api_calls": 30,
+  "max_output_tokens": 6000,
+  "max_token_budget": 600000,
+  "max_request_budget": 60000,
+  "api_timeout_seconds": 180,
+  "json_response_format": true,
+  "experiment_timeout_seconds": 300,
+  "allow_python_docker": false,
+  "docker_image": "vdc-research-candidate:r1"
+}
