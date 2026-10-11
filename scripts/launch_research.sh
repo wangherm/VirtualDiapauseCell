@@ -12,6 +12,8 @@ if [[ "${1:-}" != --worker ]]; then
   : "${VDC_RESEARCH_API_BASE:?Set API base URL on server}"
   : "${VDC_RESEARCH_MODEL:?Set research model name}"
   : "${VDC_RESEARCH_API_KEY:?Set API key on server; never paste into chat}"
+  : "${VDC_RESEARCH_API_CHECK:?Set path to passed check_research_api.py status.json}"
+  "$VDC_PYTHON" scripts/check_research_api.py --check "$VDC_RESEARCH_API_CHECK"
   "$VDC_PYTHON" -c 'from vdc.research_api import endpoint; endpoint()'
   "$VDC_PYTHON" scripts/run_research.py doctor
   RUN="${VDC_RESEARCH_RUN:-$VDC_PRIVATE_ROOT/runs/research_r1_$(date -u +%Y%m%dT%H%M%SZ)_$$}"
@@ -33,6 +35,13 @@ PY
   else
     RELEASE="$(cat "$RUN/RELEASE.txt")"
   fi
+  "$VDC_PYTHON" - "$VDC_RESEARCH_API_CHECK" "$RUN/api_check.json" <<'PY'
+import shutil,sys
+from pathlib import Path
+if Path(sys.argv[1]).resolve() != Path(sys.argv[2]).resolve():
+    shutil.copyfile(sys.argv[1],sys.argv[2])
+PY
+  export VDC_RESEARCH_API_CHECK="$RUN/api_check.json"
   SESSION="vdc_research_$(date -u +%H%M%S)_$$"
   screen -dmS "$SESSION" bash "$RELEASE/scripts/launch_research.sh" --worker "$RUN"
   printf '%s\n' "$RUN" > "$VDC_PRIVATE_ROOT/LATEST_RESEARCH.txt"
@@ -46,6 +55,7 @@ rm -f -- "$RUN/exit_code.txt"
 args=(run --run "$RUN")
 if [[ "${VDC_RESEARCH_RETRY_API_ERRORS:-0}" == 1 ]]; then args+=(--retry-api-errors); fi
 code=0
+"$VDC_PYTHON" scripts/check_research_api.py --check "$VDC_RESEARCH_API_CHECK"
 "$VDC_PYTHON" -u scripts/run_research.py "${args[@]}" || code=$?
 "$VDC_PYTHON" scripts/pack_research_report.py --run "$RUN" || true
 exit "$code"

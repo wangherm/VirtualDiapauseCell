@@ -7,7 +7,7 @@
 ## 实际范围
 
 - 默认复用已授权 bulk/core/coarse 开发缓存；任务是由目标排除后的表达、programme、已知身份预测固定隐藏基因。不能据此声称未来状态、因果干预、真实 biological time 或 depth 验证。
-- 每轮实际调用 API 两次：提出假设及实现；依据评价结果反思。默认 12 轮，最多 30 次调用，失败及重试也计入。输入 UTF-8 字节数加输出额度作为保守 token 预算，默认上限 600000；实际账单以服务商为准。
+- 每轮实际调用 API 两次：提出假设及实现；依据评价结果反思。默认 12 轮，最多 30 次调用，失败及重试也计入。输入 UTF-8 字节数加输出额度作为保守 token 预算，默认上限 1000000；实际账单以服务商为准。
 - 默认 graph 后端允许 AI 组合 PCA、多维状态、非线性基函数、身份交互及直接预测，最终拟合加权 Ridge。它是**受限数值图**，不是任意架构搜索。超出能力的建议记录为未检验。最终 Ridge 标准化特征，单纯 scale 不构成有效新假设。
 - 可选 python_docker 允许 AI 写完整 fit/predict Python 程序；服务器必须支持 Docker。fit 只见训练目标，predict 只见输入及模型；无网络、GPU、密钥和主机研究目录。不支持时不在宿主直接执行。
 - 特征选择与所有预处理只在 train 拟合，目标不参与输入归一化、rank、programme 或参考轴。pool、共享对照、cohort 连通分组。所有候选评价相同查询与目标，不接受缺失预测换取较低误差。
@@ -29,8 +29,8 @@ export VDC_PYTHON="$PWD/.venv-autodl-vdc/bin/python"
 export PYTHONPATH="$PWD/src"
 
 # 服务商的 base URL，不加 /chat/completions；使用真实模型ID。
-export VDC_RESEARCH_API_BASE='https://你的服务商/v1'
-export VDC_RESEARCH_MODEL='你的模型ID'
+export VDC_RESEARCH_API_BASE='https://api.openai.com/v1'
+export VDC_RESEARCH_MODEL='gpt-6.1-sol'
 read -rsp 'Research API key: ' VDC_RESEARCH_API_KEY; echo
 export VDC_RESEARCH_API_KEY
 
@@ -39,7 +39,21 @@ export VDC_RESEARCH_API_KEY
 python scripts/run_research.py doctor
 ```
 
-doctor 不调用 API。模型须支持 chat/completions、文本 JSON 和 max_tokens。若服务商不支持 response_format，可在启动前把 `configs/research_round1.json` 的 `json_response_format` 改为 false；仍校验完整 JSON，不从半截输出抠字段。不兼容其他协议时先适配，不自动换模型。
+doctor 不调用 API。官方 OpenAI 起步配置为 gpt-6.1-sol、medium、max_completion_tokens=16000（包括推理和可见输出）、300秒超时。模型须支持 chat/completions 与文本 JSON；默认不使用工具调用。旧兼容服务可显式配置 completion_token_parameter=max_tokens、reasoning_effort=null，不自动降级。若服务商不支持 response_format，可在启动前把 `configs/research_round1.json` 的 `json_response_format` 改为 false；仍校验完整 JSON，不从半截输出抠字段。不兼容其他协议时先适配，不自动换模型。
+
+首次真实连接检查只发一条简单 JSON 请求，不发送研究数据，可能产生少量费用。必须在同一个已设置密钥的终端执行：
+
+```bash
+CHECK_DIR="$VDC_PRIVATE_ROOT/runs/research_api_check_$(date -u +%Y%m%dT%H%M%SZ)_$$"
+python scripts/check_research_api.py --out "$CHECK_DIR"
+export VDC_RESEARCH_API_CHECK="$CHECK_DIR/status.json"
+```
+
+检查完整 JSON 和随机校验字段，记录 requested/returned model、实际 token 用量。检查通过只证明连通和协议，不等于科学实验成功。启动器和冻结副本离线核验此记录，不额外调用 API；换模型、地址、生成参数或接口代码必须重新检查。启动失败先查状态，不重复执行付费检查。
+
+失败时查看 `$CHECK_DIR/api/connection_001.json` 的 http_status 和 diagnostic：401 检查密钥；403 检查账号/地区访问资格；404 检查模型权限与地址；429 检查额度和速率；400 检查参数；output_limit_reached 是输出截断。网络超时也保留已提交记录，先检查平台用量；不自动重试或改用其他模型。HTTP 重定向被拒绝，不转发密钥。
+
+参考：[模型](https://developers.openai.com/api/docs/models/gpt-6.1-sol)、[接口参数](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create)。密钥只填在服务器环境中。
 
 API 准备好前可仅准备数据及数值基线：
 

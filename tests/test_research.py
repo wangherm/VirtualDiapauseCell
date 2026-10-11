@@ -89,7 +89,7 @@ class Response:
 
 def test_api_cache_budget_and_no_secret_persistence(tmp_path,monkeypatch):
     api_env(monkeypatch);c=Client(tmp_path,api_config())
-    with patch('urllib.request.urlopen',return_value=Response()) as request:
+    with patch('vdc.research_api.open_request',return_value=Response()) as request:
         assert c.call('a','sys','question')['ok']
         assert c.call('a','sys','question')['ok'];assert request.call_count==1
         c.call('b','sys','second')
@@ -99,12 +99,85 @@ def test_api_cache_budget_and_no_secret_persistence(tmp_path,monkeypatch):
 
 def test_api_error_requires_explicit_retry(tmp_path,monkeypatch):
     api_env(monkeypatch);c=Client(tmp_path,api_config())
-    with patch('urllib.request.urlopen',side_effect=TimeoutError('private response')):
+    with patch('vdc.research_api.open_request',side_effect=TimeoutError('private response')):
         with pytest.raises(RuntimeError):c.call('a','sys','question')
-    with patch('urllib.request.urlopen') as request:
+    with patch('vdc.research_api.open_request') as request:
         with pytest.raises(RuntimeError,match='retry'):c.call('a','sys','question')
         request.assert_not_called()
     assert 'private response' not in next((tmp_path/'api').glob('*')).read_text()
+
+
+def test_openai_parameters_and_changed_protocol_invalidate_cache(tmp_path, monkeypatch):
+    api_env(monkeypatch)
+    config = {**api_config(), 'reasoning_effort': 'medium'}
+    with patch('vdc.research_api.open_request', return_value=Response()) as request:
+        Client(tmp_path, config).call('a', 'sys', 'JSON question')
+        payload = json.loads(request.call_args.args[0].data)
+        assert payload['max_completion_tokens'] == 200
+        assert 'max_tokens' not in payload
+        assert payload['reasoning_effort'] == 'medium'
+        with pytest.raises(ValueError, match='changed'):
+            Client(tmp_path, {**config, 'reasoning_effort':'high'}).call('a', 'sys', 'JSON question')
+        assert request.call_count == 1
+
+
+def test_connection_receipt_and_single_call(tmp_path, monkeypatch):
+    from vdc.research_api import check_connection, verify_connection_check
+    api_env(monkeypatch)
+    def respond(request, timeout):
+        payload = json.loads(request.data)
+        class Echo(Response):
+            def read(self, n):
+                return json.dumps({'model':'resolved-test-model', 'choices':[{'message':{
+                    'content':payload['messages'][1]['content']}, 'finish_reason':'stop'}],
+                    'usage':{'total_tokens':20}}).encode()
+        return Echo()
+    with patch('vdc.research_api.open_request', side_effect=respond) as request:
+        out = tmp_path/'check'
+        report = check_connection(out, api_config())
+        assert report['returned_model'] == 'resolved-test-model'
+        assert report['research_experiments_executed'] == 0
+        verify_connection_check(out/'status.json', api_config())
+        assert request.call_count == 1
+        with pytest.raises(FileExistsError):check_connection(out, api_config())
+        monkeypatch.setenv('VDC_RESEARCH_MODEL','different')
+        with pytest.raises(ValueError, match='mismatched'):
+            verify_connection_check(out/'status.json', api_config())
+        assert request.call_count == 1
+
+
+def test_truncated_reasoning_keeps_usage_but_never_passes(tmp_path, monkeypatch):
+    from vdc.research_api import check_connection
+    api_env(monkeypatch)
+    class Truncated(Response):
+        def read(self, n):
+            return json.dumps({'model':'test', 'usage':{'completion_tokens':200},
+                'choices':[{'message':{'content':None}, 'finish_reason':'length'}]}).encode()
+    with patch('vdc.research_api.open_request', return_value=Truncated()) as request:
+        with pytest.raises(RuntimeError):check_connection(tmp_path/'check',api_config())
+        assert request.call_count == 1
+    report=json.loads((tmp_path/'check/status.json').read_text())
+    ledger=json.loads((tmp_path/'check/api/connection_001.json').read_text())
+    assert report['status']=='failed'
+    assert ledger['usage']['completion_tokens']==200
+    assert ledger['diagnostic']=='output_limit_reached'
+
+
+def test_http_diagnostic_has_no_provider_body(tmp_path,monkeypatch):
+    import urllib.error
+    import io
+    api_env(monkeypatch)
+    err=urllib.error.HTTPError('https://provider.example',401,'private body',{},io.BytesIO(b'fixture-secret-not-real'))
+    with patch('vdc.research_api.open_request',side_effect=err):
+        with pytest.raises(RuntimeError):Client(tmp_path,api_config()).call('a','sys','question')
+    record=json.loads(next((tmp_path/'api').glob('*')).read_text())
+    assert record['diagnostic']=='authentication_failed'
+    assert 'fixture-secret-not-real' not in json.dumps(record)
+
+
+def test_bearer_redirect_rejected():
+    from vdc.research_api import NoRedirect
+    assert NoRedirect().redirect_request(None,None,302,'',{},'https://other.example') is None
 
 
 def test_endpoint_rejects_embedded_secrets(monkeypatch):
