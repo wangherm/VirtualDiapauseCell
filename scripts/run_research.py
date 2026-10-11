@@ -33,7 +33,7 @@ def main():
     p.add_argument('--private-root',type=Path,default=Path(os.environ.get('VDC_PRIVATE_ROOT','/root/autodl-tmp/vdc-private')))
     p.add_argument('--data',default=os.environ.get('VDC_RESEARCH_DATA'))
     p.add_argument('--run',type=Path); p.add_argument('--out',type=Path)
-    p.add_argument('--config',type=Path,default=ROOT/'configs/research_round1.json')
+    p.add_argument('--config',type=Path,default=os.environ.get('VDC_RESEARCH_CONFIG',ROOT/'configs/research_round1.json'))
     p.add_argument('--corpus',type=Path,default=ROOT/'knowledge/pk2/literature.jsonl')
     p.add_argument('--retry-api-errors',action='store_true')
     a=p.parse_args()

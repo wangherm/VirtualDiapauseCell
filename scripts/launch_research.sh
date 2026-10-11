@@ -2,6 +2,11 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 SOURCE="$PWD"
+export VDC_RESEARCH_CONFIG="${VDC_RESEARCH_CONFIG:-$SOURCE/configs/research_round1.json}"
+# Workers always use the frozen selected config, never the mutable source file.
+if [[ "${1:-}" == --worker && -f "$SOURCE/configs/research_selected.json" ]]; then
+  export VDC_RESEARCH_CONFIG="$SOURCE/configs/research_selected.json"
+fi
 export VDC_PRIVATE_ROOT="${VDC_PRIVATE_ROOT:-/root/autodl-tmp/vdc-private}"
 export VDC_PYTHON="${VDC_PYTHON:-/root/autodl-tmp/VirtualDiapauseCell/.venv-autodl-vdc/bin/python}"
 export PYTHONPATH="$SOURCE/src"
@@ -24,12 +29,13 @@ if [[ "${1:-}" != --worker ]]; then
   fi
   RELEASE="$RUN/release"
   if [[ ! -f "$RUN/RELEASE.txt" ]]; then
-    "$VDC_PYTHON" - "$SOURCE" "$RELEASE" <<'PY'
+    "$VDC_PYTHON" - "$SOURCE" "$RELEASE" "$VDC_RESEARCH_CONFIG" <<'PY'
 import sys,shutil
 from pathlib import Path
-source,out=map(Path,sys.argv[1:]);out.mkdir(parents=True,exist_ok=False)
+source,out,config=map(Path,sys.argv[1:]);out.mkdir(parents=True,exist_ok=False)
 for name in ('src','scripts','configs','knowledge','data/curated'):
     shutil.copytree(source/name,out/name,ignore=shutil.ignore_patterns('__pycache__','*.pyc'))
+shutil.copyfile(config,out/'configs/research_selected.json')
 PY
     printf '%s\n' "$RELEASE" > "$RUN/RELEASE.txt"
   else

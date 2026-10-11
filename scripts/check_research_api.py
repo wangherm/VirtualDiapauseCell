@@ -1,6 +1,7 @@
 """Explicit one-call API check, or offline verification of its receipt."""
 import argparse
 import json
+import os
 from pathlib import Path
 from vdc.io import read_json
 from vdc.research_api import check_connection, verify_connection_check
@@ -12,7 +13,8 @@ def main():
     group.add_argument('--out', type=Path, help='NEW directory: performs one paid request')
     group.add_argument('--check', type=Path, help='Existing status.json: no API request')
     parser.add_argument('--config', type=Path,
-                        default=Path(__file__).resolve().parents[1]/'configs/research_round1.json')
+                        default=os.environ.get('VDC_RESEARCH_CONFIG',
+                            Path(__file__).resolve().parents[1]/'configs/research_round1.json'))
     args = parser.parse_args()
     try:
         config = read_json(args.config)

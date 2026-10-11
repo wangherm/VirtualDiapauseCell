@@ -180,6 +180,59 @@ def test_bearer_redirect_rejected():
     assert NoRedirect().redirect_request(None,None,302,'',{},'https://other.example') is None
 
 
+@pytest.mark.parametrize('final_content,passes', [('{"ok":true}', True), ('', False)])
+def test_deepseek_profile_and_final_content_only(tmp_path, monkeypatch, final_content, passes):
+    from pathlib import Path
+    api_env(monkeypatch)
+    monkeypatch.setenv('VDC_RESEARCH_API_BASE','https://api.deepseek.com')
+    monkeypatch.setenv('VDC_RESEARCH_MODEL','deepseek-v4-pro')
+    config=json.loads((Path(__file__).resolve().parents[1]/'configs/research_deepseek.json').read_text())
+    class DeepSeekResponse(Response):
+        def read(self,n):
+            return json.dumps({'model':'deepseek-v4-pro','usage':{'total_tokens':30},
+                'choices':[{'message':{'content':final_content,
+                    'reasoning_content':'INTERNAL_REASONING_DO_NOT_USE {"ok":true}'},'finish_reason':'stop'}]}).encode()
+    with patch('vdc.research_api.open_request',return_value=DeepSeekResponse()) as request:
+        c=Client(tmp_path,config)
+        if passes:
+            assert c.call('a','Return JSON','JSON question') == {'ok':True}
+        else:
+            with pytest.raises(RuntimeError):c.call('a','Return JSON','JSON question')
+        req=request.call_args.args[0]
+        payload=json.loads(req.data)
+        assert req.full_url=='https://api.deepseek.com/chat/completions'
+        assert payload['max_tokens']==16000 and 'max_completion_tokens' not in payload
+        assert payload['thinking']=={'type':'enabled'}
+        assert payload['reasoning_effort']=='high'
+        assert request.call_count==1
+    assert 'INTERNAL_REASONING_DO_NOT_USE' not in next((tmp_path/'api').glob('*')).read_text()
+
+
+def test_network_cause_is_recorded_without_url_or_credentials(tmp_path,monkeypatch):
+    import urllib.error
+    import socket
+    api_env(monkeypatch)
+    err=urllib.error.URLError(socket.gaierror(-3,'fixture-secret-not-real'))
+    with patch('vdc.research_api.open_request',side_effect=err):
+        with pytest.raises(RuntimeError):Client(tmp_path,api_config()).call('a','sys','question')
+    record=json.loads(next((tmp_path/'api').glob('*')).read_text())
+    assert record['network_reason_type']=='gaierror'
+    assert record['network_errno']==-3
+    assert 'fixture-secret-not-real' not in json.dumps(record)
+
+
+def test_profile_rejects_wrong_provider_or_model_before_submission(tmp_path,monkeypatch):
+    api_env(monkeypatch)
+    config={**api_config(),'expected_api_base':'https://api.deepseek.com',
+            'expected_model':'deepseek-v4-pro'}
+    with patch('vdc.research_api.open_request') as request:
+        with pytest.raises(ValueError,match='API base'):Client(tmp_path,config)
+        monkeypatch.setenv('VDC_RESEARCH_API_BASE','https://api.deepseek.com')
+        with pytest.raises(ValueError,match='model'):Client(tmp_path,config)
+        request.assert_not_called()
+    assert not (tmp_path/'api').exists()
+
+
 def test_endpoint_rejects_embedded_secrets(monkeypatch):
     api_env(monkeypatch);monkeypatch.setenv('VDC_RESEARCH_API_BASE','https://provider.example/v1?token=bad')
     with pytest.raises(ValueError):endpoint()

@@ -66,6 +66,37 @@ python scripts/run_research.py prepare \
 
 ## 后台启动和进度
 
+### DeepSeek 官方 API
+
+官方文档核对日期：2026-10-11。使用 `https://api.deepseek.com` 和 `deepseek-v4-pro`，
+思考开启、high、max_tokens=16000；不沿用 OpenAI 密钥或其余额。
+参考：[官方入口](https://api-docs.deepseek.com/)、[参数与 JSON 输出](https://api-docs.deepseek.com/api/create-chat-completion/)。
+这是同一研究控制器的配置选择，不另建数值管线；旧 OpenAI 失败记录保留，新建 DeepSeek run。
+
+```bash
+# 在项目目录且已激活原 venv、设置 VDC_PRIVATE_ROOT/PYTHONPATH 后执行。
+export VDC_RESEARCH_API_BASE='https://api.deepseek.com'
+export VDC_RESEARCH_MODEL='deepseek-v4-pro'
+export VDC_RESEARCH_CONFIG="$PWD/configs/research_deepseek.json"
+unset VDC_RESEARCH_API_KEY
+read -rsp 'DeepSeek API key: ' VDC_RESEARCH_API_KEY; echo
+export VDC_RESEARCH_API_KEY
+
+CHECK_DIR="$VDC_PRIVATE_ROOT/runs/deepseek_api_check_$(date -u +%Y%m%dT%H%M%SZ)_$$"
+python scripts/check_research_api.py --out "$CHECK_DIR"
+# 仅检查通过后继续；失败不自动重试。
+export VDC_RESEARCH_API_CHECK="$CHECK_DIR/status.json"
+export VDC_RESEARCH_RUN="$VDC_PRIVATE_ROOT/runs/research_deepseek_$(date -u +%Y%m%dT%H%M%SZ)_$$"
+unset VDC_RESEARCH_RESUME VDC_RESEARCH_RETRY_API_ERRORS
+bash scripts/launch_research.sh
+```
+
+启动器把选中配置复制为 release/configs/research_selected.json，worker 只读冻结副本。
+恢复此 run 时将 VDC_RESEARCH_CONFIG 指向该冻结文件，使用同一服务商及模型并保留检查记录。
+只从最终 content 解析完整 JSON；reasoning_content 不当作提案，也不会从它抽取答案补救空输出。
+检查失败日志现在同时保存 network_reason_type、network_errno、certificate_verify_code，
+不记录原始异常文本、代理地址或凭据。本地模拟测试不证明 AutoDL 已连通；需要实际一条检查请求。
+
 ```bash
 bash scripts/launch_research.sh
 

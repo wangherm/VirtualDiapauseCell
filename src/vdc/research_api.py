@@ -16,6 +16,11 @@ def generation_settings(config):
     if parameter not in {'max_completion_tokens', 'max_tokens'}:
         raise ValueError('Unsupported completion token parameter')
     settings = {parameter: int(config['max_output_tokens'])}
+    thinking = config.get('thinking_mode')
+    if thinking is not None:
+        if thinking not in {'enabled', 'disabled'}:
+            raise ValueError('Unsupported thinking mode')
+        settings['thinking'] = {'type': thinking}
     effort = config.get('reasoning_effort')
     if effort is not None:
         if effort not in {'none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'}:
@@ -49,7 +54,7 @@ def endpoint():
     base = os.environ.get('VDC_RESEARCH_API_BASE', '').rstrip('/')
     u = urlsplit(base)
     if (u.scheme != 'https' and not (u.scheme == 'http' and u.hostname in {'localhost', '127.0.0.1'})) or not u.hostname:
-        raise ValueError('Set VDC_RESEARCH_API_BASE to HTTPS base URL ending in /v1 (or loopback HTTP)')
+        raise ValueError('Set VDC_RESEARCH_API_BASE to provider HTTPS base URL (or loopback HTTP)')
     if u.username or u.password or u.query or u.fragment:
         raise ValueError('API base must not contain credentials, query strings or fragments')
     if base.endswith('/chat/completions'):
@@ -60,9 +65,20 @@ def endpoint():
 
 
 def connection_signature(config):
+    validate_backend(config)
     return object_hash({'endpoint': endpoint(), 'model': os.environ['VDC_RESEARCH_MODEL'],
                         'settings': generation_settings(config),
                         'client_sha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest()})
+
+
+def validate_backend(config):
+    url = endpoint()
+    expected = config.get('expected_api_base')
+    if expected and url != expected.rstrip('/')+'/chat/completions':
+        raise ValueError('Selected config does not match API base')
+    model = config.get('expected_model')
+    if model and os.environ['VDC_RESEARCH_MODEL'] != model:
+        raise ValueError('Selected config does not match model; no automatic fallback')
 
 
 def verify_connection_check(path, config):
@@ -102,6 +118,7 @@ def check_connection(out, config):
 
 class Client:
     def __init__(self, run, config, retry_errors=False):
+        validate_backend(config)
         self.folder = Path(run)/'api'; self.folder.mkdir(parents=True, exist_ok=True)
         self.config = config; self.retry_errors = retry_errors
         self.url = endpoint(); self.model = os.environ['VDC_RESEARCH_MODEL']
@@ -155,6 +172,10 @@ class Client:
             # Never persist arbitrary response bodies, request headers or provider error strings.
             record.update(status='failed', error_type=type(exc).__name__,
                           http_status=exc.code if isinstance(exc, urllib.error.HTTPError) else None)
+            reason = getattr(exc, 'reason', exc)
+            record.update(network_reason_type=type(reason).__name__,
+                          network_errno=getattr(reason, 'errno', None),
+                          certificate_verify_code=getattr(reason, 'verify_code', None))
             status = record['http_status']
             record['diagnostic'] = ({400:'request_parameters_rejected',401:'authentication_failed',
                 403:'access_denied',404:'model_or_endpoint_not_found',429:'rate_limit_or_quota',
