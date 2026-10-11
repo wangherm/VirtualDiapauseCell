@@ -15,6 +15,7 @@ from .io import read_json, write_json, save_npz, sha256, object_hash
 from .research_model import GraphModel, baseline_specs, validate_graph, SOURCES, OPS
 from .research_data import source_fingerprint, prepare_view, knowledge_records, retrieve
 from .research_api import Client
+from .research_assets import load_public_context
 from .metrics import study_unit_weights
 from .pk2_numeric import dynamic_ratio
 
@@ -34,6 +35,10 @@ This is not future-state or causal intervention prediction. You may propose thos
 as separate future experiments but cannot claim they ran. Clock is a train-derived
 optional reference, not ground truth. Propose alternative representations freely.
 The evaluator, target panel, splits and comparison rule are immutable this run.
+When a public asset catalogue is supplied, distinguish available files from
+executable inputs. It is context for planning; do not claim these public studies
+were used in this assay. Propose additional study experiments as pending with
+explicit missing parsers, scale mappings or grouped admission requirements.
 Return one complete JSON object, no prose outside it.
 '''
 
@@ -202,16 +207,23 @@ def verify_artifacts(folder):
     if expected!=manifest_files(folder): raise ValueError('Completed artifact changed: '+str(folder))
 
 
-def research_memory(history):
+def research_memory(history, detailed_last=None):
     """Bound context mechanically; preserve full original records on disk."""
     memory=[]
-    for item in history:
+    for index,item in enumerate(history):
         compact={k:item[k] for k in ('round','execution','relative_mse','metrics','implementation_hash') if k in item}
         compact['hypothesis']=item.get('hypothesis','')[:1000]
         if 'reason' in item:compact['reason']=item['reason'][:400]
         if 'reflection' in item:
             reflection=item['reflection']
             compact['reflection']={k:str(reflection.get(k,''))[:600] for k in ('conclusion','reasoning','next_question','limitations')}
+        if detailed_last is not None and index < len(history)-detailed_last:
+            compact.pop('metrics',None)
+            compact['hypothesis']=compact['hypothesis'][:250]
+            if 'reflection' in compact:
+                compact['reflection']={k:v[:200] for k,v in compact['reflection'].items()
+                                       if k in ('conclusion','next_question')}
+            compact['memory_detail']='condensed; full result retained in round artifacts'
         memory.append(compact)
     return memory
 
@@ -248,14 +260,17 @@ def run_research(repo, source, run, config, corpus, retry_errors=False, prepare_
     brief_path=repo/'knowledge/core_tasks.json'
     brief=read_json(brief_path) if brief_path.is_file() else {}
     project_knowledge={k:brief[k] for k in ('core_tasks','coordinate_registry','depth_policy','wave_policy') if k in brief}
+    public_context=load_public_context(repo,config,os.environ.get('VDC_RESEARCH_ASSET_REPORT'))
     identity={'protocol':'VDC_AI4AI_R1','config':config,'data':fingerprint,'corpus_sha256':sha256(corpus),
               'code':code_fingerprint(repo),'project_knowledge_hash':object_hash(project_knowledge),
+              'public_data_context_hash':object_hash(public_context),
               'api_model':os.environ.get('VDC_RESEARCH_MODEL'),
               'api_base_hash':object_hash(os.environ.get('VDC_RESEARCH_API_BASE')),'source_data':str(source.resolve())}
     if (run/'manifest.json').exists():
         if read_json(run/'manifest.json')!=identity: raise ValueError('Resume signature changed; use a new run, never stale completed states')
     else: write_json(run/'manifest.json',identity)
     write_json(run/'config.json',config)
+    if public_context is not None: write_json(run/'public_data_context.json',public_context)
     evidence=knowledge_records(corpus)
     write_json(run/'evidence.json',evidence)
     summaries={}
@@ -287,8 +302,9 @@ def run_research(repo, source, run, config, corpus, retry_errors=False, prepare_
         if history: query+=' '+history[-1].get('reflection',{}).get('next_question',history[-1].get('hypothesis',''))
         context={'research_goal':config['research_goal'],'round':i+1,'remaining_rounds':config['rounds']-i,
                  'project_definitions_not_experimental_truth':project_knowledge,
+                 'public_data_for_planning_not_executed':public_context,
                  'data':summaries,'evidence':retrieve(evidence,query,config['evidence_per_call']),
-                 'baselines':baseline,'previous_experiments':research_memory(history),
+                 'baselines':baseline,'previous_experiments':research_memory(history,config.get('detailed_memory_rounds')),
                  'docker_enabled':config['allow_python_docker'],
                  'counterexamples_to_examine':['reference support differs between identities','semantic benefit remains unproven'],
                  'evaluation_rule':'all fixed queries; equal biological material within study; equal views; no target-derived inputs; views share materials and are NOT independent replications'}

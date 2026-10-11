@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import csv
 import gzip
+import hashlib
 import io
 import re
 import time
@@ -19,6 +20,21 @@ from vdc.observation import normalise_expression, score_programmes
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def matches_download_lock(path, entry):
+    """SHA256 by default; ENA publishes MD5 for raw reads. Always check size."""
+    path = Path(path)
+    if not path.is_file() or path.stat().st_size != entry['bytes']:
+        return False
+    algorithm = 'sha256' if 'sha256' in entry else 'md5'
+    if algorithm not in entry:
+        raise ValueError('A pinned checksum is required')
+    digest = hashlib.new(algorithm)
+    with path.open('rb') as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b''):
+            digest.update(block)
+    return digest.hexdigest() == entry[algorithm]
+
+
 def fetch_locked(entry, directory, download):
     path = directory / entry['file']
     if not path.exists():
@@ -27,7 +43,7 @@ def fetch_locked(entry, directory, download):
         path.parent.mkdir(parents=True, exist_ok=True)
         temporary = path.with_suffix(path.suffix + '.partial')
         # A fully verified temporary file can survive an interrupted rename.
-        if temporary.exists() and sha256(temporary) == entry['sha256']:
+        if temporary.exists() and matches_download_lock(temporary, entry):
             temporary.replace(path)
         else:
             for attempt in range(1, 6):
@@ -74,11 +90,11 @@ def fetch_locked(entry, directory, download):
                     print(f'Retrying in {delay}s; verified other files will be reused.', flush=True)
                     time.sleep(delay)
                     continue
-                if sha256(temporary) != entry['sha256']:
+                if not matches_download_lock(temporary, entry):
                     raise ValueError(f'Source changed: {entry["file"]}; review a new snapshot explicitly')
                 temporary.replace(path)
                 break
-    if sha256(path) != entry['sha256']:
+    if not matches_download_lock(path, entry):
         raise ValueError(f'Checksum mismatch: {path}')
     print(f'VERIFIED {entry["file"]}', flush=True)
     return path

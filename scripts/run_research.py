@@ -46,10 +46,14 @@ def main():
     if a.command=='doctor':
         import torch
         from vdc.research_data import source_fingerprint
+        from vdc.research_assets import load_public_context
         fingerprint=source_fingerprint(data,read_json(a.config))
+        public_context=load_public_context(ROOT,read_json(a.config),os.environ.get('VDC_RESEARCH_ASSET_REPORT'))
         print(json.dumps({'data':str(data),'data_fingerprint':fingerprint,'torch':torch.__version__,
             'cuda':torch.cuda.is_available(),'gpu':torch.cuda.get_device_name(0) if torch.cuda.is_available() else None,
             'api_key_set':bool(os.environ.get('VDC_RESEARCH_API_KEY')),'model_set':bool(os.environ.get('VDC_RESEARCH_MODEL')),
+            'public_assets':public_context['acquisition'] if public_context else 'not_attached',
+            'public_matrices_used_in_current_assay':False,
             'api_calls_executed':0},indent=2));return 0
     if a.run is None: p.error('run/prepare needs explicit --run')
     if a.command=='run': endpoint()  # Fail before fitting if backend credentials are absent.

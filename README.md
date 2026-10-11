@@ -14,6 +14,10 @@ is stored in the repository. The default graph backend runs on CPU. Unrestricted
 generated Python requires the optional isolated Docker backend.
 
 See [the AutoDL setup, budgets, progress and resume guide](docs/AI4AI_R1_CN.md).
+To complete public downloads and attach source-aware dataset guidance before a
+research run, use the [public data preparation guide](docs/AI4AI_PUBLIC_DATA_CN.md).
+It reuses verified caches and existing private views; newly downloaded public
+matrices remain planning assets until their numerical adapters and grouped admission are implemented.
 This is a VDC-specific controller inspired by the research-memory and hypothesis
 revision literature, not an upstream EvoScientist/PiEvo/OpenEvolve reproduction.
 Real provider-driven research runs are not claimed by software tests.

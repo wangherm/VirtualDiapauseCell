@@ -48,6 +48,15 @@ if Path(sys.argv[1]).resolve() != Path(sys.argv[2]).resolve():
     shutil.copyfile(sys.argv[1],sys.argv[2])
 PY
   export VDC_RESEARCH_API_CHECK="$RUN/api_check.json"
+  if [[ -n "${VDC_RESEARCH_ASSET_REPORT:-}" ]]; then
+    "$VDC_PYTHON" - "$VDC_RESEARCH_ASSET_REPORT" "$RUN/public_asset_receipt.json" <<'PY'
+import shutil,sys
+from pathlib import Path
+if Path(sys.argv[1]).resolve() != Path(sys.argv[2]).resolve():
+    shutil.copyfile(sys.argv[1],sys.argv[2])
+PY
+    export VDC_RESEARCH_ASSET_REPORT="$RUN/public_asset_receipt.json"
+  fi
   SESSION="vdc_research_$(date -u +%H%M%S)_$$"
   screen -dmS "$SESSION" bash "$RELEASE/scripts/launch_research.sh" --worker "$RUN"
   printf '%s\n' "$RUN" > "$VDC_PRIVATE_ROOT/LATEST_RESEARCH.txt"

@@ -298,6 +298,7 @@ def test_real_numeric_loop_with_simulated_api_and_reflection_resume(tmp_path,mon
             if validator:validator(obj)
             return obj
     monkeypatch.setattr(r,'Client',FakeClient)
+    monkeypatch.setattr(r,'load_public_context',lambda *a:{'public_matrices_used_in_current_assay':False,'acquisition':{'GSE123':{'verified_files':1}}})
     config={'views':['fixture'],'allow_python_docker':False,'rounds':2,'evidence_per_call':10,'research_goal':'fixture'}
     run=tmp_path/'run'
     with pytest.raises(RuntimeError,match='reflection'):r.run_research(repo,tmp_path,run,config,corpus)
@@ -306,5 +307,6 @@ def test_real_numeric_loop_with_simulated_api_and_reflection_resume(tmp_path,mon
     assert result['completed_experiments']==2
     assert len(fits)==5  # First experiment did not refit after interrupted reflection.
     assert FakeClient.contexts[-1]['previous_experiments'][0]['reflection']['next_question']=='compare an alternative'
+    assert FakeClient.contexts[-1]['public_data_for_planning_not_executed']['public_matrices_used_in_current_assay'] is False
     r.run_research(repo,tmp_path,run,config,corpus)
     assert len(fits)==5
