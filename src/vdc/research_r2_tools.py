@@ -156,24 +156,59 @@ def resolve_assets(inv, ids):
     return result, provenance
 
 
-def inspect_assets(inv, ids):
+def inspect_assets(inv, ids, offset=0):
     """Only structural metadata is sent to the external research model."""
     import zipfile
-    result = {}
+    result = {}; offset=max(0,int(offset))
     for key in ids:
         a = inv['assets'][key]; p = Path(a['path'])
         detail = {k: a[k] for k in ('name', 'bytes', 'source', 'public')}
         if zipfile.is_zipfile(p):
             with zipfile.ZipFile(p) as z:
-                detail['archive_members'] = [{'name': i.filename, 'bytes': i.file_size} for i in z.infolist()[:100]]
+                detail['archive_members'] = [{'name': i.filename, 'bytes': i.file_size} for i in z.infolist()[offset:offset+100]]
                 detail['member_count'] = len(z.infolist())
+                if p.suffix=='.npz':
+                    import numpy.lib.format as fmt
+                    detail['arrays']=[]
+                    for entry in z.infolist()[offset:offset+100]:
+                        if not entry.filename.endswith('.npy'):continue
+                        with z.open(entry) as stream:
+                            version=fmt.read_magic(stream)
+                            if version==(1,0):shape,order,dtype=fmt.read_array_header_1_0(stream)
+                            elif version==(2,0):shape,order,dtype=fmt.read_array_header_2_0(stream)
+                            else:continue
+                        detail['arrays'].append({'name':entry.filename,'shape':shape,'dtype':str(dtype)})
         elif p.name.endswith(('.tar', '.tar.gz', '.tgz')):
             import tarfile
             with tarfile.open(p) as tar:
                 detail['archive_members'] = []
                 for i, member in enumerate(tar):
-                    if i >= 100: break
+                    if i < offset:continue
+                    if i >= offset+100: break
                     detail['archive_members'].append({'name':member.name, 'bytes':member.size})
+        elif p.suffix in ('.h5ad','.h5','.hdf5'):
+            import h5py
+            with h5py.File(p,'r') as f:
+                structures=[]
+                def visit(name,obj):
+                    if isinstance(obj,h5py.Dataset):structures.append({'name':name,'shape':obj.shape,'dtype':str(obj.dtype)})
+                f.visititems(visit)
+                detail['datasets']=structures[offset:offset+100]
+                detail['dataset_count']=len(structures)
+        elif not a['public'] and p.suffix in ('.csv','.tsv','.txt'):
+            import csv
+            with p.open(encoding='utf-8',errors='replace') as stream:
+                header=stream.readline(16000)
+            delimiter='\t' if '\t' in header else ','
+            detail['column_names']=next(csv.reader([header],delimiter=delimiter))[:200]
+            detail['data_values_returned']=False
+        elif not a['public'] and p.suffix=='.json' and p.stat().st_size<2_000_000:
+            obj=read_json(p)
+            detail['json_type']=type(obj).__name__
+            if isinstance(obj,dict):detail['fields']={k:type(v).__name__ for k,v in list(obj.items())[:100]}
+            elif isinstance(obj,list):
+                detail['length']=len(obj)
+                if obj and isinstance(obj[0],dict):detail['row_fields']=list(obj[0])[:100]
         elif a['public'] and (p.suffix in ('.txt','.tsv','.csv','.json') or p.name.endswith(('.soft.gz','.csv.gz','.tsv.gz'))):
             import gzip
             op = gzip.open if p.suffix=='.gz' else open

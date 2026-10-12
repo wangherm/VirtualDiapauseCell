@@ -57,7 +57,8 @@ minimum decision count is not a quota of invented experiments or improvements.
 
 TOOLS = '''Tools (all paths relative, all IDs unique; examples are contracts, not a model menu):
 inventory: source:optional source ID, offset:0 -> page of 40 actual file records.
-inspect: asset_ids:[...] -> archive structure, no private numeric values.
+inspect: asset_ids:[...], offset:0 -> paged archive members, H5/NPZ array shapes,
+table columns and JSON structure; no private numeric values.
 read_vdc: path:"src/vdc/..py" or "scripts/..py", offset:0 -> existing source to reuse.
 search: query:public scientific terms -> actual Europe PMC results.
 fetch: url:public HTTPS document, method or source-code file -> cached text/document ID.
@@ -180,7 +181,7 @@ class Engine:
             offset = max(0,int(a.get('offset',0)))
             return {'assets':dict(assets[offset:offset+40]), 'total_assets':len(assets),
                     'next_offset':offset+40 if offset+40<len(assets) else None}
-        if kind == 'inspect': return inspect_assets(self.inv, a['asset_ids'])
+        if kind == 'inspect': return inspect_assets(self.inv, a['asset_ids'],a.get('offset',0))
         if kind == 'read_r1':
             if self.prior is None: return {'status':'not_found_on_server'}
             n=int(a['round'])
@@ -419,9 +420,23 @@ class Engine:
             except Exception as exc:
                 if str(exc)=='API call/token upper-bound budget exhausted; no further requests submitted':
                     self.state['status']='budget_exhausted_partial'; break
+                # A returned but malformed answer is known billed work, not an
+                # uncertain transport retry. Start a NEW corrective decision.
+                records=sorted((self.run/'api').glob(f'decision_{index:04d}_*.json'))
+                r=read_json(records[-1]) if records else {}
+                if (r.get('status')=='failed' and r.get('error_type') in ('ValueError','JSONDecodeError')
+                        and r.get('finish_reason') in ('stop','length') and isinstance(r.get('content'),str)):
+                    self.state['format_failures']=self.state.get('format_failures',0)+1
+                    self.state['memories'].append('Previous answer rejected as incomplete/invalid tool JSON. No actions executed. Emit a smaller complete decision; use at most one substantial code action.')
+                    self.state['next_decision']+=1
+                    self.state['status']='running' if self.state['format_failures']<3 else 'format_failures_partial'
+                    self.save();self.report()
+                    if self.state['format_failures']>=3:break
+                    continue
                 self.state.update(status='api_stopped', error_type=type(exc).__name__)
                 self.save(); self.report(); raise
             write_json(folder/'decision.json', proposal)
+            self.state['format_failures']=0
             self.state['status']='running'; self.save()
             for action in proposal['actions']:
                 key=action['id']; fingerprint=object_hash(action)

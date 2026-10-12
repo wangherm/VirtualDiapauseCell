@@ -168,3 +168,25 @@ def test_runtime_materializes_external_symlink(tmp_path):
     copy_runtime(link,root)
     target=root/str(link).lstrip('/')
     assert not target.is_symlink() and target.read_text()==original.read_text()
+
+
+def test_private_structure_inspection_excludes_values(tmp_path):
+    from vdc.research_r2_tools import inspect_assets
+    path=tmp_path/'matrix.npz';save_npz(path,counts=np.full((3,4),987654321.0))
+    inv={'assets':{'a':{'path':str(path),'name':path.name,'bytes':path.stat().st_size,'source':'s','public':False}}}
+    r=inspect_assets(inv,['a'])['a']
+    assert r['arrays'][0]['shape']==(3,4)
+    assert '987654321' not in json.dumps(r)
+
+
+def test_completed_invalid_answers_get_bounded_corrective_decisions(tmp_path):
+    engine=make_engine(tmp_path)
+    def bad_answer(key,*args,**kwargs):
+        write_json(engine.run/'api'/f'{key}_001.json',{'status':'failed','error_type':'ValueError',
+            'finish_reason':'length','content':'{','budget_charge':100})
+        raise RuntimeError('provider answer invalid')
+    with patch('vdc.research_r2.Client') as client:
+        client.return_value.call.side_effect=bad_answer
+        result=engine.run_loop()
+    assert result['status']=='format_failures_partial'
+    assert result['next_decision']==4 and not result['experiments']
