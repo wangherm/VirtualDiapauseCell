@@ -19,9 +19,11 @@ def test_cuda_never_falls_back_to_cpu():
 
 def test_cpu_policy_does_not_load_cuda():
     with patch('vdc.research_r2_devices.gpu_receipt') as p:
-        config=configure_devices({},'cpu')
+        config=configure_devices({'gpu_available':True,'gpu_hardware':{'stale':True}},'cpu')
     p.assert_not_called()
     assert config['available_devices']==['cpu'] and not config['gpu']
+    assert config['gpu_available'] is False and 'gpu_hardware' not in config
+    with pytest.raises(ValueError):select_device(config,'cuda')
 
 
 def test_gpu_probe_bound_to_runtime_and_actual_hardware(tmp_path):

@@ -11,7 +11,11 @@ export VDC_R2_DEVICE_POLICY="${VDC_R2_DEVICE_POLICY:-ai}"
 if [[ "${1:-}" == --worker ]]; then
   exec >> "$VDC_R2_BOOT_LOG" 2>&1
   trap 'code=$?; echo "SETUP_LAUNCH_EXIT_CODE=$code"' EXIT
-  echo "Device policy: $VDC_R2_DEVICE_POLICY; GPU must pass real qualification before AI can select it."
+  if [[ "$VDC_R2_DEVICE_POLICY" == cpu ]]; then
+    echo 'Device policy: cpu (explicit); CPU isolation/fit/reload checks required. CUDA checks not requested; API reasoning remains remote.'
+  else
+    echo "Device policy: $VDC_R2_DEVICE_POLICY; GPU must pass real qualification before AI can select it."
+  fi
   bash scripts/setup_research_r2.sh
   bash scripts/launch_research_r2.sh
   exit 0

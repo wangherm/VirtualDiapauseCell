@@ -75,6 +75,12 @@ container; no data mounted. Other tools mount resulting cache at /wheels. Instal
 your script using pip --no-index --find-links /wheels --target /tmp/deps; update sys.path.
 Base runtime has numpy/scipy/pandas/sklearn/h5py/anndata/matplotlib/torch.
 Hardware and qualified available_devices are in context. For prepare/experiment,
+choose ONLY from available_devices. If it is ["cpu"], this is an explicitly selected
+CPU research run, not a broken GPU run. Do not repeatedly request CUDA, modify the
+sandbox, or install GPU drivers. API reasoning still runs remotely. Continue real
+data processing, numerical baselines and CPU-feasible models; measure timings before
+scaling expensive experiments. Record resource-limited questions without claiming
+they were tested. CPU policy does not reduce the scientific mission or decision budget.
 choose device:"cpu" or device:"cuda" and explain device_reason. Use CUDA for suitable
 neural models/large tensor operations; CPU for IO/parsing/small Ridge. Compare measured
 timings when uncertain, do not occupy GPU merely to increase utilisation. GPU choice

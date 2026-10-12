@@ -37,7 +37,8 @@ def configure_devices(runtime,policy=None):
     r=dict(runtime)
     policy=policy or r.get('device_policy','cpu')
     if policy not in ('ai','cpu'):raise ValueError('Device policy must be ai or cpu')
-    r.update(device_policy=policy,gpu=False,selected_device='cpu',available_devices=['cpu'])
+    r.update(device_policy=policy,gpu=False,gpu_available=False,selected_device='cpu',available_devices=['cpu'])
+    r.pop('gpu_hardware',None)
     if policy=='ai':
         receipt=gpu_receipt(r)
         r['available_devices'].append('cuda')

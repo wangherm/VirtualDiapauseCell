@@ -216,6 +216,19 @@ CUDA 在写线程 `comm` 路径失败时返回 304 的情况。这是诊断方�
 错误码认定同一原因。诊断保留现有隔离，不挂载整个宿主 `/proc` 或跳过 GPU 检查。
 若 strace 本身被容器阻止，保留其错误，不能将跟踪失败算作 GPU 运算失败的证据。
 
+### AutoDL 不允许命名空间时，明确先用 CPU
+
+当两种 `unshare` 检查都返回 `Operation not permitted`，当前 GPU chroot 方案
+无法提供所需动态 procfs。宿主 GPU 正常不等于隔离执行器已经可用。
+可以明确设置 `export VDC_R2_DEVICE_POLICY=cpu`，继续调用同一个
+`scripts/start_research_r2.sh`，沿用 v2 runtime 和现有数据。
+
+此模式通过 CPU 隔离、前后向和拟合重载检查后启动研究，跳过未请求的 CUDA
+检查，记录 `available_devices: ["cpu"]`。DeepSeek 推理在远程 API 上执行；
+本地研究代码用 CPU，100 次决策上限和科学目标不变，不能把上限当成已完成实验数。
+研究器应实测耗时，遇到昂贵模型记录具体资源瓶颈，不反复请求不可用的 CUDA。
+未来 GPU 后端需单独验证，不能给本轮补写 GPU 成绩或直接换环境续用旧通过凭证。
+
 ## 方法来源
 
 - EvoScientist：研究、工程与长期经验记忆，https://arxiv.org/abs/2603.08127
