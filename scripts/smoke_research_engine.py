@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 from vdc.io import read_json,write_json,object_hash,sha256
+from vdc.research_assets import asset_key,verified_file
 from vdc.research_r2 import Engine
 from vdc.research_r2_devices import configure_devices
 
@@ -64,13 +65,56 @@ np.savez_compressed('/out/predictions.npz',prediction=x@m['coef'].T+m['intercept
 '''
 
 
-def regression(private,out,runtime_root):
+def locate_probe_sources(repo,private,receipt=None,parent=None):
+    """Frozen code releases have no data/raw: follow recorded caches, verify bytes."""
+    repo,private=Path(repo),Path(private)
+    if receipt is None:
+        pointer=private/'LATEST_RESEARCH_DATA.txt'
+        if pointer.is_file():receipt=Path(pointer.read_text().strip())/'status.json'
+    records=read_json(receipt).get('files',{}) if receipt and Path(receipt).is_file() else {}
+    previous=read_json(Path(parent)/'inventory.json').get('assets',{}) if parent and (Path(parent)/'inventory.json').is_file() else {}
+    names=('GSE288723_raw_counts.csv.gz','GSE288723_family.soft.gz')
+    entries={e['file']:e for e in read_json(repo/'configs/research_public_assets.json')['files']
+             if e['study']=='GSE288723' and e['file'] in names}
+    result={};missing=[]
+    for name in names:
+        entry=entries[name];candidates=[]
+        record=records.get(asset_key(entry),{})
+        if record.get('path'):candidates.append(Path(record['path']))
+        candidates += [Path(a['path']) for a in previous.values()
+            if a.get('source')=='GSE288723' and a.get('name')==name and a.get('public') and a.get('path')]
+        candidates += [private/'public_assets'/'GSE288723'/name,repo/'data/raw'/'GSE288723'/name]
+        found=None;rejected=[]
+        for path in dict.fromkeys(candidates):
+            if path.is_symlink() or not path.is_file():continue
+            if verified_file(path,entry):found=path.resolve();break
+            rejected.append(str(path))
+        if found is None:
+            missing.append({'file':name,'searched':[str(p) for p in candidates],'checksum_mismatches':rejected})
+            continue
+        key='asset_'+object_hash(str(found))[:16]
+        result[name]=(key,{'path':str(found),'name':name,'source':'GSE288723','public':True,
+            'expected':entry,'sha256':sha256(found),'bytes':found.stat().st_size,'mtime_ns':found.stat().st_mtime_ns})
+    if missing:
+        raise FileNotFoundError('Engineering check sources missing or checksum-mismatched. '
+            'Provide --asset-report for the acquisition status.json or --parent for the previous complete server run. '
+            'No download or API call executed. Details: '+json.dumps(missing))
+    return result
+
+
+def regression(private,out,runtime_root,receipt=None,parent=None):
+    sources=locate_probe_sources(ROOT,private,receipt,parent)
     config=read_json(ROOT/'configs/research_r2.json')
     config['runtime'].update(runtime_root=str(runtime_root),memory='4g',cpus=2,timeout_seconds=180)
     config['runtime']=configure_devices(config['runtime'],'cpu')
-    engine=Engine(ROOT,private,out,config)
-    matches=lambda name:next(k for k,v in engine.inv['assets'].items() if v['source']=='GSE288723' and v['name']==name)
-    matrix=matches('GSE288723_raw_counts.csv.gz');meta=matches('GSE288723_family.soft.gz')
+    engine=Engine(ROOT,private,out,config,receipt)
+    for name,(key,asset) in sources.items():
+        engine.inv['assets'][key]=asset
+        ids=engine.inv['sources']['GSE288723']['asset_ids']
+        if key not in ids:ids.append(key)
+        print('ENGINE_CHECK_SOURCE '+name+' verified_existing_cache',flush=True)
+    engine.save()
+    matrix=sources['GSE288723_raw_counts.csv.gz'][0];meta=sources['GSE288723_family.soft.gz'][0]
     def call(a):
         print('ENGINE_CHECK_START '+a['id'],flush=True)
         engine.state['actions'][a['id']]={'type':a['type'],'signature':object_hash(a),'status':'running'};engine.save()
@@ -111,6 +155,8 @@ if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--private-root',type=Path,default=os.environ.get('VDC_PRIVATE_ROOT','/root/autodl-tmp/vdc-private'))
     p.add_argument('--runtime-root',type=Path,required=True);p.add_argument('--out',type=Path,required=True)
+    p.add_argument('--asset-report',type=Path,default=os.environ.get('VDC_RESEARCH_ASSET_REPORT'))
+    p.add_argument('--parent',type=Path,default=os.environ.get('VDC_ENGINE_PARENT'))
     a=p.parse_args()
     if a.out.exists():raise ValueError('Choose a fresh engineering check directory')
-    regression(a.private_root,a.out,a.runtime_root)
+    regression(a.private_root,a.out,a.runtime_root,a.asset_report,a.parent)

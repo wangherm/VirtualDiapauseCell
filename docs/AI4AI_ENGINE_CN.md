@@ -33,6 +33,8 @@ AI 可以调用 `discover_data(source, research_reason)`，为缺失数据或新
 
 当前 AutoDL 已验证的是 CPU 隔离。默认 CPU，DeepSeek 推理仍在远端。只有实际 GPU 隔离资格通过后才可以选择 `VDC_R2_DEVICE_POLICY=ai`，没有跳过隔离的 GPU 入口。新入口复用已合格运行时，不替换 CUDA PyTorch。
 
+工程检查的数据定位优先读取 `VDC_RESEARCH_ASSET_REPORT` 或 `LATEST_RESEARCH_DATA.txt` 指向的下载收据，再读取明确指定的父 run 的 `inventory.json`，最后检查默认缓存。旧下载器可能只复用外部缓存而未复制文件到 `public_assets`；离线 release 也没有 `data/raw`。所有命中的文件仍须匹配固定字节数和 SHA256，不会仅凭文件名接纳。确实缺失时报告具体查找位置，不再抛出无上下文的 `StopIteration`。
+
 ## 从 GitHub 启动
 
 先在 JupyterLab 终端运行，`PARENT` 改为实际停止的旧 run：

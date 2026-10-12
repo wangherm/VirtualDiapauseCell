@@ -14,7 +14,7 @@ if [[ "${1:-}" == --worker ]]; then
   echo 'ENGINE_CHECK: real public data, no API calls; this is not autonomous research.'
   CHECK="$VDC_PRIVATE_ROOT/runs/engine_check_$(date -u +%Y%m%dT%H%M%SZ)_$$"
   "$VDC_PYTHON" scripts/smoke_research_engine.py --private-root "$VDC_PRIVATE_ROOT" \
-    --runtime-root "$VDC_R2_RUNTIME_ROOT" --out "$CHECK"
+    --runtime-root "$VDC_R2_RUNTIME_ROOT" --parent "$VDC_ENGINE_PARENT" --out "$CHECK"
   export VDC_R2_RUN="$VDC_PRIVATE_ROOT/runs/research_engine_$(date -u +%Y%m%dT%H%M%SZ)_$$"
   "$VDC_PYTHON" scripts/continue_research_r2.py --engine-phase --parent "$VDC_ENGINE_PARENT" --out "$VDC_R2_RUN"
   cp "$CHECK/ENGINE_CHECK.json" "$VDC_R2_RUN/engine_check_receipt.json"
