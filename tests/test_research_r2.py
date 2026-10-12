@@ -103,6 +103,72 @@ def make_engine(tmp_path):
         return Engine(repo,private,tmp_path/'run',config)
 
 
+def test_durable_results_survive_context_compaction_and_reuse(tmp_path):
+    from vdc.io import object_hash
+    engine=make_engine(tmp_path)
+    action={'id':'old','type':'inspect','asset_ids':['example']}
+    engine.state['actions']['old']={'type':'inspect','status':'completed',
+        'signature':object_hash(action),'result':{'columns':['gene','counts']}}
+    for i in range(300):
+        engine.state['actions'][f'later{i}']={'type':'inventory','status':'completed','result':{'text':'x'*2000}}
+    with patch('vdc.research_r2.Client') as client:
+        client.return_value.call.side_effect=[{'actions':[action]},RuntimeError('stop fixture')]
+        with pytest.raises(RuntimeError):engine.run_loop()
+    assert 'old' in engine.context()['recent_actions']
+    result=engine.action({'id':'read','type':'read_action','action':'old'})
+    assert 'counts' in result['text']
+    assert engine.context()['progress']['experiments']==0
+    assert engine.action({'id':'list','type':'list_actions','tool_type':'inspect'})['total']==1
+
+
+def test_operator_stop_and_unlimited_budget_do_not_make_api_calls(tmp_path):
+    engine=make_engine(tmp_path);engine.config['max_token_budget']=None
+    write_json(engine.run/'api/history.json',{'budget_charge':99_000_000})
+    (engine.run/'STOP').touch()
+    with patch('vdc.research_r2.Client') as client:
+        assert engine.run_loop()['status']=='paused_by_operator'
+        client.return_value.call.assert_not_called()
+    assert engine.budget()['token_limit'] is None
+    assert engine.budget()['unknown_usage_requests']==1
+
+
+def test_preparation_inspection_never_returns_private_values(tmp_path):
+    engine=make_engine(tmp_path)
+    engine.state['actions']['prep']={'type':'prepare','status':'completed'}
+    write_json(engine.run/'actions/prep/output/summary.json',{'private_measurement':172635.124})
+    result=engine.action({'id':'check','type':'inspect_preparation','preparation':'prep','path':'summary.json'})
+    assert '172635' not in json.dumps(result)
+    assert result['output']['fields']['private_measurement']=='float'
+    with pytest.raises(ValueError):
+        engine.action({'id':'escape','type':'inspect_preparation','preparation':'prep','path':'../../state.json'})
+
+
+def test_preparation_fork_preserves_history_without_fabricating_experiments(tmp_path):
+    from vdc.research_r2_continue import continue_preparation_run
+    from vdc.research_r2_tools import tree_hash
+    engine=make_engine(tmp_path)
+    parent=engine.private/'runs/old';parent.parent.mkdir(parents=True)
+    engine.state['status']='budget_exhausted_partial';engine.state['next_decision']=100
+    engine.save()
+    import shutil
+    shutil.copytree(engine.run,parent)
+    write_json(parent/'actions/prep/output/real_preparation.json',{'shape':[2,3]})
+    write_json(parent/'api/decision_0099_001.json',{'budget_charge':60000,'usage':{'total_tokens':200}})
+    before=tree_hash(parent)
+    config={**engine.config,'max_api_calls':1000,'max_token_budget':None}
+    target=engine.private/'runs/new'
+    with patch('vdc.research_r2.resolve_runtime',return_value='test-runtime'):
+        child=continue_preparation_run(engine.repo,engine.private,parent,target,config)
+    assert tree_hash(parent)==before
+    assert child.state['next_decision']==100 and not child.state['experiments']
+    assert child.budget()['requests']==1 and child.budget()['token_limit'] is None
+    assert read_json(target/'status.json')['new_decisions']==0
+    assert read_json(target/'migration_status.json')['status']=='verified'
+    assert (target/'actions/prep/output/real_preparation.json').read_bytes()==(parent/'actions/prep/output/real_preparation.json').read_bytes()
+    with pytest.raises(ValueError,match='must not exist'):
+        continue_preparation_run(engine.repo,engine.private,parent,target,config)
+
+
 def test_finish_does_not_accept_empty_inventory_as_completed(tmp_path):
     engine=make_engine(tmp_path)
     r=engine.action({'type':'finish','id':'done','summary':'Everything is complete'})

@@ -139,7 +139,8 @@ class Client:
             raise RuntimeError('Previous API error/uncertain delivery; inspect api ledger and use --retry-api-errors explicitly')
         ledger = [read_json(p) for p in self.folder.glob('*.json')]
         charge = (len(system.encode('utf-8'))+len(user.encode('utf-8')))+self.config['max_output_tokens']
-        if len(ledger) >= self.config['max_api_calls'] or sum(r['budget_charge'] for r in ledger)+charge > self.config['max_token_budget']:
+        token_limit = self.config['max_token_budget']
+        if len(ledger) >= self.config['max_api_calls'] or (token_limit is not None and sum(r['budget_charge'] for r in ledger)+charge > token_limit):
             raise RuntimeError('API call/token upper-bound budget exhausted; no further requests submitted')
         if charge > self.config['max_request_budget']:
             raise ValueError('Request exceeds configured context budget')

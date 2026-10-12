@@ -53,9 +53,21 @@ The operator wants a longer iteration: after first successful experiments, spend
 remaining decisions on evidence-driven revisions and comparable parent/child tests,
 not repeated searches or equivalent reruns. Preserve negative results. The configured
 minimum decision count is not a quota of invented experiments or improvements.
+The host progress ledger is authoritative. Do not restart research when earlier
+results leave the context: use list_actions/read_action/inspect_preparation to
+recover them. Preparations and fetched papers are not training experiments.
+After inspecting enough structure, write an actual task bundle, register it, fit
+and evaluate a first model, then revise from measured results. You choose the model
+and questions; do not spend every decision rediscovering the same input files.
 '''
 
 TOOLS = '''Tools (all paths relative, all IDs unique; examples are contracts, not a model menu):
+list_actions: tool_type:optional tool type, status:optional, offset:0 -> 20 saved action summaries.
+read_action: action:previous action ID, offset:0 -> 8000 characters of its host-produced
+result/diagnostic, including previous inspect/fetch results; not arbitrary stdout.
+read_task: task:registered task ID, offset:0 -> paginated contract, no arrays.
+inspect_preparation: preparation:completed prepare ID, path:optional relative output
+file, offset:0 -> file listing or structural inspection; private matrix values stay local.
 inventory: source:optional source ID, offset:0 -> page of 40 actual file records.
 inspect: asset_ids:[...], offset:0 -> paged archive members, H5/NPZ array shapes,
 table columns and JSON structure; no private numeric values.
@@ -92,7 +104,11 @@ prepare: asset_ids:[...], files:{"prepare.py":"complete code", ...},
 command:["python","/code/prepare.py"] -> execute multi-file code in an isolated
 container. Source mounts at /input/ASSET_ID + original last-two suffixes, read-only;
 see /input/assets.json mapping. /input/roles.json, if selected, is just a mounted
-asset; historical roles are not a training veto. VDC code at /vdc, importable.
+asset. Exact manifest contract: assets=json.load(open('/input/assets.json'));
+path=assets[asset_id]['container_path']; entries also have source, sha256, bytes.
+Do not guess 'path' or 'name' fields. Save files to /out, not only print to stdout.
+Use inspect_preparation to review output structure, then register_task for training.
+Historical roles are not a training veto. VDC code at /vdc, importable.
 Write derived outputs to /out. Standard task bundle (or subfolder of /out):
 train.npz with numeric finite 2D x,y; query.npz with x only; truth.npz with y;
 train_rows.json/query_rows.json lists of {study_family,biological_unit,link_ids,
@@ -191,6 +207,38 @@ class Engine:
 
     def action(self, a):
         kind, key = a['type'], identifier(a['id']); out = self.run/'actions'/key
+        if kind == 'list_actions':
+            rows = [{'id': k, **{f: v.get(f) for f in ('type', 'status', 'error_type')}}
+                    for k,v in self.state['actions'].items() if k != key
+                    and (not a.get('status') or v['status'] == a['status'])
+                    and (not a.get('tool_type') or v['type'] == a['tool_type'])]
+            offset = max(0, int(a.get('offset', 0)))
+            return {'actions': rows[offset:offset+20], 'total': len(rows),
+                    'next_offset': offset+20 if offset+20<len(rows) else None}
+        if kind == 'read_action':
+            previous = self.state['actions'][identifier(a['action'])]
+            text = json.dumps(previous, ensure_ascii=False)
+            offset = max(0, int(a.get('offset', 0)))
+            return {'action': a['action'], 'text': text[offset:offset+8000],
+                    'characters': len(text), 'next_offset': offset+8000 if offset+8000<len(text) else None}
+        if kind == 'read_task':
+            text = json.dumps(self.state['tasks'][identifier(a['task'])], ensure_ascii=False)
+            offset = max(0, int(a.get('offset', 0)))
+            return {'task': a['task'], 'text': text[offset:offset+8000],
+                    'characters': len(text), 'next_offset': offset+8000 if offset+8000<len(text) else None}
+        if kind == 'inspect_preparation':
+            prep = identifier(a['preparation'])
+            previous = self.state['actions'][prep]
+            if previous['type'] != 'prepare' or previous['status'] != 'completed':
+                raise ValueError('Select a completed preparation')
+            root = self.run/'actions'/prep/'output'
+            offset = max(0, int(a.get('offset', 0)))
+            if not a.get('path'):
+                files = sorted(p.relative_to(root).as_posix() for p in root.rglob('*') if p.is_file())
+                return {'preparation': prep, 'files': files[offset:offset+40], 'total': len(files)}
+            path = inside(root, a['path'])
+            return inspect_assets({'assets': {'output': {'path': str(path), 'name': path.name,
+                'bytes': path.stat().st_size, 'source': prep, 'public': False}}}, ['output'], offset)
         if kind == 'inventory':
             context = asset_context(self.inv)
             assets = [(k,v) for k,v in context['assets'].items() if not a.get('source') or v['source']==a['source']]
@@ -387,6 +435,11 @@ class Engine:
 
     def context(self):
         actions = list(self.state['actions'].items())
+        # Observation order includes reused results, rather than only insertion order.
+        observed = self.state.get('observations', [])[-4:]
+        recent = [(k, self.state['actions'][k]) for k in observed] if observed else actions[-4:]
+        fetched = {v.get('result', {}).get('url') for _,v in actions
+                   if v['type']=='fetch' and v['status']=='completed'}
         # No arbitrary stdout or data files in the context, just host-generated results.
         inv = asset_context(self.inv)
         inv['assets'] = dict(list(inv['assets'].items())[:24])
@@ -397,12 +450,21 @@ class Engine:
             for k in ('ai_brief', 'unit_rule', 'scale_or_assay'):
                 if k in source: source[k] = source[k][:250]
         result = {'mission': self.config['mission'], 'scope': 'all_authorised_data_adaptive_research',
-            'method_seeds_to_fetch':self.config.get('method_seeds',[]),
+            'method_seeds_to_fetch':[u for u in self.config.get('method_seeds',[]) if u not in fetched],
+            'progress': {'completed_decisions': self.state['next_decision']-1,
+                'completed_preparations': sum(v['type']=='prepare' and v['status']=='completed' for _,v in actions),
+                'registered_tasks': len(self.state['tasks']), 'experiments': len(self.state['experiments']),
+                'exports': len(self.state['exports']),
+                'retrieval': 'list_actions(tool_type, offset), read_action(action, offset), read_task(task, offset), inspect_preparation(preparation, path)',
+                'recent_preparations': [{'id':k, 'status':v['status']} for k,v in actions if v['type']=='prepare'][-8:],
+                'fetched_documents': [{'action':k, 'document':v.get('result',{}).get('id')}
+                    for k,v in actions if v['type']=='fetch' and v['status']=='completed'][-12:]},
             'inventory': inv, 'tasks': {k:{f:v[f] for f in ('question','mission','signature','fit_units','query_units')}
-                for k,v in self.state['tasks'].items()},
-            'experiments': {k:public_result(v) for k,v in self.state['experiments'].items()},
-            'recent_actions': dict(actions[-4:]), 'older_actions': {k:{f:v.get(f) for f in ('type','status','error_type')}
-                for k,v in actions[:-4]}, 'memory': self.state['memories'][-8:],
+                for k,v in list(self.state['tasks'].items())[-12:]},
+            'experiments': {k:public_result(v) for k,v in list(self.state['experiments'].items())[-12:]},
+            'recent_actions': dict(recent), 'older_actions': {'count':len(actions),
+                'retrieval':'list_actions and read_action; recent tasks only, read_task recovers older contracts'},
+            'memory': self.state['memories'][-8:],
             'missing_scope': self.missing(), 'runtime': {k:v for k,v in self.runtime().items() if k != 'wheels'},
             'budget': self.budget()}
         if self.prior is not None:
@@ -418,34 +480,44 @@ class Engine:
         if len(json.dumps(result,ensure_ascii=False).encode()) > maximum:
             result['recent_actions'] = {k:{'type':v['type'],'status':v['status'],
                 'result_excerpt':json.dumps(v.get('result',{}),ensure_ascii=False)[:1800],
-                'diagnostic':v.get('diagnostic')} for k,v in actions[-3:]}
+                'diagnostic':v.get('diagnostic')} for k,v in recent[-3:]}
             result['memory'] = [m[:500] for m in self.state['memories'][-4:]]
             result['experiments'] = {k:{f:v[f] for f in ('task','metrics','comparison','parent')}
-                                    for k,v in self.state['experiments'].items()}
+                                    for k,v in list(self.state['experiments'].items())[-12:]}
         if len(json.dumps(result,ensure_ascii=False).encode()) > maximum:
-            result['older_actions'] = {'count':len(actions)-3, 'full_records':'state.json'}
+            result['older_actions'] = {'count':len(actions), 'retrieval':'list_actions and read_action'}
             result['inventory']['assets'] = {}
+        # Large task histories remain accessible through tools, not repeated in every billable prompt.
+        for field in ('tasks','experiments','recent_actions'):
+            while result[field] and len(json.dumps(result,ensure_ascii=False).encode()) > maximum:
+                del result[field][next(iter(result[field]))]
         return result
 
     def budget(self):
         records = [read_json(p) for p in (self.run/'api').glob('*.json')]
         return {'requests':len(records), 'request_limit':self.config['max_api_calls'],
                 'reserved_token_upper_bound':sum(r['budget_charge'] for r in records),
-                'token_limit':self.config['max_token_budget']}
+                'token_limit':self.config['max_token_budget'],
+                'reported_tokens':sum((r.get('usage') or {}).get('total_tokens',0) for r in records),
+                'unknown_usage_requests':sum(not r.get('usage') for r in records)}
 
     def run_loop(self, retry=False):
         client = Client(self.run, self.config, retry_errors=retry)
         # No fixed 12-round completion. Budget and actual mission coverage terminate.
         while self.state['status'] != 'completed_declared_scope':
+            if (self.run/'STOP').exists():
+                self.state['status']='paused_by_operator'; break
             budget = self.budget()
-            if budget['requests'] >= budget['request_limit'] or budget['reserved_token_upper_bound'] >= budget['token_limit']:
+            if budget['requests'] >= budget['request_limit'] or (budget['token_limit'] is not None and budget['reserved_token_upper_bound'] >= budget['token_limit']):
                 self.state['status']='budget_exhausted_partial'; break
             index = self.state['next_decision']; folder = self.run/'decisions'/f'{index:04d}'
             cp = folder/'context.json'
             if not cp.exists(): write_json(cp,self.context())
             try:
+                print(f'API_START decision_{index:04d} requests={budget["requests"]}/{budget["request_limit"]}', flush=True)
                 proposal = client.call(f'decision_{index:04d}', SYSTEM+'\n'+TOOLS,
                     json.dumps(read_json(cp),ensure_ascii=False), validator=decision)
+                print(f'API_COMPLETED decision_{index:04d}', flush=True)
             except Exception as exc:
                 if str(exc)=='API call/token upper-bound budget exhausted; no further requests submitted':
                     self.state['status']='budget_exhausted_partial'; break
@@ -475,6 +547,9 @@ class Engine:
                         self.state['memories'].append('Action ID conflict: '+key+'; use a new ID.')
                     elif previous['status']=='running':
                         previous.update(status='interrupted',reason='Outcome uncertain; inspect artifacts and choose new action ID, no automatic retraining')
+                    self.state.setdefault('observations', []).append(key)
+                    self.save()
+                    print('REUSED_RESULT '+key+' '+previous['status'], flush=True)
                     continue
                 entry={'type':action['type'],'signature':fingerprint,'status':'running'}
                 self.state['actions'][key]=entry; self.save()
@@ -500,6 +575,7 @@ class Engine:
                                  candidate_error_frames=frames,candidate_error_classes=error_classes)
                     write_json(self.run/'actions'/key/'error.json',
                         {'error_type':type(exc).__name__, 'detail':str(exc)[:1000], 'local_only':True})
+                self.state.setdefault('observations', []).append(key)
                 self.save(); print(entry['status'].upper()+' '+key,flush=True)
                 if self.state['status']=='completed_declared_scope': break
             self.state['memories'].append(str(proposal.get('memory',''))[:2000])
@@ -515,6 +591,11 @@ class Engine:
             'supported_declared_comparisons':sum(e['comparison']['status']=='supported_on_task' for e in self.state['experiments'].values()),
             'exports':len(self.state['exports']), 'missing':self.missing(), 'budget':self.budget(),
             'universal_model_validated':False, 'independent_confirmation':False}
+        if (self.run/'continuation.json').exists():
+            lineage=read_json(self.run/'continuation.json')
+            summary['continuation']={k:lineage[k] for k in ('parent_run','inherited_actions','inherited_decisions','inherited_api_requests')}
+            summary['new_actions']=len(self.state['actions'])-lineage['inherited_actions']
+            summary['new_decisions']=summary['decisions']-lineage['inherited_decisions']
         write_json(self.run/'status.json',summary)
         lines=['# VDC AI4AI R2 — universal dormancy research', '',
             '状态：'+summary['status'], '',
@@ -525,6 +606,6 @@ class Engine:
         lines += [f"|{k}|{v['task']}|{v['metrics']['macro_unit_mse']}|{v['comparison']['status']}|"
                   for k,v in self.state['experiments'].items()]
         lines += ['', '缺失范围：`'+json.dumps(summary['missing'],ensure_ascii=False)+'`', '',
-            'exports/ 包含实际导出的模型；准备代码、任务、预测、模型和工具日志保留在本 run。',
+            ('exports/ 包含实际导出的模型。' if summary['exports'] else '尚未导出模型。')+'准备与实验记录保留在本 run。',
             '模型输入默认是任务声明的数值 x；未经实现并核验的原始表达转换不冒称一键 raw 推理。']
         (self.run/'REPORT_CN.md').write_text('\n'.join(lines)+'\n',encoding='utf-8')

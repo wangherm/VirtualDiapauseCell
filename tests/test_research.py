@@ -107,6 +107,21 @@ def test_api_error_requires_explicit_retry(tmp_path,monkeypatch):
     assert 'private response' not in next((tmp_path/'api').glob('*')).read_text()
 
 
+def test_unlimited_cumulative_tokens_keeps_request_and_call_limits(tmp_path,monkeypatch):
+    from vdc.io import write_json
+    api_env(monkeypatch)
+    c=Client(tmp_path,{**api_config(),'max_token_budget':None})
+    write_json(tmp_path/'api/historical_001.json',{'budget_charge':99_000_000})
+    with patch('vdc.research_api.open_request',return_value=Response()) as request:
+        assert c.call('new','sys','question')['ok']
+        with pytest.raises(RuntimeError,match='budget'):c.call('over_calls','sys','question')
+        assert request.call_count==1
+    c.config['max_api_calls']=10
+    with patch('vdc.research_api.open_request') as request:
+        with pytest.raises(ValueError,match='context budget'):c.call('large','sys','x'*10001)
+        request.assert_not_called()
+
+
 def test_openai_parameters_and_changed_protocol_invalidate_cache(tmp_path, monkeypatch):
     api_env(monkeypatch)
     config = {**api_config(), 'reasoning_effort': 'medium'}

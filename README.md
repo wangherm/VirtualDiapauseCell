@@ -27,10 +27,13 @@ weight reload. The AI then chooses `cpu` or `cuda` per preparation/experiment;
 failed GPU qualification never becomes silent CPU fallback. CPU-only operation is
 an explicit policy. See the guide for the GitHub release and background startup.
 
-R2's current budget is 100 research decisions and a conservative 6-million-token
-ceiling, whichever is reached first, with at least 24 decisions before voluntary
-completion. Decisions, completed experiments and supported comparisons are counted
-separately. API credentials remain in the server environment.
+R2 now allows 1,000 research API requests and has no cumulative token ceiling
+(`max_token_budget: null`). Per-request input/output limits still apply. Attempts,
+decisions, completed experiments and supported comparisons are counted separately;
+this is capacity, not a promise of 1,000 experiments. Usage is recorded, including
+unknown usage from failed requests. API credentials remain in the server environment.
+The [extended-run guide](docs/AI4AI_R2_EXTENDED_CN.md) describes a preparation-only
+continuation with historical-result retrieval and an operator STOP file.
 
 The [R1 runner](docs/AI4AI_R1_CN.md) remains a historical graph-based baseline.
 The [public downloader](docs/AI4AI_PUBLIC_DATA_CN.md) supplies reusable verified
