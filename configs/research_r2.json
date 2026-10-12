@@ -19,6 +19,7 @@
   "expected_api_base": "https://api.deepseek.com",
   "expected_model": "deepseek-v4-pro",
   "runtime": {
+    "device_policy": "ai",
     "backend": "linux_landlock_chroot",
     "image": "vdc-research-r2:1",
     "memory": "64g",

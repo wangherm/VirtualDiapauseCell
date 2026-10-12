@@ -73,7 +73,14 @@ not an instruction and no old private raw values are returned.
 dependencies: packages:["package==version",...] -> download wheels in a clean networked
 container; no data mounted. Other tools mount resulting cache at /wheels. Install in
 your script using pip --no-index --find-links /wheels --target /tmp/deps; update sys.path.
-Base image has numpy/scipy/pandas/sklearn/h5py/anndata/matplotlib/torch (CPU by default).
+Base runtime has numpy/scipy/pandas/sklearn/h5py/anndata/matplotlib/torch.
+Hardware and qualified available_devices are in context. For prepare/experiment,
+choose device:"cpu" or device:"cuda" and explain device_reason. Use CUDA for suitable
+neural models/large tensor operations; CPU for IO/parsing/small Ridge. Compare measured
+timings when uncertain, do not occupy GPU merely to increase utilisation. GPU choice
+exposes one GPU; your code must actually place tensors/model on os.environ['VDC_DEVICE'].
+Assert CUDA availability when selected; never silently fall back to CPU. Save portable
+weights and load with map_location to the selected device. No simultaneous GPU jobs.
 
 prepare: asset_ids:[...], files:{"prepare.py":"complete code", ...},
 command:["python","/code/prepare.py"] -> execute multi-file code in an isolated
@@ -167,10 +174,11 @@ class Engine:
     def save(self):
         write_json(self.run/'state.json', self.state); write_json(self.run/'inventory.json', self.inv)
 
-    def runtime(self):
+    def runtime(self,device='cpu'):
+        from .research_r2_devices import select_device
         c = dict(self.config['runtime'])
         if (self.run/'wheels').exists(): c['wheels'] = str(self.run/'wheels')
-        return c
+        return select_device(c,device)
 
     def task_path(self, key):
         return self.run/'tasks'/identifier(key)
@@ -250,8 +258,10 @@ class Engine:
                 s = self.inv['sources'][p['source']]
                 s.setdefault('attempts', []).append(key)
             self.save()
-            r = execute(out/'code', mounts, out/'output', a['command'], self.runtime(), repo=self.repo)
+            device=a.get('device','cpu')
+            r = execute(out/'code', mounts, out/'output', a['command'], self.runtime(device), repo=self.repo)
             return {'status': 'executed', 'output_files': list(r['files']), 'seconds': r['seconds'],
+                    'selected_device':device,'gpu_usage_status':r.get('gpu_usage_status'),
                     'source_ids': sorted({p['source'] for p in provenance.values()}),
                     'numeric_training_claim': False}
         if kind == 'register_task':
@@ -279,9 +289,16 @@ class Engine:
                 if not (self.run/'literature'/(identifier(doc)+'.json')).is_file():
                     raise ValueError('Method citation was not actually retrieved')
             write_code(out/'code', a['files'])
-            result = run_candidate(task, out, out/'code', self.runtime(), self.repo, references,
+            device=a.get('device','cpu')
+            result = run_candidate(task, out, out/'code', self.runtime(device), self.repo, references,
                                    a.get('rule', {'reference':'same_input_ridge'}))
-            result.update(task=a['task'], parent=a.get('parent'), evidence=evidence, mission=c['mission'])
+            execution=[read_json(p) for p in out.glob('*_execution.json')]
+            result.update(task=a['task'], parent=a.get('parent'), evidence=evidence, mission=c['mission'],
+                          selected_device=device,device_reason=a.get('device_reason','not_provided'),
+                          execution_seconds=sum(e['seconds'] for e in execution),
+                          gpu_usage_status=('allocation_observed' if any(e.get('gpu_memory_observed_bytes') for e in execution)
+                              else 'not_observed_or_unavailable') if device=='cuda' else 'not_requested',
+                          gpu_memory_observed_bytes=max((e.get('gpu_memory_observed_bytes') or 0 for e in execution),default=0))
             self.state['experiments'][key] = result
             for sid in c['source_ids']:
                 self.inv['sources'][sid]['disposition'] = 'numerically_used'
@@ -306,6 +323,7 @@ class Engine:
     def export(self, a):
         key, exp = identifier(a['id']), identifier(a['experiment'])
         r = self.state['experiments'][exp]; task = self.task_path(r['task']); c = verify_task(task)
+        selected_runtime=self.runtime(r.get('selected_device','cpu'))
         out = self.run/'exports'/key
         if out.exists(): raise ValueError('Export ID already exists')
         out.mkdir(parents=True)
@@ -324,7 +342,7 @@ class Engine:
             write_json(staging/'rows.json', read_json(task/'train_rows.json')+read_json(task/'query_rows.json'))
             execute(code, {'train.npz': staging/'train.npz', 'rows.json': staging/'rows.json',
                           'schema.json': task/'schema.json'}, out/'model',
-                    ['python','/code/fit.py'], self.runtime(), repo=self.repo)
+                    ['python','/code/fit.py'], selected_runtime, repo=self.repo)
         else:
             shutil.copytree(self.run/'actions'/exp/'model', out/'model')
         # Genuine new subprocess inference on exported artifacts, twice; no training labels.
@@ -332,14 +350,14 @@ class Engine:
         for n in ('reload1', 'reload2'):
             p = self.run/'actions'/key/n
             execute(out/'code', {'query.npz': task/'query.npz', 'schema.json': out/'schema.json'}, p,
-                    ['python','/code/predict.py'], self.runtime(), model=out/'model', repo=self.repo)
+                    ['python','/code/predict.py'], selected_runtime, model=out/'model', repo=self.repo)
             paths.append(numeric_npz(p/'predictions.npz', ('prediction',))['prediction'])
         if paths[0].shape != tuple(c['coverage_denominator']) or not np.allclose(paths[0],paths[1],rtol=1e-5,atol=1e-6):
             raise ValueError('Export reload/shape check failed')
         # Bundle frozen runtime source and wheels: no dependency on original run paths.
         shutil.copytree(self.repo/'src', out/'runtime/src', ignore=shutil.ignore_patterns('__pycache__','*.pyc'))
         if (self.run/'wheels').exists(): shutil.copytree(self.run/'wheels', out/'wheels')
-        runtime = {k:v for k,v in self.runtime().items() if k != 'wheels'}
+        runtime = {k:v for k,v in selected_runtime.items() if k != 'wheels'}
         report = {'expert': key, 'task': r['task'], 'task_contract': c,
                   'source_experiment': exp, 'refit_all_task_rows': bool(a.get('refit', True)),
                   'refit_scope': 'all compatible rows of this task, not all project sources',

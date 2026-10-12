@@ -59,19 +59,16 @@ def main():
         print(json.dumps(summary));return 0
     config=read_json(a.config)
     if config['runtime'].get('backend')=='linux_landlock_chroot':
-        config['runtime']['runtime_root']=os.environ.get('VDC_R2_RUNTIME_ROOT',str(a.private_root/'r2_runtime'))
-        if os.environ.get('VDC_R2_GPU')=='1':
-            probe=Path(config['runtime']['runtime_root'])/'gpu_probe_passed.json'
-            if not probe.is_file(): raise ValueError('Run setup_research_r2.sh with VDC_R2_GPU=1 first')
-            config['runtime']['gpu']=True
+        from vdc.research_r2_devices import configure_devices
+        config['runtime']['runtime_root']=os.environ.get('VDC_R2_RUNTIME_ROOT',str(a.private_root/'r2_runtime_devices_v1'))
+        config['runtime']=configure_devices(config['runtime'],os.environ.get('VDC_R2_DEVICE_POLICY'))
     image=resolve_runtime(config['runtime'])
-    if config['runtime'].get('gpu') and config['runtime'].get('backend')=='linux_landlock_chroot':
-        probe=read_json(Path(config['runtime']['runtime_root'])/'gpu_probe_passed.json')
-        if probe.get('runtime_id')!=image or probe.get('status')!='passed':
-            raise ValueError('GPU probe belongs to a different runtime or did not pass')
     if a.command=='doctor':
         inv=inventory(ROOT,a.private_root,a.asset_report,a.extra_data_root)
         print(json.dumps({'status':'structural_checks_passed','image_id':image,
+            'device_policy':config['runtime'].get('device_policy'),
+            'available_devices':config['runtime'].get('available_devices',['cpu']),
+            'gpu_hardware':config['runtime'].get('gpu_hardware'),
             'private_assets':sum(not v['public'] for v in inv['assets'].values()),
             'public_assets_present':sum(v['public'] for v in inv['assets'].values()),
             'missing_sources':[k for k,v in inv['sources'].items() if not v['asset_ids']],

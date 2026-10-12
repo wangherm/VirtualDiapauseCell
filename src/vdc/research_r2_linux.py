@@ -39,6 +39,8 @@ def copy_runtime(src, root):
             # /etc/resolv.conf and /bin/sh often point outside the selected paths.
             # Materialize the trusted file, not an unusable host-only symlink.
             dest.parent.mkdir(parents=True,exist_ok=True)
+            if dest.is_symlink():dest.unlink()
+            elif dest.exists():return
             shutil.copyfile(src.resolve(),dest);dest.chmod(src.stat().st_mode & 0o777)
         else:link_or_copy(src,dest)
 
@@ -72,6 +74,18 @@ def build_runtime(repo, out):
         if Path(name).exists(): copy_runtime(name,root)
     for name in ('/bin/sh','/bin/bash','/usr/bin/env','/etc/resolv.conf','/etc/nsswitch.conf'):
         if Path(name).exists(): copy_runtime(name,root)
+    # AutoDL may inject the compute driver outside the system library directories.
+    driver_paths=[]
+    for folder in ('/usr/local/nvidia/lib','/usr/local/nvidia/lib64','/usr/local/cuda/lib64'):
+        if Path(folder).is_dir():
+            copy_runtime(folder,root);driver_paths.append(folder)
+    ldconfig=shutil.which('ldconfig') or '/sbin/ldconfig'
+    found=subprocess.run([ldconfig,'-p'],capture_output=True,text=True,check=True)
+    for line in found.stdout.splitlines():
+        if '=>' not in line:continue
+        name,path=line.strip().split('=>',1);path=Path(path.strip())
+        if name.startswith(('libcuda.so','libnvidia-','libnvcuvid')) and path.exists():
+            copy_runtime(path,root);driver_paths.append(str(path.parent))
     (root/'usr/bin').mkdir(parents=True,exist_ok=True)
     p=root/'usr/bin/python';p.symlink_to(sys.executable)
     (root/'etc').mkdir(exist_ok=True)
@@ -82,7 +96,9 @@ def build_runtime(repo, out):
     manifest={'backend':'linux_landlock_chroot','python':sys.executable,
         'jail_sha256':sha256(out/'jail'), 'packages':sorted((d.metadata.get('Name',''),d.version)
             for d in importlib.metadata.distributions()),'created_at':time.time(),
-        'runtime_files_are_trusted':True,'private_data_in_runtime':False}
+        'runtime_files_are_trusted':True,'private_data_in_runtime':False,
+        'driver_library_paths':sorted(set(driver_paths)),
+        'executor_version':'r2_device_choice_v1'}
     # Snapshot files are read-only to candidates; source changes require a new runtime.
     manifest['runtime_id']=object_hash(manifest)
     write_json(out/'runtime.json',manifest)
@@ -102,6 +118,10 @@ def runtime_info(config):
 def execute_linux(code, inputs, out, command, config, model=None, repo=None, network=False):
     if network and (inputs or model or repo): raise ValueError('Network staging cannot mount data')
     m=runtime_info(config);runtime=Path(config['runtime_root']).resolve()
+    if config.get('gpu') and not config.get('probe_mode'):
+        probe=read_json(runtime/'gpu_probe_passed.json')
+        if probe.get('status')!='passed' or probe.get('runtime_id')!=m['runtime_id'] or not probe.get('reload'):
+            raise ValueError('GPU execution requires matching actual CUDA training/reload probe')
     out=Path(out).resolve();out.mkdir(parents=True,exist_ok=True)
     jail=out.parent/(out.name+'_jail_'+uuid.uuid4().hex[:8]);jail.mkdir()
     root=jail/'root'
@@ -123,9 +143,17 @@ def execute_linux(code, inputs, out, command, config, model=None, repo=None, net
     devices=['null','zero','random','urandom']
     if config.get('gpu'):
         devices += [p.name for p in Path('/dev').glob('nvidia*') if p.is_char_device()]
+        devices += [str(p.relative_to('/dev')) for p in Path('/dev/nvidia-caps').glob('*') if p.is_char_device()]
+        # Driver metadata only. Never expose host /proc processes or environments.
+        for info in ('/proc/driver/nvidia/version','/proc/driver/nvidia/params'):
+            if Path(info).is_file():
+                target=root/info.lstrip('/');target.parent.mkdir(parents=True,exist_ok=True)
+                target.write_bytes(Path(info).read_bytes())
     for name in devices:
         s=(Path('/dev')/name).stat()
+        (root/'dev'/name).parent.mkdir(parents=True,exist_ok=True)
         os.mknod(root/'dev'/name,stat.S_IFCHR|0o666,s.st_rdev)
+        (root/'dev'/name).chmod(0o666)  # mknod is affected by the parent's umask.
     memory=str(config.get('memory','64g')).lower()
     memory_bytes=int(memory[:-1])*1024**3 if memory.endswith('g') else int(memory)
     argv=list(command)
@@ -135,16 +163,26 @@ def execute_linux(code, inputs, out, command, config, model=None, repo=None, net
          'PYTHONPATH':'/code:/vdc/src','PYTHONDONTWRITEBYTECODE':'1',
          'OMP_NUM_THREADS':'2','OPENBLAS_NUM_THREADS':'2','MKL_NUM_THREADS':'2'}
     env['R2_CPUS']=str(config.get('cpus',8))
-    args=[str(runtime/'jail'),str(root),'1' if network else '0',str(memory_bytes),
+    env['VDC_DEVICE']='cuda' if config.get('gpu') else 'cpu'
+    env['CUDA_VISIBLE_DEVICES']='0' if config.get('gpu') else ''
+    env['LD_LIBRARY_PATH']=':'.join(m.get('driver_library_paths',[]))
+    from .research_r2_devices import process_group_usage,gpu_process_memory
+    args=[str(runtime/'jail'),str(root),'1' if network else '0',str(0 if config.get('gpu') else memory_bytes),
           str(config.get('timeout_seconds',7200)),*argv]
     log=out.parent/(out.name+'.log'); start=time.monotonic();reason=None
+    peak_rss=0;peak_gpu=None;last_gpu=0
     try:
         with log.open('wb') as stream:
             p=subprocess.Popen(args,stdout=stream,stderr=subprocess.STDOUT,stdin=subprocess.DEVNULL,
                                env=env,start_new_session=True)
             while p.poll() is None:
                 time.sleep(.5)
+                pids,rss=process_group_usage(p.pid);peak_rss=max(peak_rss,rss)
+                if config.get('gpu') and time.monotonic()-last_gpu>=1:
+                    measured=gpu_process_memory(pids);last_gpu=time.monotonic()
+                    if measured is not None:peak_gpu=max(peak_gpu or 0,measured)
                 if time.monotonic()-start>config.get('timeout_seconds',7200): reason='timeout'
+                elif rss>memory_bytes:reason='resident_memory_limit'
                 elif log.stat().st_size>20_000_000:reason='log_limit'
                 elif sum(f.stat().st_size for f in (root/'out').rglob('*') if f.is_file() and not f.is_symlink())>config.get('max_output_bytes',50_000_000_000):reason='output_disk_limit'
                 if reason:
@@ -163,6 +201,10 @@ def execute_linux(code, inputs, out, command, config, model=None, repo=None, net
             raise ValueError('Unexpected disposable path')
         shutil.rmtree(jail)
     result={'exit_code':rc,'stop_reason':reason,'seconds':round(time.monotonic()-start,3),
+            'selected_device':env['VDC_DEVICE'],'peak_process_group_rss_bytes':peak_rss,
+            'gpu_memory_observed_bytes':peak_gpu,
+            'gpu_usage_status':('allocation_observed' if peak_gpu else 'not_observed_or_unavailable') if config.get('gpu') else 'not_requested',
+            'memory_limit_mode':'sampled_group_rss' if config.get('gpu') else 'per_process_AS_and_sampled_group_rss',
             'runtime_id':m['runtime_id'],'backend':'linux_landlock_chroot','network':network,
             'files':tree_hash(out)}
     write_json(out.parent/(out.name+'_execution.json'),result)

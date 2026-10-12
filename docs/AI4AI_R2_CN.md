@@ -44,28 +44,52 @@ Landlock 文件访问规则 + seccomp，Docker 保留为显式替代后端。
 保留在服务器，不整段发送外部 API，失败反馈包含代码位置与结构化错误。
 
 运行库是现有 Python 环境的隔离快照，优先硬链接、跨文件系统时复制，需要额外
-磁盘空间。不会重新安装或替换现有 CUDA Torch。默认每个执行工具 8 CPU、64 GiB
-虚拟内存上限、最长2小时；同一时刻一个工具。硬件不同应修改配置并新建 run。
-默认 CPU，GPU 需要在安装和研究启动前都设置 `export VDC_R2_GPU=1`，
-并在该实例通过真实 CUDA 前后向检查；
-不能根据旧 GPU 截图宣称当前隔离环境可以使用 CUDA。
+磁盘空间。不会重新安装或替换现有 CUDA Torch。默认每个执行工具最多8 CPU、
+64 GiB进程组驻留内存阈值、最长2小时；同一时刻一个工具。CPU还有逐进程虚拟
+地址空间限制；GPU取消该地址空间限制，避免误拦CUDA的大地址预留。驻留内存
+由父进程采样，包含共享页重复计数，并非cgroup硬配额。
+
+默认 `VDC_R2_DEVICE_POLICY=ai`：先检测实际显卡和CUDA，在隔离环境执行FP32
+训练、支持时执行BF16前后向、保存及新进程重载；全部通过后，AI获得CPU和CUDA
+两种选择。每条prepare/experiment使用 `device: cpu|cuda` 和选择理由，神经网络
+或大张量可选GPU，IO/小型Ridge可选CPU。导出与新请求沿用实验选择的设备。
+只允许一条GPU任务；不会因为GPU空闲而制造计算。
+
+GPU检查失败会停止启动，不静默降级。CPU模式需显式设置
+`VDC_R2_DEVICE_POLICY=cpu`。旧 `VDC_R2_GPU` 开关已由此策略替代。
+执行记录含选择设备、耗时、驻留内存及候选进程实际观察到的显存分配；短任务
+可能未被nvidia-smi采样捕获，此时标明未观察到，不冒称已经使用GPU计算。
+DeepSeek研究决策仍调用远程API，本机GPU用于AI编写的数值模型和数据计算。
 
 ## 1. 安装和实际隔离检查
 
 ```bash
-cd /root/autodl-tmp/VirtualDiapauseCell
-git -c http.version=HTTP/1.1 pull --ff-only
-export VDC_PRIVATE_ROOT=/root/autodl-tmp/vdc-private
-export VDC_PYTHON="$PWD/.venv-autodl-vdc/bin/python"
-export PYTHONPATH="$PWD/src"
-
-# screen 内安装，断线不会中断。Ctrl+A 然后 D 可离开并保持运行。
-screen -S vdc_r2_setup
-bash scripts/setup_research_r2.sh
+(
+  set -euo pipefail
+  cd /root/autodl-tmp/VirtualDiapauseCell
+  git -c http.version=HTTP/1.1 fetch origin main
+  REV="$(git rev-parse origin/main)"
+  RELEASE="/root/autodl-tmp/vdc-releases/r2_gpu_${REV:0:12}_$(date -u +%Y%m%dT%H%M%SZ)_$$"
+  mkdir -p "$RELEASE"
+  git archive "$REV" | tar -x -C "$RELEASE"
+  printf '%s\n' "$REV" > "$RELEASE/RELEASE_COMMIT.txt"
+  export VDC_PRIVATE_ROOT=/root/autodl-tmp/vdc-private
+  export VDC_PYTHON="$PWD/.venv-autodl-vdc/bin/python"
+  export VDC_R2_DEVICE_POLICY=ai
+  export VDC_R2_RUNTIME_ROOT="$VDC_PRIVATE_ROOT/r2_runtime_devices_v1"
+  unset VDC_R2_RUN VDC_R2_RESUME VDC_R2_GPU VDC_R2_RETRY_API_ERRORS
+  bash "$RELEASE/scripts/start_research_r2.sh"
+)
 ```
 
-结束应看到 `status: passed`、`scope: synthetic_software_only`。
-这是真实执行器与合成数值连接检查，不是生物学效果或付费研究。
+使用fetch和git archive得到固定提交，不覆盖旧checkout的本地改动。缺少密钥时
+在服务器终端隐藏输入；自动寻找并核验已有成功API记录，不发送新的付费检查。
+安装和环境验证在screen后台运行，通过后自动派发研究，不必再次调用launch。
+已有旧研究运行时不要同时新开第二条GPU队列。
+
+查看安装日志：`tail -n 60 -F "$(cat /root/autodl-tmp/vdc-private/LATEST_R2_SETUP.txt)"`。
+环境检查应看到 `status: passed`、`scope: synthetic_software_only`，随后输出
+研究的SCREEN和RUN。这是实际软件连接检查，不是生物学效果。
 若报 Landlock/chroot 权限错误，把 setup 日志给维护者；不要改成裸 `exec`。
 如需重建运行库，使用新的 `VDC_R2_RUNTIME_ROOT`，不覆盖旧快照。
 
@@ -73,6 +97,8 @@ bash scripts/setup_research_r2.sh
 独立目录中应显式设置 `VDC_PYTHON` 为上面的绝对路径。
 
 ## 2. API 与资料检查
+
+以下是手动诊断入口；使用上面的start脚本时已经自动执行，无须另开一次研究。
 
 沿用服务器上的 `VDC_RESEARCH_API_KEY`、`VDC_RESEARCH_API_BASE` 和
 `VDC_RESEARCH_MODEL`。密钥不写代码、配置或聊天。生成参数与 R1 DeepSeek profile
@@ -96,7 +122,6 @@ Doctor 列出实际存在的私有与公共文件。R2 不要求所有来源齐�
 ## 3. 后台启动和恢复
 
 ```bash
-bash scripts/launch_research_r2.sh
 "$VDC_PYTHON" scripts/run_research_r2.py status
 RUN="$(cat "$VDC_PRIVATE_ROOT/LATEST_RESEARCH_R2.txt")"
 tail -n 60 -F "$RUN/console.log"

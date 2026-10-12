@@ -27,6 +27,7 @@ from pathlib import Path
 assert not os.environ.get("VDC_RESEARCH_API_KEY")
 assert not Path("/root/autodl-tmp/vdc-private").exists()
 assert os.geteuid()!=0
+with open('/dev/null','wb') as sink:sink.write(b'probe')
 try:
     Path('/input/sentinel.txt').write_text('corrupt')
 except OSError: pass
@@ -44,14 +45,40 @@ Path("/out/probe.json").write_text(json.dumps({"status":"passed","synthetic":Tru
     execute(a.out/'probe_code',{'sentinel.txt':a.out/'sentinel.txt'},a.out/'probe',['python','/code/probe.py'],runtime)
     assert (a.out/'sentinel.txt').read_text()=='original'
     if a.gpu:
+        from vdc.research_r2_devices import gpu_inventory
+        hardware=gpu_inventory()
+        if not hardware['cuda_available']:raise RuntimeError('Host CUDA unavailable; AI GPU policy cannot start')
+        write_json(a.out/'hardware.json',hardware)
         write_code(a.out/'gpu_code',{'gpu.py':'''import torch,json
 from pathlib import Path
 assert torch.cuda.is_available()
-x=torch.randn(16,16,device='cuda',requires_grad=True);(x@x.T).sum().backward()
-assert torch.isfinite(x.grad).all()
-Path('/out/gpu.json').write_text(json.dumps({'status':'passed','torch':torch.__version__,'device':torch.cuda.get_device_name(0)}))
+torch.manual_seed(42)
+m=torch.nn.Linear(16,4).cuda();x=torch.randn(64,16,device='cuda')
+o=torch.optim.AdamW(m.parameters(),lr=.001)
+for _ in range(3):
+    o.zero_grad();loss=m(x).square().mean();loss.backward();o.step()
+assert torch.isfinite(loss)
+bf16=torch.cuda.is_bf16_supported()
+if bf16:
+    b=torch.randn(32,32,device='cuda',dtype=torch.bfloat16,requires_grad=True)
+    (b@b.T).float().mean().backward();assert torch.isfinite(b.grad).all()
+torch.cuda.synchronize()
+m.eval()
+torch.save({'weights':{k:v.cpu() for k,v in m.state_dict().items()},'x':x.cpu(),'prediction':m(x).detach().cpu()},'/out/probe.pt')
+Path('/out/gpu.json').write_text(json.dumps({'status':'passed','torch':torch.__version__,
+    'device':torch.cuda.get_device_name(0),'bf16_backward_passed':bf16,
+    'peak_cuda_allocated_bytes':torch.cuda.max_memory_allocated()}))
+''','reload.py':'''import torch,json
+from pathlib import Path
+d=torch.load('/model/probe.pt',map_location='cpu',weights_only=True)
+m=torch.nn.Linear(16,4).cuda();m.load_state_dict(d['weights']);m.eval()
+p=m(d['x'].cuda()).detach().cpu()
+delta=float((p-d['prediction']).abs().max());assert torch.allclose(p,d['prediction'],rtol=1e-5,atol=1e-6)
+Path('/out/reload.json').write_text(json.dumps({'status':'passed','max_abs_delta':delta}))
 '''})
-        execute(a.out/'gpu_code',{},a.out/'gpu',['python','/code/gpu.py'],{**runtime,'gpu':True,'memory':'64g'})
+        cuda={**runtime,'gpu':True,'memory':'64g'}
+        execute(a.out/'gpu_code',{},a.out/'gpu',['python','/code/gpu.py'],cuda)
+        execute(a.out/'gpu_code',{},a.out/'gpu_reload',['python','/code/reload.py'],cuda,model=a.out/'gpu')
     rng=np.random.default_rng(2);x=rng.normal(size=(12,3));y=x@np.array([[1.],[2.],[-1.]])
     prepared=a.out/'fixture';save_npz(prepared/'train.npz',x=x[:8],y=y[:8])
     save_npz(prepared/'query.npz',x=x[8:]);save_npz(prepared/'truth.npz',y=y[8:])
@@ -79,12 +106,16 @@ np.savez('/out/predictions.npz',prediction=x@b)
                          Path(__file__).resolve().parents[1],read_json(a.out/'task/baselines.json'),
                          {'reference':'train_mean'})
     report={'status':'passed','scope':'synthetic_software_only','real_research_executed':False,
+            'gpu_qualification':'passed' if a.gpu else 'not_requested',
+            'hardware':hardware if a.gpu else None,
             'reload_verified':result['reload_verified'],'mse':result['metrics']['macro_unit_mse'],
             'image_id':runtime['image_id']}
     write_json(a.out/'status.json',report);print(json.dumps(report,indent=2))
     if a.backend=='linux_landlock_chroot':
         write_json(a.runtime_root/'probe_passed.json',{'runtime_id':runtime['image_id'],**report})
-        if a.gpu:write_json(a.runtime_root/'gpu_probe_passed.json',{'runtime_id':runtime['image_id'],'status':'passed'})
+        if a.gpu:write_json(a.runtime_root/'gpu_probe_passed.json',{'runtime_id':runtime['image_id'],
+            'status':'passed','hardware':hardware,'forward_backward':read_json(a.out/'gpu/gpu.json'),
+            'reload':read_json(a.out/'gpu_reload/reload.json')})
 
 
 if __name__=='__main__':main()

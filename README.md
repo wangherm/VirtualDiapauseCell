@@ -22,6 +22,11 @@ The default AutoDL executor uses Linux chroot, Landlock and seccomp rather than
 nested Docker. Run its actual isolation probe before paid research. Software tests
 are not claims of completed public-data modelling or a validated universal model.
 
+R2 qualifies the server's actual CUDA device with forward/backward and a fresh-process
+weight reload. The AI then chooses `cpu` or `cuda` per preparation/experiment;
+failed GPU qualification never becomes silent CPU fallback. CPU-only operation is
+an explicit policy. See the guide for the GitHub release and background startup.
+
 R2's current budget is 100 research decisions and a conservative 6-million-token
 ceiling, whichever is reached first, with at least 24 decisions before voluntary
 completion. Decisions, completed experiments and supported comparisons are counted

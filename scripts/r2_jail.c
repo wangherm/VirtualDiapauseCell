@@ -48,6 +48,9 @@ int main(int argc, char **argv) {
     if (abi>=2) rights|=1ULL<<13; /* REFER */
     if (abi>=3) rights|=1ULL<<14; /* TRUNCATE */
     struct rlimit mem={strtoull(argv[3],NULL,10),strtoull(argv[3],NULL,10)};
+    /* CUDA reserves large virtual address ranges. Zero selects no AS ceiling;
+       the trusted parent separately monitors resident memory of this group. */
+    if (!mem.rlim_cur) mem.rlim_cur=mem.rlim_max=RLIM_INFINITY;
     struct rlimit cpu={strtoul(argv[4],NULL,10),strtoul(argv[4],NULL,10)};
     struct rlimit proc={128,128};
     if (setrlimit(RLIMIT_AS,&mem)||setrlimit(RLIMIT_CPU,&cpu)||setrlimit(RLIMIT_NPROC,&proc)) die("resource limits");
