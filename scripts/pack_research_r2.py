@@ -18,10 +18,10 @@ def pack(run):
             if p.is_symlink(): raise ValueError('Symlink in report tree')
             if not p.is_file(): continue
             rel=p.relative_to(run); parts=rel.parts
-            if any(n in parts for n in ('release','__pycache__','refit_inputs')): continue
+            if any(n in parts for n in ('release','__pycache__','refit_inputs','dependency_probe','audited_bundle')): continue
             if parts[0]=='wheels' or (parts[0]=='actions' and 'wheels' in parts):continue
             if parts[0]=='actions' and 'output' in parts: continue  # arbitrary data-preparation outputs
-            if parts[0]=='tasks' and p.name in ('train.npz','query.npz','truth.npz'): continue
+            if 'tasks' in parts and p.name in ('train.npz','query.npz','truth.npz'): continue
             if p.name in ('.env','inventory.json'): continue  # local raw source paths stay on server
             if p.suffix in ('.partial',): continue
             z.write(p,rel.as_posix())

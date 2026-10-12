@@ -53,3 +53,68 @@ def continue_preparation_run(repo, private, parent, target, config):
     engine.save(); engine.report()
     write_json(target/'migration_status.json',{'status':'verified','parent_unchanged':True})
     return engine
+
+
+def continue_engine_phase(repo, private, parent, target, config):
+    """New audited-contract phase; retain preparations and old science as history."""
+    from .research_r2_tools import tree_hash
+    from .research_r2_artifacts import artifact_index
+    parent,target,private=map(lambda p:Path(p).resolve(),(parent,target,private))
+    if parent==target or parent in target.parents or not parent.is_relative_to(private) or not target.is_relative_to(private):
+        raise ValueError('Choose distinct runs inside the private root')
+    if target.exists():raise ValueError('Continuation target must not exist')
+    state=read_json(parent/'state.json')
+    if state['status'] not in ('budget_exhausted_partial','paused_by_operator','stalled_no_progress','format_failures_partial'):
+        raise ValueError('Parent must have a stopped known outcome')
+    if any(a['status']=='running' for a in state['actions'].values()):
+        raise ValueError('Resolve uncertain running actions before migration')
+    target.mkdir(parents=True);write_json(target/'migration_status.json',{'status':'copying'})
+    files={}
+    for name in ('actions','literature','wheels','inventory.json'):
+        src=parent/name
+        if src.is_dir():
+            hashes=tree_hash(src);shutil.copytree(src,target/name)
+            if tree_hash(target/name)!=hashes or tree_hash(src)!=hashes:raise ValueError('Copy/source changed during migration')
+            files.update({name+'/'+k:v for k,v in hashes.items()})
+        elif src.is_file():
+            digest=sha256(src);shutil.copy2(src,target/name)
+            if sha256(src)!=digest or sha256(target/name)!=digest:raise ValueError('Source changed during migration')
+            files[name]=digest
+    history=target/'history';history.mkdir()
+    for name in ('state.json','manifest.json','status.json','api','decisions','tasks','exports'):
+        src=parent/name
+        if src.is_dir():shutil.copytree(src,history/name)
+        elif src.is_file():shutil.copy2(src,history/name)
+    old_manifest=read_json(parent/'manifest.json')
+    inv=read_json(target/'inventory.json')
+    for source in inv['sources'].values():
+        source['historical_disposition']=source.get('disposition')
+        source['historical_experiments']=source.pop('experiments',[])
+        source['disposition']='not_processed'
+    write_json(target/'inventory.json',inv)
+    inherited={k:dict(v) for k,v in state['actions'].items() if v['type'] in ('prepare','fetch','search','dependencies') and v['status']=='completed'}
+    fresh={'status':'ready','actions':inherited,'tasks':{},'experiments':{},'exports':{},'next_decision':1,
+        'memories':['New engine phase: reuse existing preparations via inspect_preparation and artifact_inputs. '
+                    'Read source unit metadata; old tasks are historical only and need fresh contract registration. '
+                    'read_history exposes previous candidate/metric evidence. Do not restart source discovery.']}
+    write_json(target/'state.json',fresh)
+    engine=Engine(repo,private,target,config)
+    if engine.config['runtime']['image_id']!=old_manifest['config']['runtime']['image_id']:
+        raise ValueError('Runtime differs from parent; perform an explicit compatibility review before migration')
+    for key,entry in engine.state['actions'].items():
+        if entry['type']=='prepare':entry['result']['artifacts']=artifact_index(target,key,engine.inv)
+    records=[read_json(p) for p in (history/'api').glob('*.json')]
+    lineage={'parent_run':str(parent),'parent_manifest_sha256':sha256(parent/'manifest.json'),
+        'inherited_actions':len(inherited),'inherited_decisions':state['next_decision']-1,
+        'inherited_api_requests':len(records),'historical_reported_tokens':sum((r.get('usage') or {}).get('total_tokens',0) for r in records),
+        'historical_unknown_usage_requests':sum(not r.get('usage') for r in records),
+        'historical_experiments':len(state['experiments']),'counter_mode':'new_phase',
+        'historical_limitations':('killi_state_v1 used material types as units and all-gene CPM before target selection; independent-group/strict-target-isolation interpretations are not supported. Original scores preserved.'
+            if 'killi_state_v1' in state['tasks'] else 'Historical contracts retain their original limitations; not revalidated by migration.'),
+        'new_phase_request_limit':config['max_api_calls'],'new_phase_token_limit':config.get('max_token_budget'),
+        'scope':'preparation reuse; historical task scores unchanged; new audited tasks not yet trained',
+        'parent_modified':False,'artifact_sha256':files,'history_sha256':tree_hash(history)}
+    write_json(target/'continuation.json',lineage)
+    engine.save();engine.report()
+    write_json(target/'migration_status.json',{'status':'verified','parent_unchanged':True,'new_training_executed':False})
+    return engine

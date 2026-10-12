@@ -23,6 +23,7 @@ def main():
     p.add_argument('--extra-data-root',type=Path,action='append',default=[])
     p.add_argument('--run',type=Path)
     p.add_argument('--retry-api-errors',action='store_true')
+    p.add_argument('--resume-after-stall',action='store_true')
     p.add_argument('--bundle',type=Path); p.add_argument('--input',type=Path); p.add_argument('--out',type=Path)
     a=p.parse_args()
     if a.command=='status':
@@ -82,7 +83,7 @@ def main():
     a.run.mkdir(parents=True,exist_ok=True)
     with exclusive_run(a.run):
         engine=Engine(ROOT,a.private_root,a.run,config,a.asset_report,a.extra_data_root)
-        result=engine.run_loop(a.retry_api_errors)
+        result=engine.run_loop(a.retry_api_errors,a.resume_after_stall)
     print(json.dumps({'status':result['status'],'report':str(a.run/'REPORT_CN.md')}))
     return 0 if result['status']=='completed_declared_scope' else 2
 

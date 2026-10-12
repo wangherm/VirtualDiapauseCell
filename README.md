@@ -32,8 +32,12 @@ R2 now allows 1,000 research API requests and has no cumulative token ceiling
 decisions, completed experiments and supported comparisons are counted separately;
 this is capacity, not a promise of 1,000 experiments. Usage is recorded, including
 unknown usage from failed requests. API credentials remain in the server environment.
-The [extended-run guide](docs/AI4AI_R2_EXTENDED_CN.md) describes a preparation-only
-continuation with historical-result retrieval and an operator STOP file.
+The current [engine continuation guide](docs/AI4AI_ENGINE_CN.md) adds source-backed
+metadata, explicit preparation-artifact inputs, executable target-dependency checks,
+content-based reuse and a recoverable no-progress stop. It admits relevant new public
+GEO/ENA sources through an official-data broker. A new phase preserves old scores as
+history; API requests, preparations, evaluated candidates and exports remain separate.
+The older preparation-only continuation is retained for historical runs.
 
 The [R1 runner](docs/AI4AI_R1_CN.md) remains a historical graph-based baseline.
 The [public downloader](docs/AI4AI_PUBLIC_DATA_CN.md) supplies reusable verified

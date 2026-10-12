@@ -14,6 +14,7 @@ if [[ "${1:-}" == --worker ]]; then
   trap 'code=$?; echo "TASK_EXIT_CODE=$code"; printf "%s\n" "$code" > "$RUN/exit_code.txt"' EXIT
   args=(run --run "$RUN")
   if [[ "${VDC_R2_RETRY_API_ERRORS:-0}" == 1 ]]; then args+=(--retry-api-errors); fi
+  if [[ "${VDC_R2_RESUME_AFTER_STALL:-0}" == 1 ]]; then args+=(--resume-after-stall); fi
   if [[ -n "${VDC_R2_EXTRA_DATA_ROOT:-}" ]]; then args+=(--extra-data-root "$VDC_R2_EXTRA_DATA_ROOT"); fi
   code=0
   "$VDC_PYTHON" -u scripts/run_research_r2.py "${args[@]}" || code=$?

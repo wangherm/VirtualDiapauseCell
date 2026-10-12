@@ -126,7 +126,7 @@ def inventory(repo, private, receipt=None, extra_roots=()):
 
 
 def asset_context(inv):
-    return {'sources': [{k: s[k] for k in ('accession', 'system', 'ai_brief', 'unit_rule',
+    return {'sources': [{k: s[k] for k in ('accession', 'system', 'ai_brief', 'unit_rule', 'current_access',
             'scale_or_assay', 'availability', 'disposition', 'asset_ids') if k in s} | {'id': sid}
         for sid, s in inv['sources'].items()],
         'assets': {k: {f: a[f] for f in ('source', 'name', 'bytes', 'public')}
@@ -280,7 +280,32 @@ def fetch_public(url, out, max_bytes=16_000_000):
               'bytes': len(body), 'content_type': content_type, 'text_characters': len(text),
               'license': 'not_inferred; inspect source before redistribution'}
     write_json(out/(digest+'.json'), record)
+    record.update(literature_kind=literature_kind(original,content_type),
+                  related_resources=literature_links(original,body.decode('utf-8',errors='ignore')))
+    write_json(out/(digest+'.json'),record)
     return {**record, 'excerpt': text[:10000], 'untrusted_source_material': True}
+
+
+def literature_kind(url,content_type=''):
+    u=urllib.parse.urlsplit(url)
+    if u.hostname in ('arxiv.org','www.arxiv.org') and u.path.startswith('/abs/'):
+        return 'abstract_page'
+    if 'pdf' in content_type or (u.hostname in ('arxiv.org','www.arxiv.org') and u.path.startswith(('/pdf/','/html/'))):
+        return 'full_text'
+    if u.hostname=='raw.githubusercontent.com' or u.path.endswith(('.py','.r','.R','.jl','.ipynb')):
+        return 'source_code_author_association_unverified'
+    return 'web_page'
+
+
+def literature_links(url,text):
+    links=[]
+    if 'arxiv.org/abs/' in url:
+        paper=url.split('/abs/',1)[1].split('?',1)[0]
+        links=[{'kind':'full_text_option','url':'https://arxiv.org/html/'+paper},
+               {'kind':'full_text_option','url':'https://arxiv.org/pdf/'+paper}]
+    for value in sorted(set(re.findall(r'https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+',text))):
+        links.append({'kind':'linked_repository_not_yet_read','url':value})
+    return links[:20]
 
 
 def search_literature(query, out):

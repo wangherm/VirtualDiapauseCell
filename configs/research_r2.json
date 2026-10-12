@@ -2,6 +2,9 @@
   "mission": "Research a universal diapause/dormancy model: evidence-supported state and individual variation; maintenance, release and intervention responses; transfer and calibration across backgrounds; loadable experts behind a unified inference interface. Universality is an aim to test, not a claimed result.",
   "max_api_calls": 1000,
   "max_token_budget": null,
+  "engine_contract_version": 2,
+  "no_progress_warning_decisions": 8,
+  "no_progress_stop_decisions": 24,
   "min_decisions_before_finish": 24,
   "method_seeds": [
     "https://arxiv.org/abs/2603.08127",

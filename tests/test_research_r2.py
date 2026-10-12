@@ -135,6 +135,7 @@ def test_operator_stop_and_unlimited_budget_do_not_make_api_calls(tmp_path):
 def test_preparation_inspection_never_returns_private_values(tmp_path):
     engine=make_engine(tmp_path)
     engine.state['actions']['prep']={'type':'prepare','status':'completed'}
+    write_json(engine.run/'actions/prep/provenance.json',{})
     write_json(engine.run/'actions/prep/output/summary.json',{'private_measurement':172635.124})
     result=engine.action({'id':'check','type':'inspect_preparation','preparation':'prep','path':'summary.json'})
     assert '172635' not in json.dumps(result)
