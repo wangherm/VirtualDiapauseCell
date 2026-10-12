@@ -22,7 +22,7 @@ The default AutoDL executor uses Linux chroot, Landlock and seccomp rather than
 nested Docker. Run its actual isolation probe before paid research. Software tests
 are not claims of completed public-data modelling or a validated universal model.
 
-R2's current budget is 60 research decisions and a conservative 2-million-token
+R2's current budget is 100 research decisions and a conservative 6-million-token
 ceiling, whichever is reached first, with at least 24 decisions before voluntary
 completion. Decisions, completed experiments and supported comparisons are counted
 separately. API credentials remain in the server environment.
