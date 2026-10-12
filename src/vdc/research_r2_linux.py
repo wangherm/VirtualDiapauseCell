@@ -143,6 +143,11 @@ def runtime_info(config):
 
 def execute_linux(code, inputs, out, command, config, model=None, repo=None, network=False):
     if network and (inputs or model or repo): raise ValueError('Network staging cannot mount data')
+    trace=bool(config.get('diagnostic_trace'))
+    if trace and (not config.get('probe_mode') or inputs or model or repo or network):
+        raise ValueError('Syscall tracing is only for an offline probe with no data mounts')
+    tracer=shutil.which('strace') if trace else None
+    if trace and not tracer:raise RuntimeError('GPU diagnostic requires strace on the host')
     m=runtime_info(config);runtime=Path(config['runtime_root']).resolve()
     if config.get('gpu') and not config.get('probe_mode'):
         probe=read_json(runtime/'gpu_probe_passed.json')
@@ -196,6 +201,11 @@ def execute_linux(code, inputs, out, command, config, model=None, repo=None, net
     from .research_r2_devices import process_group_usage,gpu_process_memory
     args=[str(runtime/'jail'),str(root),'1' if network else '0',str(address_space_bytes),
           str(config.get('timeout_seconds',7200)),*argv]
+    trace_path=out.parent/(out.name+'_syscalls.log') if trace else None
+    if trace:
+        args=[tracer,'-f','-qq','-s','160','-e',
+              'trace=%file,ioctl,prctl,socket,connect,clone,clone3',
+              '-o',str(trace_path),*args]
     log=out.parent/(out.name+'.log'); start=time.monotonic();reason=None
     peak_rss=0;peak_gpu=None;last_gpu=0
     try:
@@ -211,6 +221,7 @@ def execute_linux(code, inputs, out, command, config, model=None, repo=None, net
                 if time.monotonic()-start>config.get('timeout_seconds',7200): reason='timeout'
                 elif rss>memory_bytes:reason='resident_memory_limit'
                 elif log.stat().st_size>20_000_000:reason='log_limit'
+                elif trace_path and trace_path.exists() and trace_path.stat().st_size>20_000_000:reason='trace_limit'
                 elif sum(f.stat().st_size for f in (root/'out').rglob('*') if f.is_file() and not f.is_symlink())>config.get('max_output_bytes',50_000_000_000):reason='output_disk_limit'
                 if reason:
                     os.killpg(p.pid,signal.SIGKILL);p.wait();break
@@ -235,6 +246,7 @@ def execute_linux(code, inputs, out, command, config, model=None, repo=None, net
             'resident_memory_limit_bytes':memory_bytes,
             'address_space_limit_bytes':address_space_bytes or None,
             'memory_policy_version':'separate_address_space_v1',
+            'diagnostic_trace':str(trace_path) if trace_path else None,
             'runtime_id':m['runtime_id'],'backend':'linux_landlock_chroot','network':network,
             'files':tree_hash(out)}
     write_json(out.parent/(out.name+'_execution.json'),result)

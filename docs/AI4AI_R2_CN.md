@@ -202,6 +202,20 @@ v2 保留可执行文件权限，并只修正隔离副本的目录访问权限�
 此修改不改变 v2 的运行环境文件，可复用 v2 snapshot，但必须重新运行 smoke；
 日志会标明隔离、Torch 导入和 CUDA 检查各阶段。
 
+### CPU 已通过、CUDA 初始化返回 304
+
+这不等于 GPU 硬件故障。使用 `scripts/diagnose_research_r2_gpu.py --runtime-root
+/path/to/r2_runtime_devices_v2 --out /new/private/diagnostic` 对比宿主与隔离环境。
+需要主机安装 `strace`。它只执行固定的小型 GPU 前后向，记录系统调用失败；
+不挂载研究数据、不调用 API、不签发 GPU 通过凭证，也不启动研究循环。
+报告保存在 `diagnostic.json`，完整跟踪保留在私有目录。
+
+当前 chroot 只提供静态驱动信息，没有动态 `/proc/self`。NVIDIA 的
+[OpenShell issue 1486](https://github.com/NVIDIA/OpenShell/issues/1486) 记录了
+CUDA 在写线程 `comm` 路径失败时返回 304 的情况。这是诊断方向，不能仅凭
+错误码认定同一原因。诊断保留现有隔离，不挂载整个宿主 `/proc` 或跳过 GPU 检查。
+若 strace 本身被容器阻止，保留其错误，不能将跟踪失败算作 GPU 运算失败的证据。
+
 ## 方法来源
 
 - EvoScientist：研究、工程与长期经验记忆，https://arxiv.org/abs/2603.08127
