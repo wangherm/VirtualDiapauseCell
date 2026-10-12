@@ -41,6 +41,17 @@ def readable_directories(root):
         Path(directory).chmod(0o755)
 
 
+def memory_limits(config):
+    """Resident budget is distinct from library mappings / reserved addresses."""
+    memory=str(config.get('memory','64g')).lower()
+    resident=int(memory[:-1])*1024**3 if memory.endswith('g') else int(memory)
+    if resident<=0:raise ValueError('Resident memory budget must be positive')
+    # Even CPU work imports the installed CUDA-enabled Torch libraries.
+    # A small RLIMIT_AS can abort import while resident usage is still tiny.
+    address_space=0 if config.get('gpu') else max(resident,64*1024**3)
+    return resident,address_space
+
+
 def copy_runtime(src, root):
     src=Path(src); dest=Path(root)/str(src).lstrip('/')
     if src.is_dir():
@@ -171,8 +182,7 @@ def execute_linux(code, inputs, out, command, config, model=None, repo=None, net
         (root/'dev'/name).parent.mkdir(parents=True,exist_ok=True)
         os.mknod(root/'dev'/name,stat.S_IFCHR|0o666,s.st_rdev)
         (root/'dev'/name).chmod(0o666)  # mknod is affected by the parent's umask.
-    memory=str(config.get('memory','64g')).lower()
-    memory_bytes=int(memory[:-1])*1024**3 if memory.endswith('g') else int(memory)
+    memory_bytes,address_space_bytes=memory_limits(config)
     argv=list(command)
     if argv[0]=='python':argv[0]=m['python']
     elif not argv[0].startswith('/'):argv[0]='/bin/'+argv[0]
@@ -184,7 +194,7 @@ def execute_linux(code, inputs, out, command, config, model=None, repo=None, net
     env['CUDA_VISIBLE_DEVICES']='0' if config.get('gpu') else ''
     env['LD_LIBRARY_PATH']=':'.join(m.get('driver_library_paths',[]))
     from .research_r2_devices import process_group_usage,gpu_process_memory
-    args=[str(runtime/'jail'),str(root),'1' if network else '0',str(0 if config.get('gpu') else memory_bytes),
+    args=[str(runtime/'jail'),str(root),'1' if network else '0',str(address_space_bytes),
           str(config.get('timeout_seconds',7200)),*argv]
     log=out.parent/(out.name+'.log'); start=time.monotonic();reason=None
     peak_rss=0;peak_gpu=None;last_gpu=0
@@ -222,6 +232,9 @@ def execute_linux(code, inputs, out, command, config, model=None, repo=None, net
             'gpu_memory_observed_bytes':peak_gpu,
             'gpu_usage_status':('allocation_observed' if peak_gpu else 'not_observed_or_unavailable') if config.get('gpu') else 'not_requested',
             'memory_limit_mode':'sampled_group_rss' if config.get('gpu') else 'per_process_AS_and_sampled_group_rss',
+            'resident_memory_limit_bytes':memory_bytes,
+            'address_space_limit_bytes':address_space_bytes or None,
+            'memory_policy_version':'separate_address_space_v1',
             'runtime_id':m['runtime_id'],'backend':'linux_landlock_chroot','network':network,
             'files':tree_hash(out)}
     write_json(out.parent/(out.name+'_execution.json'),result)

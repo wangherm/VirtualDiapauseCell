@@ -194,6 +194,14 @@ v2 保留可执行文件权限，并只修正隔离副本的目录访问权限�
 旧 snapshot 与检查凭证不能继续使用。启动脚本会先重新执行 CPU 隔离检查和
 真实 GPU 前后向、保存重载检查，通过后才启动研究循环。旧数据和 R1 结果保留。
 
+若权限修复后出现 `std::bad_alloc`，检查 `probe_execution.json` 的内存字段。
+早期 CPU smoke 把 4 GiB 同时用作 RSS 预算和虚拟地址上限；CUDA 版 Torch
+即使执行 CPU 运算也可能需要更大的库映射空间。现在 CPU 虚拟地址上限至少
+64 GiB，原 RSS 预算不变，由父进程采样监督；这不是预分配 64 GiB 物理内存，
+也不是 cgroup 硬限制。GPU 保留独立的地址空间策略。执行记录分别保存两种限制。
+此修改不改变 v2 的运行环境文件，可复用 v2 snapshot，但必须重新运行 smoke；
+日志会标明隔离、Torch 导入和 CUDA 检查各阶段。
+
 ## 方法来源
 
 - EvoScientist：研究、工程与长期经验记忆，https://arxiv.org/abs/2603.08127

@@ -8,6 +8,18 @@ from vdc.research_r2_tools import write_code
 from vdc.research_r2_runtime import docker_image,execute,seal_task,run_candidate
 
 
+def execute_probe(code, inputs, out, command, runtime, **kwargs):
+    """Only fixed software probes: surface their diagnostics in the setup log."""
+    try:
+        return execute(code,inputs,out,command,runtime,**kwargs)
+    except Exception:
+        log=out.parent/(out.name+'.log')
+        if log.is_file():
+            print('FAILED_PROBE_LOG '+str(log),flush=True)
+            print(log.read_text(errors='replace')[-6000:],flush=True)
+        raise
+
+
 def main():
     p=argparse.ArgumentParser();p.add_argument('--out',required=True,type=Path)
     p.add_argument('--backend',choices=['docker','linux_landlock_chroot'],default='docker')
@@ -22,8 +34,10 @@ def main():
         runtime['image_id']=runtime_info(runtime)['runtime_id']
     else: runtime['image_id']=docker_image(a.image)
     # Pure runtime probe checks that no host credentials/root data/network are mounted.
-    write_code(a.out/'probe_code',{'probe.py':'''import os,socket,json
+    print('SMOKE_START cpu_isolation_and_torch (RSS budget 4 GiB; separate address-space limit)',flush=True)
+    write_code(a.out/'probe_code',{'probe.py':'''import os,socket,json,mmap,resource
 from pathlib import Path
+print('PROBE_STARTED',flush=True)
 assert not os.environ.get("VDC_RESEARCH_API_KEY")
 assert not Path("/root/autodl-tmp/vdc-private").exists()
 assert os.geteuid()!=0
@@ -36,15 +50,24 @@ try:
     socket.create_connection(("1.1.1.1",443),timeout=1)
 except OSError: pass
 else: raise RuntimeError("Unexpected outbound network")
+print('ISOLATION_PASSED',flush=True)
+# Reserve addresses without touching pages: this must not consume the RSS budget.
+with mmap.mmap(-1,8*1024**3,prot=mmap.PROT_NONE if hasattr(mmap,'PROT_NONE') else 0):
+    pass
+print('TORCH_IMPORT_START',flush=True)
 import torch
+print('TORCH_IMPORT_PASSED '+torch.__version__,flush=True)
 x=torch.randn(8,8,requires_grad=True);(x@x.T).sum().backward()
 assert torch.isfinite(x.grad).all()
-Path("/out/probe.json").write_text(json.dumps({"status":"passed","synthetic":True,"torch_cpu_backward":True}))
+Path("/out/probe.json").write_text(json.dumps({"status":"passed","synthetic":True,"torch_cpu_backward":True,
+    "address_space_soft_limit":resource.getrlimit(resource.RLIMIT_AS)[0],"virtual_reservation_test":True}))
 '''})
     (a.out/'sentinel.txt').write_text('original')
-    execute(a.out/'probe_code',{'sentinel.txt':a.out/'sentinel.txt'},a.out/'probe',['python','/code/probe.py'],runtime)
+    execute_probe(a.out/'probe_code',{'sentinel.txt':a.out/'sentinel.txt'},a.out/'probe',['python','/code/probe.py'],runtime)
     assert (a.out/'sentinel.txt').read_text()=='original'
+    print('SMOKE_PASSED cpu_isolation_and_torch',flush=True)
     if a.gpu:
+        print('SMOKE_START cuda_forward_backward_and_reload',flush=True)
         from vdc.research_r2_devices import gpu_inventory
         hardware=gpu_inventory()
         if not hardware['cuda_available']:raise RuntimeError('Host CUDA unavailable; AI GPU policy cannot start')
@@ -77,8 +100,9 @@ delta=float((p-d['prediction']).abs().max());assert torch.allclose(p,d['predicti
 Path('/out/reload.json').write_text(json.dumps({'status':'passed','max_abs_delta':delta}))
 '''})
         cuda={**runtime,'gpu':True,'memory':'64g'}
-        execute(a.out/'gpu_code',{},a.out/'gpu',['python','/code/gpu.py'],cuda)
-        execute(a.out/'gpu_code',{},a.out/'gpu_reload',['python','/code/reload.py'],cuda,model=a.out/'gpu')
+        execute_probe(a.out/'gpu_code',{},a.out/'gpu',['python','/code/gpu.py'],cuda)
+        execute_probe(a.out/'gpu_code',{},a.out/'gpu_reload',['python','/code/reload.py'],cuda,model=a.out/'gpu')
+        print('SMOKE_PASSED cuda_forward_backward_and_reload',flush=True)
     rng=np.random.default_rng(2);x=rng.normal(size=(12,3));y=x@np.array([[1.],[2.],[-1.]])
     prepared=a.out/'fixture';save_npz(prepared/'train.npz',x=x[:8],y=y[:8])
     save_npz(prepared/'query.npz',x=x[8:]);save_npz(prepared/'truth.npz',y=y[8:])
