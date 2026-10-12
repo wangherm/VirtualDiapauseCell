@@ -22,11 +22,23 @@ from .research_r2_tools import tree_hash
 def link_or_copy(src, dst):
     src, dst=Path(src),Path(dst); dst.parent.mkdir(parents=True,exist_ok=True)
     if dst.exists(): return
-    # Private files with restrictive modes are copied before making a readable input.
-    if not src.stat().st_mode & stat.S_IROTH:
-        shutil.copyfile(src,dst);dst.chmod(0o444);return
+    mode=src.stat().st_mode
+    executable=bool(mode & 0o111)
+    def copy_readable():
+        # copyfile does not preserve mode, notably across system/data disks.
+        # Never chmod a hardlink: that would also change the host source.
+        shutil.copyfile(src,dst)
+        dst.chmod(0o555 if executable else 0o444)
+    if not mode & stat.S_IROTH or (executable and not mode & stat.S_IXOTH):
+        copy_readable();return
     try: os.link(src,dst)
-    except OSError: shutil.copyfile(src,dst)
+    except OSError: copy_readable()
+
+
+def readable_directories(root):
+    """Normalize only copied directories, never files or symlink targets."""
+    for directory, _, _ in os.walk(root, followlinks=False):
+        Path(directory).chmod(0o755)
 
 
 def copy_runtime(src, root):
@@ -92,13 +104,14 @@ def build_runtime(repo, out):
     (root/'etc/passwd').write_text('nobody:x:65534:65534:nobody:/tmp:/bin/sh\n')
     (root/'etc/group').write_text('nogroup:x:65534:\n')
     (root/'etc/hosts').write_text('127.0.0.1 localhost\n')
+    readable_directories(root)
     import importlib.metadata
     manifest={'backend':'linux_landlock_chroot','python':sys.executable,
         'jail_sha256':sha256(out/'jail'), 'packages':sorted((d.metadata.get('Name',''),d.version)
             for d in importlib.metadata.distributions()),'created_at':time.time(),
         'runtime_files_are_trusted':True,'private_data_in_runtime':False,
         'driver_library_paths':sorted(set(driver_paths)),
-        'executor_version':'r2_device_choice_v1'}
+        'executor_version':'r2_device_choice_v2'}
     # Snapshot files are read-only to candidates; source changes require a new runtime.
     manifest['runtime_id']=object_hash(manifest)
     write_json(out/'runtime.json',manifest)
@@ -107,6 +120,8 @@ def build_runtime(repo, out):
 
 def runtime_info(config):
     root=Path(config['runtime_root']).resolve();m=read_json(root/'runtime.json')
+    if m.get('executor_version')!='r2_device_choice_v2':
+        raise ValueError('Runtime predates executable-permission fix; build a new runtime snapshot')
     if sha256(root/'jail')!=m['jail_sha256']: raise ValueError('Isolation launcher changed')
     if not (root/'probe_passed.json').is_file() and not config.get('probe_mode'):
         raise RuntimeError('Runtime lacks actual isolation probe; run setup_research_r2.sh')
@@ -139,6 +154,8 @@ def execute_linux(code, inputs, out, command, config, model=None, repo=None, net
                 if selected.exists():shutil.copytree(selected,root/name/allowed,symlinks=False,
                     copy_function=link_or_copy,ignore=shutil.ignore_patterns('__pycache__','*.pyc'))
         elif path:shutil.copytree(path,root/name,symlinks=False,copy_function=link_or_copy)
+    readable_directories(root)
+    (root/'out').chmod(0o777);(root/'tmp').chmod(0o777)
     # Character devices are recreated, not symlinked out of the chroot.
     devices=['null','zero','random','urandom']
     if config.get('gpu'):
@@ -208,5 +225,5 @@ def execute_linux(code, inputs, out, command, config, model=None, repo=None, net
             'runtime_id':m['runtime_id'],'backend':'linux_landlock_chroot','network':network,
             'files':tree_hash(out)}
     write_json(out.parent/(out.name+'_execution.json'),result)
-    if reason or rc:raise RuntimeError('Isolated candidate failed: '+str(reason or rc)+'; local log retained')
+    if reason or rc:raise RuntimeError('Isolated candidate failed: '+str(reason or rc)+'; inspect local log: '+str(log))
     return result

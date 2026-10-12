@@ -60,7 +60,7 @@ def main():
     config=read_json(a.config)
     if config['runtime'].get('backend')=='linux_landlock_chroot':
         from vdc.research_r2_devices import configure_devices
-        config['runtime']['runtime_root']=os.environ.get('VDC_R2_RUNTIME_ROOT',str(a.private_root/'r2_runtime_devices_v1'))
+        config['runtime']['runtime_root']=os.environ.get('VDC_R2_RUNTIME_ROOT',str(a.private_root/'r2_runtime_devices_v2'))
         config['runtime']=configure_devices(config['runtime'],os.environ.get('VDC_R2_DEVICE_POLICY'))
     image=resolve_runtime(config['runtime'])
     if a.command=='doctor':

@@ -6,7 +6,7 @@ export VDC_PRIVATE_ROOT="${VDC_PRIVATE_ROOT:-/root/autodl-tmp/vdc-private}"
 export VDC_PYTHON="${VDC_PYTHON:-/root/autodl-tmp/VirtualDiapauseCell/.venv-autodl-vdc/bin/python}"
 export PYTHONPATH="$PWD/src"
 export VDC_RESEARCH_CONFIG="$PWD/configs/research_r2.json"
-export VDC_R2_RUNTIME_ROOT="${VDC_R2_RUNTIME_ROOT:-$VDC_PRIVATE_ROOT/r2_runtime_devices_v1}"
+export VDC_R2_RUNTIME_ROOT="${VDC_R2_RUNTIME_ROOT:-$VDC_PRIVATE_ROOT/r2_runtime_devices_v2}"
 export VDC_R2_DEVICE_POLICY="${VDC_R2_DEVICE_POLICY:-ai}"
 if [[ "${1:-}" == --worker ]]; then
   exec >> "$VDC_R2_BOOT_LOG" 2>&1

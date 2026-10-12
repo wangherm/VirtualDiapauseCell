@@ -76,7 +76,7 @@ DeepSeek研究决策仍调用远程API，本机GPU用于AI编写的数值模型�
   export VDC_PRIVATE_ROOT=/root/autodl-tmp/vdc-private
   export VDC_PYTHON="$PWD/.venv-autodl-vdc/bin/python"
   export VDC_R2_DEVICE_POLICY=ai
-  export VDC_R2_RUNTIME_ROOT="$VDC_PRIVATE_ROOT/r2_runtime_devices_v1"
+  export VDC_R2_RUNTIME_ROOT="$VDC_PRIVATE_ROOT/r2_runtime_devices_v2"
   unset VDC_R2_RUN VDC_R2_RESUME VDC_R2_GPU VDC_R2_RETRY_API_ERRORS
   bash "$RELEASE/scripts/start_research_r2.sh"
 )
@@ -182,6 +182,17 @@ RUN="$(cat "$VDC_PRIVATE_ROOT/LATEST_RESEARCH_R2.txt")"
 
 全量重拟合仅指所选任务中兼容的 fit/query 行，不等于所有项目数据混合训练。
 新模型得分、跨物种有效性以及论文算法移植效果都要等服务器实际运行后判断。
+
+## 隔离环境启动权限修复
+
+若旧版在 `probe.log` 中出现 `exec: Permission denied`，表示隔离启动器尚未成功
+执行 Python，不是模型训练失败。旧复制逻辑在系统盘到数据盘的跨盘复制中会丢失
+可执行位；复制目录还可能继承不允许降权用户访问的权限。
+
+v2 保留可执行文件权限，并只修正隔离副本的目录访问权限，不修改宿主文件，
+不关闭 Landlock、降权或网络隔离。使用新的 `r2_runtime_devices_v2` 路径重建环境；
+旧 snapshot 与检查凭证不能继续使用。启动脚本会先重新执行 CPU 隔离检查和
+真实 GPU 前后向、保存重载检查，通过后才启动研究循环。旧数据和 R1 结果保留。
 
 ## 方法来源
 

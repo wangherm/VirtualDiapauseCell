@@ -11,11 +11,11 @@ fi
 "$PY" -m pip install 'pypdf>=5,<6' 'pandas>=2.2,<3' 'scikit-learn>=1.6,<2' \
   'anndata>=0.10,<0.13' 'openpyxl>=3.1,<4' 'xlrd>=2,<3' 'biopython>=1.85,<2'
 export PYTHONPATH="$PWD/src"
-export VDC_R2_RUNTIME_ROOT="${VDC_R2_RUNTIME_ROOT:-${VDC_PRIVATE_ROOT:-/root/autodl-tmp/vdc-private}/r2_runtime_devices_v1}"
+export VDC_R2_RUNTIME_ROOT="${VDC_R2_RUNTIME_ROOT:-${VDC_PRIVATE_ROOT:-/root/autodl-tmp/vdc-private}/r2_runtime_devices_v2}"
 if [[ ! -f "$VDC_R2_RUNTIME_ROOT/runtime.json" ]]; then
   "$PY" -c 'import os; from pathlib import Path; from vdc.research_r2_linux import build_runtime; print("Runtime snapshot:",build_runtime(Path.cwd(),os.environ["VDC_R2_RUNTIME_ROOT"])["runtime_id"])'
 fi
-"$PY" -c 'import os; from pathlib import Path; from vdc.io import read_json; m=read_json(Path(os.environ["VDC_R2_RUNTIME_ROOT"])/"runtime.json"); assert m.get("executor_version")=="r2_device_choice_v1", "Old runtime: select a new VDC_R2_RUNTIME_ROOT and repeat setup"'
+"$PY" -c 'import os; from pathlib import Path; from vdc.io import read_json; m=read_json(Path(os.environ["VDC_R2_RUNTIME_ROOT"])/"runtime.json"); assert m.get("executor_version")=="r2_device_choice_v2", "Old runtime: select a new VDC_R2_RUNTIME_ROOT and repeat setup"'
 args=()
 POLICY="${VDC_R2_DEVICE_POLICY:-ai}"
 case "$POLICY" in ai) args+=(--gpu);; cpu) ;; *) echo 'VDC_R2_DEVICE_POLICY must be ai or cpu'; exit 2;; esac
