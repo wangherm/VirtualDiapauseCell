@@ -1,0 +1,24 @@
+{
+  "mission": "Research a universal diapause/dormancy model: evidence-supported state and individual variation; maintenance, release and intervention responses; transfer and calibration across backgrounds; loadable experts behind a unified inference interface. Universality is an aim to test, not a claimed result.",
+  "max_api_calls": 60,
+  "max_token_budget": 2000000,
+  "min_decisions_before_finish": 24,
+  "max_output_tokens": 16000,
+  "max_request_budget": 60000,
+  "completion_token_parameter": "max_tokens",
+  "reasoning_effort": "high",
+  "thinking_mode": "enabled",
+  "json_response_format": true,
+  "api_timeout_seconds": 300,
+  "expected_api_base": "https://api.deepseek.com",
+  "expected_model": "deepseek-v4-pro",
+  "runtime": {
+    "backend": "linux_landlock_chroot",
+    "image": "vdc-research-r2:1",
+    "memory": "64g",
+    "cpus": 8,
+    "timeout_seconds": 7200,
+    "max_output_bytes": 50000000000,
+    "gpu": false
+  }
+}

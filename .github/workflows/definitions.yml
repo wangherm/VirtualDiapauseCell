@@ -24,6 +24,7 @@ jobs:
       - run: bash -n scripts/launch_int1.sh && bash -n scripts/serve_int1.sh
       - run: bash -n scripts/launch_research.sh
       - run: bash -n scripts/launch_research_data.sh
+      - run: bash -n scripts/launch_research_r2.sh && bash -n scripts/setup_research_r2.sh
       - run: python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
       - run: python -m pip install -e '.[test,app]'
       - run: python scripts/doctor.py
@@ -36,3 +37,25 @@ jobs:
           path: |
             work/ci_tests.xml
             work/ci_synthetic/status.json
+  r2-isolation:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - run: python -m pip install -e '.[test]'
+      - name: Build and probe actual Linux isolation without nested Docker
+        run: |
+          PY="$(command -v python)"
+          sudo env PYTHONPATH="$PWD/src" "$PY" -c 'from vdc.research_r2_linux import build_runtime; from pathlib import Path; build_runtime(Path.cwd(),Path("work/r2_runtime"))'
+          sudo env PYTHONPATH="$PWD/src" "$PY" scripts/smoke_research_r2.py --backend linux_landlock_chroot --runtime-root work/r2_runtime --out work/r2_isolation_smoke
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r2-isolation-software-only
+          path: |
+            work/r2_isolation_smoke/status.json
+            work/r2_isolation_smoke/probe.log
+            work/r2_isolation_smoke/experiment/*_execution.json

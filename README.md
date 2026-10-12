@@ -6,21 +6,31 @@ The main application is embryonic diapause in the African turquoise killifish, *
 
 ## Hypothesis-driven research
 
-The first AI4AI research runner proposes hypotheses from reviewed evidence, designs
-numerical experiments, evaluates real development predictions, and revises its
-reasoning from the results. It preserves the existing application as a baseline.
-An OpenAI-compatible research API is configured on the execution host; no API key
-is stored in the repository. The default graph backend runs on CPU. Unrestricted
-generated Python requires the optional isolated Docker backend.
+**R2: towards a universal diapause/dormancy model.** The research goal now includes
+state, maintenance/release/intervention responses, and transfer across biological
+backgrounds. Universality is a hypothesis to test, not an established capability.
+The model may evolve into a shared representation or a set of calibrated experts.
 
-See [the AutoDL setup, budgets, progress and resume guide](docs/AI4AI_R1_CN.md).
-To complete public downloads and attach source-aware dataset guidance before a
-research run, use the [public data preparation guide](docs/AI4AI_PUBLIC_DATA_CN.md).
-It reuses verified caches and existing private views; newly downloaded public
-matrices remain planning assets until their numerical adapters and grouped admission are implemented.
-This is a VDC-specific controller inspired by the research-memory and hypothesis
-revision literature, not an upstream EvoScientist/PiEvo/OpenEvolve reproduction.
-Real provider-driven research runs are not claimed by software tests.
+The [R2 AutoDL guide](docs/AI4AI_R2_CN.md) documents actual literature tools,
+all-authorised-source preparation, isolated multi-file model execution, task-specific
+evaluators, persistent experiment branches, and export/reload. Existing R1 results
+remain available. R2 opens historical data roles for adaptive research without
+rewriting provenance or claiming a new blind test. Models and conclusions are open;
+the research mission and each comparison contract are fixed.
+
+The default AutoDL executor uses Linux chroot, Landlock and seccomp rather than
+nested Docker. Run its actual isolation probe before paid research. Software tests
+are not claims of completed public-data modelling or a validated universal model.
+
+R2's current budget is 60 research decisions and a conservative 2-million-token
+ceiling, whichever is reached first, with at least 24 decisions before voluntary
+completion. Decisions, completed experiments and supported comparisons are counted
+separately. API credentials remain in the server environment.
+
+The [R1 runner](docs/AI4AI_R1_CN.md) remains a historical graph-based baseline.
+The [public downloader](docs/AI4AI_PUBLIC_DATA_CN.md) supplies reusable verified
+caches. R2 can process those files with its preparation tool; downloaded data are
+not counted as numerically used until an actual experiment consumes them.
 
 ## Model
 
