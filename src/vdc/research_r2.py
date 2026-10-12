@@ -59,7 +59,9 @@ TOOLS = '''Tools (all paths relative, all IDs unique; examples are contracts, no
 inventory: source:optional source ID, offset:0 -> page of 40 actual file records.
 inspect: asset_ids:[...], offset:0 -> paged archive members, H5/NPZ array shapes,
 table columns and JSON structure; no private numeric values.
-read_vdc: path:"src/vdc/..py" or "scripts/..py", offset:0 -> existing source to reuse.
+read_vdc: path:"src/vdc/..py", "scripts/..py", or "knowledge/..json", offset:0
+-> existing public source/knowledge to reuse; knowledge/alpha/corpus.jsonl and
+knowledge/research_public_data.json are available starting points, not gold labels.
 search: query:public scientific terms -> actual Europe PMC results.
 fetch: url:public HTTPS document, method or source-code file -> cached text/document ID.
 download: source:catalogue source ID, file:basename, url:official NCBI/ENA HTTPS,
@@ -210,8 +212,10 @@ class Engine:
             return {'status':'verified','asset':key_asset,'bytes':entry['bytes']}
         if kind == 'read_vdc':
             path = inside(self.repo, a['path'])
-            if path.suffix != '.py' or path.parts[len(self.repo.parts)] not in ('src', 'scripts'):
-                raise ValueError('Only existing public VDC Python source is readable')
+            section=path.parts[len(self.repo.parts)]
+            if not ((section in ('src','scripts') and path.suffix=='.py') or
+                    (section=='knowledge' and path.suffix in ('.json','.jsonl','.md','.txt'))):
+                raise ValueError('Only existing public VDC code or knowledge is readable')
             text = path.read_text(encoding='utf-8'); offset = max(0, int(a.get('offset', 0)))
             return {'text': text[offset:offset+14000], 'characters': len(text)}
         if kind == 'search': return search_literature(a['query'], self.run/'literature')
@@ -369,6 +373,7 @@ class Engine:
             for k in ('ai_brief', 'unit_rule', 'scale_or_assay'):
                 if k in source: source[k] = source[k][:250]
         result = {'mission': self.config['mission'], 'scope': 'all_authorised_data_adaptive_research',
+            'method_seeds_to_fetch':self.config.get('method_seeds',[]),
             'inventory': inv, 'tasks': {k:{f:v[f] for f in ('question','mission','signature','fit_units','query_units')}
                 for k,v in self.state['tasks'].items()},
             'experiments': {k:public_result(v) for k,v in self.state['experiments'].items()},
