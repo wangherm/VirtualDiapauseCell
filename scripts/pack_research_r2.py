@@ -18,7 +18,14 @@ def pack(run):
             if p.is_symlink(): raise ValueError('Symlink in report tree')
             if not p.is_file(): continue
             rel=p.relative_to(run); parts=rel.parts
-            if any(n in parts for n in ('release','__pycache__','refit_inputs','dependency_probe','audited_bundle')): continue
+            # Include the exact controller/tool source for independent diagnosis.
+            # Other frozen-release content and any raw data remain excluded.
+            controller_source = (parts[0]=='release' and p.suffix=='.py' and
+                ((len(parts)==4 and parts[1:3]==('src','vdc') and p.name.startswith('research')) or
+                 (len(parts)==3 and parts[1]=='scripts' and p.name in
+                  ('research_worker.py','run_codex_research.py','run_research_r2.py'))))
+            if 'release' in parts and not controller_source: continue
+            if any(n in parts for n in ('__pycache__','refit_inputs','dependency_probe','audited_bundle')): continue
             if parts[0]=='wheels' or (parts[0]=='actions' and 'wheels' in parts):continue
             if parts[0]=='actions' and 'output' in parts: continue  # arbitrary data-preparation outputs
             if 'tasks' in parts and p.name in ('train.npz','query.npz','truth.npz'): continue

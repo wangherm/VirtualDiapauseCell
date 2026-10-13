@@ -18,10 +18,7 @@ from .io import read_json, write_json, sha256, object_hash
 from .research_assets import verified_file, asset_key
 
 
-def identifier(value):
-    if not isinstance(value, str) or not re.fullmatch(r'[a-zA-Z0-9][a-zA-Z0-9_-]{0,79}', value):
-        raise ValueError('Expected a short alphanumeric identifier')
-    return value
+from .research_protocol import identifier
 
 
 def inside(root, relative):

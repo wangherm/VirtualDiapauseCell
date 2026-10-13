@@ -22,6 +22,10 @@ def request_fingerprint(engine,a):
             # Hash the content, not a new action name or a changed mtime.
             bindings[key]=sha256(asset['path'])
     elif kind=='read_public':bindings['document']=sha256(engine.run/'literature'/(a['document']+'.txt'))
+    elif kind=='read_preparation_code':
+        from .research_r2_tools import inside, identifier
+        path=inside(engine.run/'actions'/identifier(a['preparation'])/'code',a['path'])
+        bindings['code']=sha256(path) if path.is_file() else 'absent'
     elif kind=='read_task':bindings=engine.state['tasks'].get(a['task'],{})
     elif kind=='read_action':bindings=engine.state['actions'].get(a['action'],{})
     elif kind=='read_vdc':

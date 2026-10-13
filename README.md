@@ -1,5 +1,11 @@
 # Virtual Diapause Cell
 
+The new [Codex-primary research workflow](docs/CODEX_PRIMARY_CN.md) runs Codex
+locally, keeps DeepSeek as an advisory reviewer, and submits durable tasks to the
+existing AutoDL executor. Joint evidence and explicit task receipts preserve context
+and prevent duplicate submissions after reconnecting. This is a controller integration;
+an actual new agent-driven experiment must be recorded before claiming research progress.
+
 Virtual Diapause Cell models how embryos maintain diapause and resume development. It uses gene expression to locate a sample on a reference reactivation coordinate, describe the programmes associated with that position, and identify changes that the reference does not explain.
 
 The main application is embryonic diapause in the African turquoise killifish, *Nothobranchius furzeri*. Public dormancy and quiescence datasets support pretraining and separate perturbation experiments.

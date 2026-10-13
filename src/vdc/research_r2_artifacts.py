@@ -104,8 +104,16 @@ def checked_artifact(run,prep,relative,inv):
     root=Path(run)/'actions'/identifier(prep)
     index=read_json(root/'artifact_index.json') if (root/'artifact_index.json').is_file() else artifact_index(run,prep,inv)
     p=inside(root/'output',relative); item=index['files'].get(relative)
-    if item is None or not p.is_file() or sha256(p)!=item['sha256']:
-        raise ValueError('Preparation artifact changed or missing; create a new preparation version')
+    if p.is_dir():
+        raise ValueError('Artifact reference is a directory; list with inspect_preparation without path')
+    if item is None:
+        candidates=[n for n in index['files'] if Path(n).name==Path(relative).name][:10]
+        raise ValueError('Artifact path not indexed; matching filenames: '+str(candidates)+
+                         '; use inspect_preparation listing for exact references')
+    if not p.is_file():
+        raise ValueError('Indexed artifact is absent on disk; restore verified source or prepare a new version')
+    if sha256(p)!=item['sha256']:
+        raise ValueError('Preparation artifact changed; create a new preparation version')
     # Do not accept an edited index's privacy flag in lieu of source lineage.
     provenance=read_json(root/'provenance.json')
     public=bool(provenance) and all(k in inv['assets'] and inv['assets'][k]['public'] for k in provenance)
