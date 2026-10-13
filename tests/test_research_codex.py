@@ -199,3 +199,6 @@ def test_codex_scratch_is_separate_from_host_receipts(tmp_path, monkeypatch):
         assert run_codex(tmp_path, 1)['actions'][0]['id'] == 'x'
     assert read_json(tmp_path/'codex_session.json')['thread_id'] == 'test-session'
     assert read_json(tmp_path/'turns/000001/codex_receipt.json')['status'] == 'completed'
+    write_json(tmp_path/'context.json', {'mission': 'changed'})
+    with pytest.raises(ValueError, match='changed'):
+        run_codex(tmp_path, 1)

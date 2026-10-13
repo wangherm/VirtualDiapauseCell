@@ -6,7 +6,7 @@ import shlex
 import shutil
 import subprocess
 import time
-from .io import read_json, write_json, object_hash
+from .io import read_json, write_json, object_hash, sha256
 from .research_api import Client, parse_object
 from .research_bridge import PROTOCOL, rpc, lock
 from .research_protocol import decision
@@ -83,8 +83,14 @@ def run_codex(workspace, index, model=None):
     folder.mkdir(parents=True, exist_ok=True)
     receipt = folder/'codex_receipt.json'
     output = folder/'decision.txt'
+    binding = {'context_sha256': sha256(workspace/'context.json'),
+               'evidence_sha256': sha256(workspace/'working_evidence.json'),
+               'tool_contract_sha256': sha256(workspace/'tool_contract.md'),
+               'instructions_sha256': object_hash(LOCAL_INSTRUCTIONS), 'requested_model': model}
     if receipt.exists():
         r = read_json(receipt)
+        if r.get('input_binding') != binding:
+            raise ValueError('Codex prompt/evidence/model changed; old completed decision cannot be reused')
         if r['status'] == 'completed':
             return read_json(folder/'decision.json')
         raise RuntimeError('Previous Codex call failed or outcome uncertain; inspect this turn before retrying')
@@ -107,6 +113,7 @@ def run_codex(workspace, index, model=None):
     (folder/'context.json').write_bytes((workspace/'context.json').read_bytes())
     (folder/'working_evidence.json').write_bytes((workspace/'working_evidence.json').read_bytes())
     write_json(receipt, {'status': 'submitted_outcome_uncertain', 'started_at': time.time(),
+                        'input_binding': binding,
                         'requested_model': model, 'model_selection': 'explicit' if model else 'local_codex_configuration'})
     env = {k: v for k, v in os.environ.items() if not k.startswith('VDC_RESEARCH_API')}
     with (folder/'events.jsonl').open('w', encoding='utf-8') as log, (folder/'stderr.log').open('w', encoding='utf-8') as err:
@@ -168,7 +175,8 @@ def advise(workspace, index, question, context, config):
 def controller(config, workspace, turns=24, model=None, advisor_config=None):
     workspace = Path(workspace).resolve(); workspace.mkdir(parents=True, exist_ok=True)
     with lock(workspace, '.controller.lock'):
-        settings = {'transport': config, 'model': model, 'protocol': PROTOCOL}
+        settings = {'transport': config, 'model': model, 'protocol': PROTOCOL,
+                    'controller_source_sha256': sha256(Path(__file__))}
         binding = workspace/'controller_binding.json'
         if binding.exists() and read_json(binding) != settings:
             raise ValueError('Controller workspace is bound to another run/config/model; use a new workspace')
