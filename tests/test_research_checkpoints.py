@@ -103,12 +103,20 @@ def test_worker_finish_requires_human_review(tmp_path):
         primary.assert_not_called()
 
 
-def test_continuous_does_not_start_paid_primary_without_advisor_credentials(tmp_path, monkeypatch):
+def test_missing_advisor_credentials_do_not_block_primary(tmp_path, monkeypatch):
     monkeypatch.delenv('VDC_RESEARCH_API_KEY', raising=False)
     e=make_engine(tmp_path); snapshot(e)
-    with patch('vdc.research_codex.run_codex') as primary:
-        r=controller({'transport':'files','run':str(e.run)},tmp_path/'local',continuous=True,
+    workspace=tmp_path/'local'
+    def remote(c, packet):
+        r=rpc(e.run,packet)
+        if packet['operation']=='submit': process_one(e)
+        if packet['operation']=='poll': (workspace/'STOP').write_text('fixture pause')
+        return r
+    proposal={'actions':[{'id':'one','type':'inventory'}], 'advisor_question':'review'}
+    with patch('vdc.research_codex.transport',side_effect=remote), patch('vdc.research_codex.run_codex',return_value=proposal) as primary:
+        r=controller({'transport':'files','run':str(e.run)},workspace,continuous=True,
                      advisor_config={'max_api_calls':1000,'max_token_budget':None})
-        assert r['status']=='advisor_unavailable_requires_inspection'
-        assert r['next_turn']==1
-        primary.assert_not_called()
+        assert r['status']=='paused_by_operator'
+        assert r['next_turn']==2
+        assert r['advisor_health']['status']=='not_run_missing_deepseek_key'
+        primary.assert_called_once()

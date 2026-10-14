@@ -116,11 +116,13 @@ def test_controller_recovers_same_submission_after_network_disconnect(tmp_path):
 def test_advisor_cannot_submit_actions_and_has_separate_usage(tmp_path, monkeypatch):
     monkeypatch.setenv('VDC_RESEARCH_API_KEY', 'unit-test-value-not-real')
     with patch('vdc.research_codex.Client') as client:
-        client.return_value.call.return_value = {'actions': [{'type': 'experiment'}], 'concerns': ['test']}
+        client.return_value.call.return_value = {'concerns': 'test',
+            'recommended_next_experiment': 'compare alternatives', 'evidence_gaps': 'test-only'}
         result = advise(tmp_path, 1, 'Review this proposal', {'progress': {}}, {})
         assert result['worker_actions_executed'] == 0
         assert result['decision_authority'] == 'local_codex'
-        assert result['response']['actions']  # retained as text/data, never dispatched
+        assert result['status'] == 'completed'
+        assert 'actions' not in result['response']
         advise(tmp_path, 1, 'Review this proposal', {'progress': {}}, {})
         assert client.return_value.call.call_count == 1
 

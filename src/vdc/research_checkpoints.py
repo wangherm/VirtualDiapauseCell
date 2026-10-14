@@ -85,6 +85,7 @@ def checkpoint(workspace, state, reason, config=None):
         'cumulative_worker_progress': progress, 'new_actions': records,
         'new_completed_experiments': sum(r['type']=='experiment' and r['status']=='completed' for r in records),
         'usage': usage_totals(workspace), 'resources': config or {},
+        'advisor_health': state.get('advisor_health'),
         'scientific_approval': False, 'evaluation_scope': 'adaptive_research_not_new_blind_test'}
     notes = workspace/'agent/research_notes.md'
     if notes.exists():
