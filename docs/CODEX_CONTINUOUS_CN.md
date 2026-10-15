@@ -24,6 +24,8 @@ DeepSeek返回固定三个字符串字段：`concerns`、`recommended_next_exper
 
 ## 从旧工作区续跑
 
+若上一阶段已是 `awaiting_stage_review`，先按 [阶段审查后恢复](CODEX_STAGE_RESUME_CN.md) 登记操作者批准的新任务书并恢复原worker，再启动本地主控。普通续跑不会自动解除阶段审查暂停。
+
 必须使用原工作区的**绝对路径**。旧版PowerShell相对路径可能落在用户主目录的 `work` 中，不能以仓库路径猜测。先检查其中 `controller_state.json` 和 `connection.local.json`。
 
 本地主控代码改变时，需要一次显式 `--accept-controller-update`。它只允许在无待定任务、下一轮未发起、远端编号一致时迁移；保留旧会话和全部回执，在 `controller_versions/` 写入前后代码指纹。不能把旧completed当作新prompt的结果。可以用 `--brief` 加入操作者说明，按下一轮生效、记录指纹。
