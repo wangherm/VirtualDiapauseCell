@@ -1,0 +1,11 @@
+evidence/
+source_data/
+figures/
+outputs/
+*.npz
+*.zip
+*.npy
+*.pt
+*.ckpt
+.env
+__pycache__/

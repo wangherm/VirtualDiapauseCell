@@ -1,0 +1,170 @@
+[
+  {
+    "path": "predict/apricot_anchored_predict.py",
+    "bytes": 6863,
+    "sha256": "c9b35d615645660311947416e4cf37ba00c4d0b6f600835d997b16b2bbdef249",
+    "source": "frozen predict kit/apricot_anchored_predict.py"
+  },
+  {
+    "path": "predict/chilling_functional_model.py",
+    "bytes": 2531,
+    "sha256": "c51d3a777a0ae213b340c6561ef3602b986e158c847d692b66ed21b67f78a82b",
+    "source": "frozen predict kit/chilling_functional_model.py"
+  },
+  {
+    "path": "predict/chilling_predict_adapter.py",
+    "bytes": 5327,
+    "sha256": "3d6145d193a5d158c507a062b3401b5c16421e148c289a153859ebe33e674c0e",
+    "source": "frozen predict kit/chilling_predict_adapter.py"
+  },
+  {
+    "path": "predict/general_learning.py",
+    "bytes": 7635,
+    "sha256": "95116ba28fa9820f1b87ec9331e989b9ed4669670a2479252fcd01e6ce9a38e9",
+    "source": "frozen predict kit/general_learning.py"
+  },
+  {
+    "path": "predict/integrated_benchmark.py",
+    "bytes": 3903,
+    "sha256": "217711e48d3fa9b57cefc728875809811c24744855347ea2bab2b55348f03183",
+    "source": "frozen predict kit/integrated_benchmark.py"
+  },
+  {
+    "path": "predict/native_seed_predict.py",
+    "bytes": 6809,
+    "sha256": "1869dacd738206d6e4f9742f566a11d45645db06e9e1e084a36016c7aa2442e0",
+    "source": "frozen predict kit/native_seed_predict.py"
+  },
+  {
+    "path": "predict/predict_packet.py",
+    "bytes": 1995,
+    "sha256": "9d18ee6dee0f5e87d1436b22b8a0fc99e7cb9be4c4b27db6a8b5445424c761f9",
+    "source": "frozen predict kit/predict_packet.py"
+  },
+  {
+    "path": "predict/predict_request.py",
+    "bytes": 2051,
+    "sha256": "1b03781495487b60b2507b5ac174c1fa8d50d7972901612a51a41350e5cf3ab7",
+    "source": "frozen predict kit/predict_request.py"
+  },
+  {
+    "path": "predict/run_packed.py",
+    "bytes": 2660,
+    "sha256": "5176ddd20b258627f8cd3c734b6c6a90f4de67fff4cf72571e344de37858d0c1",
+    "source": "frozen predict kit/run_packed.py"
+  },
+  {
+    "path": "predict/seed_predict_adapter.py",
+    "bytes": 2336,
+    "sha256": "6f9888de4b12ffc1ed9f6d47196a5af445c29bb44101c42b0f0e17c67b28085f",
+    "source": "frozen predict kit/seed_predict_adapter.py"
+  },
+  {
+    "path": "predict/yeast_saved_predict.py",
+    "bytes": 8347,
+    "sha256": "664343e6cffc486251a16b3290e895de478785e57c0ca32f4c9d69a01829c8c2",
+    "source": "frozen predict kit/yeast_saved_predict.py"
+  },
+  {
+    "path": "score/apricot_anchored_score.py",
+    "bytes": 7678,
+    "sha256": "e31e11ab68488c1ae5ef8be53b49356b7cd9321f83c59e84dbbd557c72fce0fc",
+    "source": "frozen score kit/apricot_anchored_score.py"
+  },
+  {
+    "path": "score/chilling_score_adapter.py",
+    "bytes": 8457,
+    "sha256": "a0bc7af2f66bebaf81cdf0ded63c0f110ed94f3799b232e75d4d35e141a542e1",
+    "source": "frozen score kit/chilling_score_adapter.py"
+  },
+  {
+    "path": "score/integrated_benchmark.py",
+    "bytes": 3903,
+    "sha256": "217711e48d3fa9b57cefc728875809811c24744855347ea2bab2b55348f03183",
+    "source": "frozen score kit/integrated_benchmark.py"
+  },
+  {
+    "path": "score/native_seed_score.py",
+    "bytes": 9489,
+    "sha256": "7646fe1cf279f85511f9d12a442882930828c1a17a4c8190371024f2c384ea70",
+    "source": "frozen score kit/native_seed_score.py"
+  },
+  {
+    "path": "score/run_packed.py",
+    "bytes": 2660,
+    "sha256": "5176ddd20b258627f8cd3c734b6c6a90f4de67fff4cf72571e344de37858d0c1",
+    "source": "frozen score kit/run_packed.py"
+  },
+  {
+    "path": "score/seed_score_adapter.py",
+    "bytes": 2211,
+    "sha256": "7a89a4c5eafaf809c0b922e294f73a8bd32b70accafa4f7865b829500490248c",
+    "source": "frozen score kit/seed_score_adapter.py"
+  },
+  {
+    "path": "score/yeast_saved_score.py",
+    "bytes": 11104,
+    "sha256": "4a8e838eef660302f94ee9c88c6e35e31aafa9492f3413bd224541dd0be49805",
+    "source": "frozen score kit/yeast_saved_score.py"
+  },
+  {
+    "path": "backends/seed/model.py",
+    "bytes": 2319,
+    "sha256": "869ac8fb41d887697762f2aef8355535a97194d1c51d131bc5829fba7df7b25e",
+    "source": "seed checkpoint Ler/model.py"
+  },
+  {
+    "path": "backends/apricot/model.py",
+    "bytes": 3616,
+    "sha256": "e955bd6884688edcac41bd13a229b9d08ca2992700b7a9d2a88e0f48dce3a5e0",
+    "source": "apricot A1267 checkpoint/model.py"
+  },
+  {
+    "path": "backends/functional/prepare.py",
+    "bytes": 6118,
+    "sha256": "2d17a856352c4e171bce8e529b221f571b465b7d9295185d54f4c5f83203f00a",
+    "source": "archived source-only fit decision 2927/prepare.py"
+  },
+  {
+    "path": "backends/functional/chilling_functional_model.py",
+    "bytes": 2531,
+    "sha256": "c51d3a777a0ae213b340c6561ef3602b986e158c847d692b66ed21b67f78a82b",
+    "source": "archived source-only fit decision 2927/chilling_functional_model.py"
+  },
+  {
+    "path": "backends/yeast/prepare.py",
+    "bytes": 13469,
+    "sha256": "0d6e3fc8bc326b04d1d28f5c073199faa845d93bedc0c6455f48ea61804ee14d",
+    "source": "archived source-only fit decision 2142/prepare.py"
+  },
+  {
+    "path": "scripts/recompute.py",
+    "bytes": 15690,
+    "sha256": "3e65fb019da978a70616b0d50955f276a61a9357677d44c854e254e9df9af89a",
+    "source": "paper audit script"
+  },
+  {
+    "path": "requirements.txt",
+    "bytes": 12,
+    "sha256": "4ddc9fac6812009f664a46c80b8fd573c9f2bcc4ac391cca9531ca94cd432e63",
+    "source": "code runtime requirements"
+  },
+  {
+    "path": ".gitignore",
+    "bytes": 89,
+    "sha256": "bf20d202fbadfb7697d522bf2f402466886b848246ad9559d034029cf036c10c",
+    "source": "publication boundary"
+  },
+  {
+    "path": "README.md",
+    "bytes": 2802,
+    "sha256": "a13e101955fad9fa24a7f2db3f989cee74a9aabba96bda545f408026d459ae54",
+    "source": "publication documentation"
+  },
+  {
+    "path": "verify_snapshot.py",
+    "bytes": 458,
+    "sha256": "00d9201f335f8256ecc261e3f8c01d087bca84559b63eb3e8618aecff63d9340",
+    "source": "non-executing snapshot verification"
+  }
+]
